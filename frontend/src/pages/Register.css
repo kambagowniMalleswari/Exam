@@ -1,0 +1,26 @@
+/* ==========================================================================
+   AssessIQ Institutional Student Registration Styling
+   ========================================================================== */
+@import "./Login.css";
+
+/* Additional Register-Specific Fine-Tuning */
+.register-panel {
+  max-width: 680px;
+}
+
+.register-form-body {
+  max-width: 560px;
+}
+
+.register-panel .field-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .register-panel .field-row-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}

@@ -1,0 +1,21 @@
+/* Protected test page */
+.protected-test {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  text-align: center;
+}
+
+.protected-test h1 {
+  margin-bottom: 10px;
+  color: #172033;
+  font-size: 32px;
+}
+
+.protected-test p {
+  color: #748096;
+  font-size: 15px;
+}
