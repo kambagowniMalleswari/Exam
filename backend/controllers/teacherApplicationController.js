@@ -125,28 +125,27 @@ export const applyForTeacher = async (req, res) => {
       status: "pending"
     });
 
-    // 4. Send email confirmation to applicant
-    sendEmail({
-      to: application.email,
-      subject: `Teacher Application Received — ${org.name}`,
-      text: `Hello ${application.name},\n\nYour application to join ${org.name} as a Teacher for ${application.subject} has been received and is currently pending administrator review.\n\nYou will receive an update once the institutional admin reviews your application.\n\nThank you,\n${org.name} Academic Management`
-    });
-
-    // 5. Send notification to organization official email (if provided)
-    if (org.email && org.email.toLowerCase() !== application.email.toLowerCase()) {
+    // 4. Send email confirmation to applicant & administration
+    const adminAlertEmail = process.env.EMAIL_USER || "kambagownikmalleswari@gmail.com";
+    await Promise.allSettled([
       sendEmail({
-        to: org.email,
-        subject: `[Faculty Notice] New Teacher Application Received — ${application.name} (${application.subject})`,
-        text: `Dear ${org.name} Administration,\n\nA new teacher application has been submitted by ${application.name} (${application.email}) for the subject/department: "${application.subject}".\n\nPlease log in to your AssessIQ institutional portal to review the applicant's credentials and approve/reject.\n\nAssessIQ Platform Operations`
-      });
-    }
-
-    // 6. Send notification to Platform Administration (kambagownikmalleswari@gmail.com)
-    sendEmail({
-      to: "kambagownikmalleswari@gmail.com",
-      subject: `[AssessIQ Alert] New Teacher Application for ${org.name} — ${application.name}`,
-      text: `Hello Administrator,\n\nA new teacher application has been received for institution "${org.name}".\n\nApplicant Details:\n- Name: ${application.name}\n- Email: ${application.email}\n- Phone: ${application.phone}\n- Subject: ${application.subject}\n- Qualification: ${application.qualification}\n- Experience: ${application.experienceYears || 0} years\n\nYou can review this application in the Super Admin or Organization dashboard.\n\nAssessIQ System`
-    });
+        to: application.email,
+        subject: `Teacher Application Received — ${org.name}`,
+        text: `Hello ${application.name},\n\nYour application to join ${org.name} as a Teacher for ${application.subject} has been received and is currently pending administrator review.\n\nYou will receive an update once the institutional admin reviews your application.\n\nThank you,\n${org.name} Academic Management`
+      }),
+      ...(org.email && org.email.toLowerCase() !== application.email.toLowerCase() ? [
+        sendEmail({
+          to: org.email,
+          subject: `[Faculty Notice] New Teacher Application Received — ${application.name} (${application.subject})`,
+          text: `Dear ${org.name} Administration,\n\nA new teacher application has been submitted by ${application.name} (${application.email}) for the subject/department: "${application.subject}".\n\nPlease log in to your AssessIQ institutional portal to review the applicant's credentials and approve/reject.\n\nAssessIQ Platform Operations`
+        })
+      ] : []),
+      sendEmail({
+        to: adminAlertEmail,
+        subject: `[AssessIQ Alert] New Teacher Application for ${org.name} — ${application.name}`,
+        text: `Hello Administrator,\n\nA new teacher application has been received for institution "${org.name}".\n\nApplicant Details:\n- Name: ${application.name}\n- Email: ${application.email}\n- Phone: ${application.phone}\n- Subject: ${application.subject}\n- Qualification: ${application.qualification}\n- Experience: ${application.experienceYears || 0} years\n\nYou can review this application in the Super Admin or Organization dashboard.\n\nAssessIQ System`
+      })
+    ]);
 
     res.status(201).json({
       success: true,
@@ -292,17 +291,19 @@ export const approveTeacherApplication = async (req, res) => {
     }
     emailText += `Welcome to the faculty!\n${orgName} Management`;
 
-    sendEmail({
-      to: application.email,
-      subject: `Teacher Application Approved — ${orgName}`,
-      text: emailText
-    });
-
-    sendEmail({
-      to: "kambagownikmalleswari@gmail.com",
-      subject: `[AssessIQ Alert] Teacher Application Approved — ${application.name} (${orgName})`,
-      text: `Teacher application for ${application.name} (${application.email}) has been approved for institution ${orgName}.\nRole: Faculty / Teacher\nSubject: ${application.subject}`
-    });
+    const adminEmail = process.env.EMAIL_USER || "kambagownikmalleswari@gmail.com";
+    await Promise.allSettled([
+      sendEmail({
+        to: application.email,
+        subject: `Teacher Application Approved — ${orgName}`,
+        text: emailText
+      }),
+      sendEmail({
+        to: adminEmail,
+        subject: `[AssessIQ Alert] Teacher Application Approved — ${application.name} (${orgName})`,
+        text: `Teacher application for ${application.name} (${application.email}) has been approved for institution ${orgName}.\nRole: Faculty / Teacher\nSubject: ${application.subject}`
+      })
+    ]);
 
     res.status(200).json({
       success: true,
@@ -356,11 +357,15 @@ export const rejectTeacherApplication = async (req, res) => {
     await application.save();
 
     const orgName = application.organizationId?.name || "the institution";
-    sendEmail({
-      to: application.email,
-      subject: `Teacher Application Status Update — ${orgName}`,
-      text: `Dear ${application.name},\n\nThank you for applying to join ${orgName} as a Teacher. After review, we regret to inform you that we are unable to approve your application at this time.\n\nReason: ${application.rejectionReason}\n\nWe wish you the best in your professional endeavors.\n\n${orgName} Academic Team`
-    });
+    try {
+      await sendEmail({
+        to: application.email,
+        subject: `Teacher Application Status Update — ${orgName}`,
+        text: `Dear ${application.name},\n\nThank you for applying to join ${orgName} as a Teacher. After review, we regret to inform you that we are unable to approve your application at this time.\n\nReason: ${application.rejectionReason}\n\nWe wish you the best in your professional endeavors.\n\n${orgName} Academic Team`
+      });
+    } catch (emailErr) {
+      console.warn("Could not dispatch teacher rejection email:", emailErr.message);
+    }
 
     res.status(200).json({
       success: true,

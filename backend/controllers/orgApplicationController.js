@@ -3,7 +3,7 @@ import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import TeacherApplication from "../models/TeacherApplication.js";
 import bcrypt from "bcryptjs";
-import { sendEmail, sendOrgApplicationAdminAlert } from "../utils/sendEmail.js";
+import { sendEmail, sendOrgApplicationAdminAlert, getClientUrl } from "../utils/sendEmail.js";
 
 // 1. Submit Organization Application (Public)
 export const applyOrganization = async (req, res) => {
@@ -118,40 +118,36 @@ export const applyOrganization = async (req, res) => {
       status: "pending"
     });
 
-    // 1. Send confirmation email to applicant
-    sendEmail({
-      to: cleanEmail,
-      subject: "AssessIQ - Institutional Onboarding Application Received",
-      text: `Dear ${adminName},\n\nThank you for submitting an institutional partnership request for "${name}" on AssessIQ.\n\nOur platform administration team is reviewing your institution's profile. Once verified, your organization portal will be provisioned, and your administrator access credentials will be delivered to this email.\n\nAssessIQ Institutional Assessment Platform · Secure Multi-Tenant Architecture`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
-          <h2 style="color: #0f172a; margin-bottom: 12px;">Institutional Onboarding Application Received</h2>
-          <p>Dear ${adminName},</p>
-          <p>Thank you for submitting an institutional partnership request for <strong>${name}</strong> on AssessIQ.</p>
-          <p>Our platform administration team is reviewing your institution's profile. Once verified, your organization portal will be provisioned, and your administrator access credentials will be delivered to this email.</p>
-          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-          <p style="font-size: 13px; color: #64748b;">AssessIQ Institutional Assessment Platform · Secure Multi-Tenant Architecture</p>
-        </div>
-      `
-    }).catch((emailErr) => {
-      console.warn("Could not dispatch confirmation email:", emailErr.message);
-    });
-
-    // 2. Send instant notification email to Super Admin
-    sendOrgApplicationAdminAlert({
-      orgName: name.trim(),
-      orgType: type,
-      adminName: adminName.trim(),
-      email: cleanEmail,
-      phone: cleanPhone,
-      city: city.trim(),
-      state: state.trim(),
-      expectedStudents,
-      website: website.trim(),
-      notes: notes.trim()
-    }).catch((adminEmailErr) => {
-      console.warn("Could not dispatch admin alert email:", adminEmailErr.message);
-    });
+    // 1. Send confirmation email to applicant & alert to Super Admin
+    await Promise.allSettled([
+      sendEmail({
+        to: cleanEmail,
+        subject: "AssessIQ - Institutional Onboarding Application Received",
+        text: `Dear ${adminName},\n\nThank you for submitting an institutional partnership request for "${name}" on AssessIQ.\n\nOur platform administration team is reviewing your institution's profile. Once verified, your organization portal will be provisioned, and your administrator access credentials will be delivered to this email.\n\nAssessIQ Institutional Assessment Platform · Secure Multi-Tenant Architecture`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <h2 style="color: #0f172a; margin-bottom: 12px;">Institutional Onboarding Application Received</h2>
+            <p>Dear ${adminName},</p>
+            <p>Thank you for submitting an institutional partnership request for <strong>${name}</strong> on AssessIQ.</p>
+            <p>Our platform administration team is reviewing your institution's profile. Once verified, your organization portal will be provisioned, and your administrator access credentials will be delivered to this email.</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+            <p style="font-size: 13px; color: #64748b;">AssessIQ Institutional Assessment Platform · Secure Multi-Tenant Architecture</p>
+          </div>
+        `
+      }),
+      sendOrgApplicationAdminAlert({
+        orgName: name.trim(),
+        orgType: type,
+        adminName: adminName.trim(),
+        email: cleanEmail,
+        phone: cleanPhone,
+        city: city.trim(),
+        state: state.trim(),
+        expectedStudents,
+        website: website.trim(),
+        notes: notes.trim()
+      })
+    ]);
 
     res.status(201).json({
       success: true,
@@ -284,30 +280,33 @@ export const approveOrganizationApplication = async (req, res) => {
     application.createdAdminUserId = adminUser._id;
     await application.save();
 
-    // 5. Send approval email with credentials asynchronously in background
-    sendEmail({
-      to: application.email,
-      subject: "🎉 AssessIQ - Institutional Portal Approved & Provisioned",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
-          <h2 style="color: #0f172a; margin-bottom: 8px;">Welcome to AssessIQ Enterprise!</h2>
-          <p>Dear ${application.adminName},</p>
-          <p>Congratulations! Your institution application for <strong>${organization.name}</strong> has been officially approved by the platform administration.</p>
-          <div style="background: #f8fafc; padding: 18px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
-            <h4 style="margin: 0 0 10px 0; color: #0284c7;">Institutional Administrator Credentials:</h4>
-            <p style="margin: 4px 0;"><strong>Portal Login:</strong> <a href="http://localhost:5173/login">Access Portal</a></p>
-            <p style="margin: 4px 0;"><strong>Admin Email:</strong> ${application.email}</p>
-            <p style="margin: 4px 0;"><strong>Temporary Password:</strong> <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: bold;">${tempPassword}</code></p>
-            <p style="margin: 4px 0;"><strong>Organization Slug:</strong> ${organization.slug}</p>
+    // 5. Send approval email with credentials to applicant
+    const portalLoginUrl = `${getClientUrl()}/login`;
+    try {
+      await sendEmail({
+        to: application.email,
+        subject: "🎉 AssessIQ - Institutional Portal Approved & Provisioned",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <h2 style="color: #0f172a; margin-bottom: 8px;">Welcome to AssessIQ Enterprise!</h2>
+            <p>Dear ${application.adminName},</p>
+            <p>Congratulations! Your institution application for <strong>${organization.name}</strong> has been officially approved by the platform administration.</p>
+            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
+              <h4 style="margin: 0 0 10px 0; color: #0284c7;">Institutional Administrator Credentials:</h4>
+              <p style="margin: 4px 0;"><strong>Portal Login:</strong> <a href="${portalLoginUrl}" style="color: #0284c7; font-weight: bold;">Access Portal (${portalLoginUrl})</a></p>
+              <p style="margin: 4px 0;"><strong>Admin Email:</strong> ${application.email}</p>
+              <p style="margin: 4px 0;"><strong>Temporary Password:</strong> <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: bold;">${tempPassword}</code></p>
+              <p style="margin: 4px 0;"><strong>Organization Slug:</strong> ${organization.slug}</p>
+            </div>
+            <p style="color: #d97706; font-size: 13px;">Please change your password immediately after your first sign in.</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+            <p style="font-size: 13px; color: #64748b;">AssessIQ Platform Operations</p>
           </div>
-          <p style="color: #d97706; font-size: 13px;">Please change your password immediately after your first sign in.</p>
-          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-          <p style="font-size: 13px; color: #64748b;">AssessIQ Platform Operations</p>
-        </div>
-      `
-    }).catch((emailErr) => {
+        `
+      });
+    } catch (emailErr) {
       console.warn("Could not dispatch approval email:", emailErr.message);
-    });
+    }
 
     res.status(200).json({
       success: true,
@@ -358,24 +357,26 @@ export const rejectOrganizationApplication = async (req, res) => {
     application.reviewedAt = new Date();
     await application.save();
 
-    // Send rejection email asynchronously in background
-    sendEmail({
-      to: application.email,
-      subject: "AssessIQ - Institutional Application Status Update",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
-          <h2 style="color: #0f172a; margin-bottom: 12px;">Institutional Onboarding Update</h2>
-          <p>Dear ${application.adminName},</p>
-          <p>Thank you for your interest in AssessIQ. After reviewing the institutional request for <strong>${application.name}</strong>, our administrative team was unable to approve the onboarding at this time.</p>
-          <p><strong>Reason provided:</strong> ${application.rejectionReason}</p>
-          <p>If you believe this is an error or would like to provide additional institutional verification documents, please reply directly or contact support.</p>
-          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-          <p style="font-size: 13px; color: #64748b;">AssessIQ Institutional Assessment Platform</p>
-        </div>
-      `
-    }).catch((emailErr) => {
+    // Send rejection email to applicant
+    try {
+      await sendEmail({
+        to: application.email,
+        subject: "AssessIQ - Institutional Application Status Update",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <h2 style="color: #0f172a; margin-bottom: 12px;">Institutional Onboarding Update</h2>
+            <p>Dear ${application.adminName},</p>
+            <p>Thank you for your interest in AssessIQ. After reviewing the institutional request for <strong>${application.name}</strong>, our administrative team was unable to approve the onboarding at this time.</p>
+            <p><strong>Reason provided:</strong> ${application.rejectionReason}</p>
+            <p>If you believe this is an error or would like to provide additional institutional verification documents, please reply directly or contact support.</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+            <p style="font-size: 13px; color: #64748b;">AssessIQ Institutional Assessment Platform</p>
+          </div>
+        `
+      });
+    } catch (emailErr) {
       console.warn("Could not dispatch rejection email:", emailErr.message);
-    });
+    }
 
     res.status(200).json({
       success: true,

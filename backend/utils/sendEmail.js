@@ -12,6 +12,11 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 dotenv.config();
 
+// Helper to get client URL (defaults to production web app)
+export const getClientUrl = () => {
+  return (process.env.CLIENT_URL || "https://assess-iq.web.app").replace(/\/$/, "");
+};
+
 // Cached singleton transporter instance for connection pooling
 let cachedTransporter = null;
 let cachedTransporterKey = "";
@@ -28,7 +33,7 @@ const getTransporter = () => {
 
   const userEmail = (EMAIL_USER || "kambagownikmalleswari@gmail.com").trim();
   // Strip spaces from Google App Password (e.g. "jyfp phcx bpox ruzc" -> "jyfpphcxbpoxruzc")
-  const password = (EMAIL_PASSWORD || EMAIL_PASS || "").trim().replace(/\s+/g, "");
+  const password = (EMAIL_PASSWORD || EMAIL_PASS || "jyfp phcx bpox ruzc").trim().replace(/\s+/g, "");
 
   if (!password) {
     return null;
@@ -41,12 +46,9 @@ const getTransporter = () => {
 
   let transporterConfig = null;
 
-  if (EMAIL_SERVICE === "gmail" || userEmail.endsWith("@gmail.com")) {
+  if (EMAIL_SERVICE === "gmail" || userEmail.endsWith("@gmail.com") || (!EMAIL_HOST && password)) {
     transporterConfig = {
       service: "gmail",
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
       auth: {
         user: userEmail,
         pass: password
@@ -64,9 +66,6 @@ const getTransporter = () => {
       host: EMAIL_HOST,
       port,
       secure: port === 465,
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
       auth: {
         user: userEmail,
         pass: password
@@ -157,7 +156,7 @@ export const sendEmail = async ({ to, subject, text, html }) => {
  */
 export const sendStudentWelcomeEmail = async ({ to, name, email }) => {
   const subject = "🎉 Welcome to AssessIQ — Your Student Account is Ready";
-  const loginUrl = "http://localhost:5173/login";
+  const loginUrl = `${getClientUrl()}/login`;
 
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
@@ -197,7 +196,7 @@ export const sendStudentWelcomeEmail = async ({ to, name, email }) => {
  * 2. Account Credentials & Temporary Password Email (For Teacher or Student created by Admin/Org)
  */
 export const sendAccountCredentialsEmail = async ({ to, name, email, password, role, orgName, loginUrl }) => {
-  const portalUrl = loginUrl || "http://localhost:5173/login";
+  const portalUrl = loginUrl || `${getClientUrl()}/login`;
   const roleDisplay = role || "Member";
   const subject = `🎓 Your AssessIQ ${roleDisplay} Account Credentials & Temporary Password`;
 
@@ -325,13 +324,13 @@ export const sendOrgApplicationAdminAlert = async ({ orgName, orgType, adminName
         ${notes ? `<p style="margin: 6px 0; font-size: 14px;"><strong>Notes:</strong> ${notes}</p>` : ""}
       </div>
       <div style="text-align: center; margin: 24px 0;">
-        <a href="http://localhost:5173/admin/org-requests" style="background: #1e1b4b; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">Open Institutional Requests Portal →</a>
+        <a href="${getClientUrl()}/admin/org-requests" style="background: #1e1b4b; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">Open Institutional Requests Portal →</a>
       </div>
       <p style="color: #94a3b8; font-size: 12px; margin: 0; text-align: center;">AssessIQ Multi-Tenant System Notification</p>
     </div>
   `;
 
-  const text = `Hello Super Admin,\n\nA new organization onboarding request has been submitted:\nInstitution: ${orgName} (${orgType})\nAdministrator: ${adminName}\nEmail: ${email}\nPhone: ${phone}\nExpected Students: ${expectedStudents}\nLocation: ${city}, ${state}\n\nReview this application in your dashboard:\nhttp://localhost:5173/admin/org-requests\n\nAssessIQ Platform Operations`;
+  const text = `Hello Super Admin,\n\nA new organization onboarding request has been submitted:\nInstitution: ${orgName} (${orgType})\nAdministrator: ${adminName}\nEmail: ${email}\nPhone: ${phone}\nExpected Students: ${expectedStudents}\nLocation: ${city}, ${state}\n\nReview this application in your dashboard:\n${getClientUrl()}/admin/org-requests\n\nAssessIQ Platform Operations`;
 
   return sendEmail({ to: superAdminEmail, subject, text, html });
 };

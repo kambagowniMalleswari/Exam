@@ -5,7 +5,7 @@ import Batch from "../models/Batch.js";
 import Organization from "../models/Organization.js";
 import OrgApplication from "../models/OrgApplication.js";
 import TeacherApplication from "../models/TeacherApplication.js";
-import { sendAccountCredentialsEmail, sendEmail } from "../utils/sendEmail.js";
+import { sendAccountCredentialsEmail, sendEmail, getClientUrl } from "../utils/sendEmail.js";
 
 // Get users in current organization (or all users for super admin)
 export const getUsers = async (req, res) => {
@@ -257,30 +257,26 @@ export const createUser = async (req, res) => {
       isActive: true
     });
 
-    // Send account credentials and temporary password email asynchronously to the new user
-    sendAccountCredentialsEmail({
-      to: user.email,
-      name: user.name,
-      email: user.email,
-      password: password,
-      role: user.role === "teacher" ? "Faculty / Teacher" : "Student",
-      orgName: org?.name || "AssessIQ Institution",
-      loginUrl: "http://localhost:5173/login"
-    }).catch((emailErr) => {
-      console.error("[User Account Credentials Email Error]:", emailErr.message);
-    });
-
-    // Also send confirmation alert to the administrator
+    // Send account credentials and temporary password email to the new user and alert to admin
     const adminNotificationEmail = req.user?.email || process.env.EMAIL_USER || "kambagownikmalleswari@gmail.com";
-    if (adminNotificationEmail && adminNotificationEmail.toLowerCase() !== user.email.toLowerCase()) {
-      sendEmail({
-        to: adminNotificationEmail,
-        subject: `[AssessIQ Alert] New ${user.role === "teacher" ? "Teacher" : "Student"} Created — ${user.name}`,
-        text: `Hello Administrator,\n\nA new ${user.role} account has been provisioned on AssessIQ.\n\nAccount Details:\n- Name: ${user.name}\n- Email: ${user.email}\n- Role: ${user.role}\n- Institution: ${org?.name || "Platform"}\n- Temporary Password: ${password}\n\nAssessIQ Automated Operations`
-      }).catch((adminEmailErr) => {
-        console.warn("[Admin Notification Email Error]:", adminEmailErr.message);
-      });
-    }
+    await Promise.allSettled([
+      sendAccountCredentialsEmail({
+        to: user.email,
+        name: user.name,
+        email: user.email,
+        password: password,
+        role: user.role === "teacher" ? "Faculty / Teacher" : "Student",
+        orgName: org?.name || "AssessIQ Institution",
+        loginUrl: `${getClientUrl()}/login`
+      }),
+      ...(adminNotificationEmail && adminNotificationEmail.toLowerCase() !== user.email.toLowerCase() ? [
+        sendEmail({
+          to: adminNotificationEmail,
+          subject: `[AssessIQ Alert] New ${user.role === "teacher" ? "Teacher" : "Student"} Created — ${user.name}`,
+          text: `Hello Administrator,\n\nA new ${user.role} account has been provisioned on AssessIQ.\n\nAccount Details:\n- Name: ${user.name}\n- Email: ${user.email}\n- Role: ${user.role}\n- Institution: ${org?.name || "Platform"}\n- Temporary Password: ${password}\n\nAssessIQ Automated Operations`
+        })
+      ] : [])
+    ]);
 
     res.status(201).json({
       success: true,

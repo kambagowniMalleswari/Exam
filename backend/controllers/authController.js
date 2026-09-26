@@ -145,24 +145,20 @@ export const register = async (req, res) => {
     // 11. Generate JWT token
     const token = generateToken(user);
 
-    // 12. Dispatch student welcome email asynchronously
-    sendStudentWelcomeEmail({
-      to: user.email,
-      name: user.name,
-      email: user.email
-    }).catch((emailErr) => {
-      console.error("[Student Welcome Email Error]:", emailErr.message);
-    });
-
-    // 13. Dispatch alert to Super Admin / Admin
-    sendStudentRegistrationAdminAlert({
-      studentName: user.name,
-      studentEmail: user.email,
-      studentPhone: user.phone,
-      orgName: org?.name || "Independent / Platform"
-    }).catch((adminEmailErr) => {
-      console.warn("[Student Registration Admin Alert Error]:", adminEmailErr.message);
-    });
+    // 12. Dispatch student welcome email & admin alert
+    await Promise.allSettled([
+      sendStudentWelcomeEmail({
+        to: user.email,
+        name: user.name,
+        email: user.email
+      }),
+      sendStudentRegistrationAdminAlert({
+        studentName: user.name,
+        studentEmail: user.email,
+        studentPhone: user.phone,
+        orgName: organization?.name || "Independent / Platform"
+      })
+    ]);
 
     // 13. Send response
     res.status(201).json({
@@ -541,32 +537,34 @@ export const sendResetPasswordOtp = async (req, res) => {
     user.resetPasswordOtpExpires = expires;
     await user.save();
 
-    // Dispatch OTP email asynchronously in background
-    sendEmail({
-      to: user.email,
-      subject: "AssessIQ Platform — Password Reset Verification Code",
-      text: `Hello ${user.name},\n\nYour 6-digit password reset verification code is:\n\n${otp}\n\nThis code will expire in 10 minutes. If you did not request a password change, please ignore this email or contact platform support.\n\nAssessIQ Security Operations`,
-      html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
-          <div style="display: flex; align-items: center; margin-bottom: 20px;">
-            <div style="width: 36px; height: 36px; background: #1e3a8a; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-right: 12px;">IQ</div>
-            <h3 style="margin: 0; color: #0f172a; font-size: 18px;">AssessIQ Platform Security</h3>
+    // Dispatch OTP email to user
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "AssessIQ Platform — Password Reset Verification Code",
+        text: `Hello ${user.name},\n\nYour 6-digit password reset verification code is:\n\n${otp}\n\nThis code will expire in 10 minutes. If you did not request a password change, please ignore this email or contact platform support.\n\nAssessIQ Security Operations`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+              <div style="width: 36px; height: 36px; background: #1e3a8a; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-right: 12px;">IQ</div>
+              <h3 style="margin: 0; color: #0f172a; font-size: 18px;">AssessIQ Platform Security</h3>
+            </div>
+            <h2 style="color: #0f172a; font-size: 22px; margin-bottom: 12px;">Password Reset Verification</h2>
+            <p style="color: #475569; font-size: 15px; line-height: 1.5;">Hello <strong>${user.name}</strong>,</p>
+            <p style="color: #475569; font-size: 15px; line-height: 1.5;">You have requested to reset or modify your account password. Use the single-use 6-digit verification code below to authorize this change:</p>
+            <div style="margin: 28px 0; text-align: center;">
+              <span style="font-family: 'Courier New', monospace; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #1e40af; background: #eff6ff; padding: 14px 28px; border-radius: 10px; border: 2px dashed #93c5fd; display: inline-block;">${otp}</span>
+            </div>
+            <p style="color: #64748b; font-size: 13px; margin-bottom: 6px;">⏱️ This verification code is valid for <strong>10 minutes</strong>.</p>
+            <p style="color: #64748b; font-size: 13px;">If you did not initiate this request, please change your credentials immediately or notify your institution administrator.</p>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px 0;" />
+            <p style="color: #94a3b8; font-size: 12px; margin: 0; text-align: center;">AssessIQ Multi-Tenant Institutional Assessment Platform</p>
           </div>
-          <h2 style="color: #0f172a; font-size: 22px; margin-bottom: 12px;">Password Reset Verification</h2>
-          <p style="color: #475569; font-size: 15px; line-height: 1.5;">Hello <strong>${user.name}</strong>,</p>
-          <p style="color: #475569; font-size: 15px; line-height: 1.5;">You have requested to reset or modify your account password. Use the single-use 6-digit verification code below to authorize this change:</p>
-          <div style="margin: 28px 0; text-align: center;">
-            <span style="font-family: 'Courier New', monospace; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #1e40af; background: #eff6ff; padding: 14px 28px; border-radius: 10px; border: 2px dashed #93c5fd; display: inline-block;">${otp}</span>
-          </div>
-          <p style="color: #64748b; font-size: 13px; margin-bottom: 6px;">⏱️ This verification code is valid for <strong>10 minutes</strong>.</p>
-          <p style="color: #64748b; font-size: 13px;">If you did not initiate this request, please change your credentials immediately or notify your institution administrator.</p>
-          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px 0;" />
-          <p style="color: #94a3b8; font-size: 12px; margin: 0; text-align: center;">AssessIQ Multi-Tenant Institutional Assessment Platform</p>
-        </div>
-      `
-    }).catch((emailErr) => {
+        `
+      });
+    } catch (emailErr) {
       console.warn("[OTP Email Dispatch Warning]:", emailErr.message);
-    });
+    }
 
     res.status(200).json({
       success: true,
