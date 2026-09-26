@@ -5,7 +5,11 @@ import Organization from "../models/Organization.js";
 import OrgApplication from "../models/OrgApplication.js";
 import TeacherApplication from "../models/TeacherApplication.js";
 import generateToken from "../utils/generateToken.js";
-import sendEmail, { sendStudentWelcomeEmail, sendLoginNotificationEmail } from "../utils/sendEmail.js";
+import sendEmail, {
+  sendStudentWelcomeEmail,
+  sendLoginNotificationEmail,
+  sendStudentRegistrationAdminAlert
+} from "../utils/sendEmail.js";
 
 // Register user - Public registration strictly registers Student accounts
 export const register = async (req, res) => {
@@ -148,6 +152,16 @@ export const register = async (req, res) => {
       email: user.email
     }).catch((emailErr) => {
       console.error("[Student Welcome Email Error]:", emailErr.message);
+    });
+
+    // 13. Dispatch alert to Super Admin / Admin
+    sendStudentRegistrationAdminAlert({
+      studentName: user.name,
+      studentEmail: user.email,
+      studentPhone: user.phone,
+      orgName: org?.name || "Independent / Platform"
+    }).catch((adminEmailErr) => {
+      console.warn("[Student Registration Admin Alert Error]:", adminEmailErr.message);
     });
 
     // 13. Send response
@@ -527,8 +541,8 @@ export const sendResetPasswordOtp = async (req, res) => {
     user.resetPasswordOtpExpires = expires;
     await user.save();
 
-    // Dispatch OTP email
-    await sendEmail({
+    // Dispatch OTP email asynchronously in background
+    sendEmail({
       to: user.email,
       subject: "AssessIQ Platform — Password Reset Verification Code",
       text: `Hello ${user.name},\n\nYour 6-digit password reset verification code is:\n\n${otp}\n\nThis code will expire in 10 minutes. If you did not request a password change, please ignore this email or contact platform support.\n\nAssessIQ Security Operations`,
@@ -550,11 +564,14 @@ export const sendResetPasswordOtp = async (req, res) => {
           <p style="color: #94a3b8; font-size: 12px; margin: 0; text-align: center;">AssessIQ Multi-Tenant Institutional Assessment Platform</p>
         </div>
       `
+    }).catch((emailErr) => {
+      console.warn("[OTP Email Dispatch Warning]:", emailErr.message);
     });
 
     res.status(200).json({
       success: true,
-      message: `A 6-digit verification code has been dispatched to ${user.email}.`
+      message: `A 6-digit verification code has been dispatched to ${user.email}.`,
+      ...(process.env.NODE_ENV !== "production" ? { devOtp: otp } : {})
     });
   } catch (error) {
     console.error("Send Reset OTP Error:", error);

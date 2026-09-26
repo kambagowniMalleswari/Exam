@@ -3,7 +3,7 @@ import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import TeacherApplication from "../models/TeacherApplication.js";
 import bcrypt from "bcryptjs";
-import { sendEmail } from "../utils/sendEmail.js";
+import { sendEmail, sendOrgApplicationAdminAlert } from "../utils/sendEmail.js";
 
 // 1. Submit Organization Application (Public)
 export const applyOrganization = async (req, res) => {
@@ -89,6 +89,18 @@ export const applyOrganization = async (req, res) => {
       .replace(/[^a-z0-9]/g, "-")
       .replace(/-+/g, "-");
 
+    const validEnums = ["1-100", "101-500", "501-2000", "2000+"];
+    let normalizedExpectedStudents = "101-500";
+    if (validEnums.includes(expectedStudents)) {
+      normalizedExpectedStudents = expectedStudents;
+    } else if (typeof expectedStudents === "number" || !isNaN(Number(expectedStudents))) {
+      const num = Number(expectedStudents);
+      if (num <= 100) normalizedExpectedStudents = "1-100";
+      else if (num <= 500) normalizedExpectedStudents = "101-500";
+      else if (num <= 2000) normalizedExpectedStudents = "501-2000";
+      else normalizedExpectedStudents = "2000+";
+    }
+
     const application = await OrgApplication.create({
       name: name.trim(),
       slug: generatedSlug,
@@ -101,15 +113,16 @@ export const applyOrganization = async (req, res) => {
       city: city.trim(),
       state: state.trim(),
       country: country.trim(),
-      expectedStudents,
+      expectedStudents: normalizedExpectedStudents,
       notes: notes.trim(),
       status: "pending"
     });
 
-    // Send confirmation email asynchronously in background
+    // 1. Send confirmation email to applicant
     sendEmail({
       to: cleanEmail,
       subject: "AssessIQ - Institutional Onboarding Application Received",
+      text: `Dear ${adminName},\n\nThank you for submitting an institutional partnership request for "${name}" on AssessIQ.\n\nOur platform administration team is reviewing your institution's profile. Once verified, your organization portal will be provisioned, and your administrator access credentials will be delivered to this email.\n\nAssessIQ Institutional Assessment Platform · Secure Multi-Tenant Architecture`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
           <h2 style="color: #0f172a; margin-bottom: 12px;">Institutional Onboarding Application Received</h2>
@@ -122,6 +135,22 @@ export const applyOrganization = async (req, res) => {
       `
     }).catch((emailErr) => {
       console.warn("Could not dispatch confirmation email:", emailErr.message);
+    });
+
+    // 2. Send instant notification email to Super Admin
+    sendOrgApplicationAdminAlert({
+      orgName: name.trim(),
+      orgType: type,
+      adminName: adminName.trim(),
+      email: cleanEmail,
+      phone: cleanPhone,
+      city: city.trim(),
+      state: state.trim(),
+      expectedStudents,
+      website: website.trim(),
+      notes: notes.trim()
+    }).catch((adminEmailErr) => {
+      console.warn("Could not dispatch admin alert email:", adminEmailErr.message);
     });
 
     res.status(201).json({

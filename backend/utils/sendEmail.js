@@ -12,83 +12,121 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 dotenv.config();
 
+// Cached singleton transporter instance for connection pooling
+let cachedTransporter = null;
+let cachedTransporterKey = "";
+
+const getTransporter = () => {
+  const {
+    EMAIL_SERVICE,
+    EMAIL_HOST,
+    EMAIL_PORT,
+    EMAIL_USER,
+    EMAIL_PASSWORD,
+    EMAIL_PASS
+  } = process.env;
+
+  const userEmail = (EMAIL_USER || "kambagownikmalleswari@gmail.com").trim();
+  // Strip spaces from Google App Password (e.g. "jyfp phcx bpox ruzc" -> "jyfpphcxbpoxruzc")
+  const password = (EMAIL_PASSWORD || EMAIL_PASS || "").trim().replace(/\s+/g, "");
+
+  if (!password) {
+    return null;
+  }
+
+  const configKey = `${EMAIL_SERVICE}_${EMAIL_HOST}_${EMAIL_PORT}_${userEmail}_${password}`;
+  if (cachedTransporter && cachedTransporterKey === configKey) {
+    return cachedTransporter;
+  }
+
+  let transporterConfig = null;
+
+  if (EMAIL_SERVICE === "gmail" || userEmail.endsWith("@gmail.com")) {
+    transporterConfig = {
+      service: "gmail",
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+      auth: {
+        user: userEmail,
+        pass: password
+      },
+      tls: {
+        rejectUnauthorized: false
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000
+    };
+  } else if (EMAIL_HOST) {
+    const port = Number(EMAIL_PORT) || 587;
+    transporterConfig = {
+      host: EMAIL_HOST,
+      port,
+      secure: port === 465,
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+      auth: {
+        user: userEmail,
+        pass: password
+      },
+      tls: {
+        rejectUnauthorized: false
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000
+    };
+  }
+
+  if (transporterConfig) {
+    cachedTransporter = nodemailer.createTransport(transporterConfig);
+    cachedTransporterKey = configKey;
+  }
+
+  return cachedTransporter;
+};
+
 /**
  * Base email sending function.
  */
 export const sendEmail = async ({ to, subject, text, html }) => {
   try {
-    const {
-      EMAIL_SERVICE,
-      EMAIL_HOST,
-      EMAIL_PORT,
-      EMAIL_USER,
-      EMAIL_PASSWORD,
-      EMAIL_PASS,
-      EMAIL_FROM
-    } = process.env;
-
-    const userEmail = EMAIL_USER || "kambagownikmalleswari@gmail.com";
-    const password = (EMAIL_PASSWORD || EMAIL_PASS || "").trim();
+    const { EMAIL_USER, EMAIL_FROM } = process.env;
+    const userEmail = (EMAIL_USER || "kambagownikmalleswari@gmail.com").trim();
 
     if (!to) {
       console.warn("[Email Notification] Skipped: No recipient provided.");
       return { success: false, reason: "No recipient provided" };
     }
 
-    // Check if password/credentials are configured for real dispatch
-    if (password) {
+    const transporter = getTransporter();
+
+    // Generate fallback plain text from HTML to prevent spam flagging
+    const cleanPlainText =
+      text ||
+      html
+        ?.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+        ?.replace(/<[^>]+>/g, " ")
+        ?.replace(/\s+/g, " ")
+        ?.trim() ||
+      "Notification from AssessIQ";
+
+    if (transporter) {
       try {
-        let transporterConfig;
+        const fromAddress = EMAIL_FROM || `"AssessIQ Platform" <${userEmail}>`;
 
-        if (EMAIL_SERVICE === "gmail" || userEmail.endsWith("@gmail.com")) {
-          transporterConfig = {
-            service: "gmail",
-            auth: {
-              user: userEmail.trim(),
-              pass: password
-            },
-            tls: {
-              rejectUnauthorized: false
-            },
-            connectionTimeout: 15000,
-            greetingTimeout: 15000,
-            socketTimeout: 20000
-          };
-        } else if (EMAIL_HOST) {
-          const port = Number(EMAIL_PORT) || 587;
-          transporterConfig = {
-            host: EMAIL_HOST,
-            port,
-            secure: port === 465,
-            auth: {
-              user: userEmail.trim(),
-              pass: password
-            },
-            tls: {
-              rejectUnauthorized: false
-            },
-            connectionTimeout: 15000,
-            greetingTimeout: 15000,
-            socketTimeout: 20000
-          };
-        }
+        const info = await transporter.sendMail({
+          from: fromAddress,
+          to,
+          subject,
+          text: cleanPlainText,
+          html: html || text?.replace(/\n/g, "<br/>")
+        });
 
-        if (transporterConfig) {
-          const transporter = nodemailer.createTransport(transporterConfig);
-
-          const fromAddress = EMAIL_FROM || `"AssessIQ Platform" <${userEmail.trim()}>`;
-
-          const info = await transporter.sendMail({
-            from: fromAddress,
-            to,
-            subject,
-            text,
-            html: html || text?.replace(/\n/g, "<br/>")
-          });
-
-          console.log(`[Real Email Sent] Message ID: ${info.messageId} to: ${to} (Subject: "${subject}")`);
-          return { success: true, messageId: info.messageId, real: true };
-        }
+        console.log(`[Real Email Sent] Message ID: ${info.messageId} to: ${to} (Subject: "${subject}")`);
+        return { success: true, messageId: info.messageId, real: true };
       } catch (nodemailerErr) {
         console.error("[Real Email Dispatch Failed]:", nodemailerErr.message);
       }
@@ -100,7 +138,7 @@ export const sendEmail = async ({ to, subject, text, html }) => {
     console.log(`Sender: ${userEmail}`);
     console.log(`To: ${to}`);
     console.log(`Subject: ${subject}`);
-    console.log(`Content:\n${text}`);
+    console.log(`Content:\n${cleanPlainText}`);
     console.log("==================================================");
 
     return {
@@ -256,6 +294,58 @@ export const sendLoginNotificationEmail = async ({ to, name, role, email, ip, us
   const text = `Hello ${name || email},\n\nA successful login to your AssessIQ ${roleText} account was detected on ${loginTime}.\n\nIf this was you, no action is needed.\nIf this was NOT you, please reset your password immediately.\n\nAssessIQ Security Team`;
 
   return sendEmail({ to, subject, text, html });
+};
+
+/**
+ * 4. Organization Application Alert to Super Admin
+ */
+export const sendOrgApplicationAdminAlert = async ({ orgName, orgType, adminName, email, phone, city, state, expectedStudents, website, notes }) => {
+  const superAdminEmail = (process.env.EMAIL_USER || "kambagownikmalleswari@gmail.com").trim();
+  const subject = `🏛️ [AssessIQ Alert] New Organization Request — ${orgName} (${orgType})`;
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+      <div style="display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 14px;">
+        <div style="width: 38px; height: 38px; background: #1e1b4b; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fbbf24; font-weight: 800; font-size: 18px; margin-right: 12px;">IQ</div>
+        <div>
+          <h3 style="margin: 0; color: #0f172a; font-size: 18px;">AssessIQ Platform Administration</h3>
+          <span style="font-size: 13px; color: #64748b;">New Institutional Onboarding Request</span>
+        </div>
+      </div>
+      <h3 style="color: #0f172a; margin-top: 0;">New Organization Request Received</h3>
+      <p style="color: #334155; font-size: 15px;">A new institutional partnership application has been submitted and is waiting for your review:</p>
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin: 18px 0;">
+        <p style="margin: 6px 0; font-size: 14px;"><strong>Institution:</strong> ${orgName} (${orgType})</p>
+        <p style="margin: 6px 0; font-size: 14px;"><strong>Administrator Name:</strong> ${adminName}</p>
+        <p style="margin: 6px 0; font-size: 14px;"><strong>Contact Email:</strong> <a href="mailto:${email}" style="color: #2563eb;">${email}</a></p>
+        <p style="margin: 6px 0; font-size: 14px;"><strong>Contact Phone:</strong> ${phone || "N/A"}</p>
+        <p style="margin: 6px 0; font-size: 14px;"><strong>Location:</strong> ${city || ""}, ${state || ""}</p>
+        <p style="margin: 6px 0; font-size: 14px;"><strong>Expected Students:</strong> ${expectedStudents || 50}</p>
+        <p style="margin: 6px 0; font-size: 14px;"><strong>Website:</strong> ${website || "N/A"}</p>
+        ${notes ? `<p style="margin: 6px 0; font-size: 14px;"><strong>Notes:</strong> ${notes}</p>` : ""}
+      </div>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="http://localhost:5173/admin/org-requests" style="background: #1e1b4b; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">Open Institutional Requests Portal →</a>
+      </div>
+      <p style="color: #94a3b8; font-size: 12px; margin: 0; text-align: center;">AssessIQ Multi-Tenant System Notification</p>
+    </div>
+  `;
+
+  const text = `Hello Super Admin,\n\nA new organization onboarding request has been submitted:\nInstitution: ${orgName} (${orgType})\nAdministrator: ${adminName}\nEmail: ${email}\nPhone: ${phone}\nExpected Students: ${expectedStudents}\nLocation: ${city}, ${state}\n\nReview this application in your dashboard:\nhttp://localhost:5173/admin/org-requests\n\nAssessIQ Platform Operations`;
+
+  return sendEmail({ to: superAdminEmail, subject, text, html });
+};
+
+/**
+ * 5. Student Self-Registration Alert to Admin
+ */
+export const sendStudentRegistrationAdminAlert = async ({ studentName, studentEmail, studentPhone, orgName }) => {
+  const superAdminEmail = (process.env.EMAIL_USER || "kambagownikmalleswari@gmail.com").trim();
+  const subject = `🎓 [AssessIQ Alert] New Student Registration — ${studentName}`;
+
+  const text = `Hello Administrator,\n\nA new student has registered on AssessIQ:\nName: ${studentName}\nEmail: ${studentEmail}\nPhone: ${studentPhone || "N/A"}\nInstitution: ${orgName || "Independent / Platform"}\n\nAssessIQ System`;
+
+  return sendEmail({ to: superAdminEmail, subject, text });
 };
 
 export default sendEmail;
