@@ -2,6 +2,10 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import Batch from "../models/Batch.js";
+import Organization from "../models/Organization.js";
+import OrgApplication from "../models/OrgApplication.js";
+import TeacherApplication from "../models/TeacherApplication.js";
+import { sendAccountCredentialsEmail } from "../utils/sendEmail.js";
 
 // Get users in current organization (or all users for super admin)
 export const getUsers = async (req, res) => {
@@ -183,12 +187,29 @@ export const createUser = async (req, res) => {
       });
     }
 
-    // Check existing email
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    // Check existing email across User collection and pending applications (no duplicates)
+    const cleanEmail = email.toLowerCase().trim();
+    const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
-        message: "User with this email already exists"
+        message: "A user with this email address already exists in the system"
+      });
+    }
+
+    const pendingOrg = await OrgApplication.findOne({ email: cleanEmail, status: "pending" });
+    if (pendingOrg) {
+      return res.status(409).json({
+        success: false,
+        message: "An institutional application with this email address is pending review"
+      });
+    }
+
+    const pendingTeacher = await TeacherApplication.findOne({ email: cleanEmail, status: "pending" });
+    if (pendingTeacher) {
+      return res.status(409).json({
+        success: false,
+        message: "A faculty application with this email address is pending review"
       });
     }
 
@@ -203,6 +224,8 @@ export const createUser = async (req, res) => {
         message: "Organization ID is required"
       });
     }
+
+    const org = await Organization.findById(targetOrgId);
 
     // Resolve batch if provided
     let resolvedBatchId = null;
@@ -221,7 +244,7 @@ export const createUser = async (req, res) => {
     // Create user inside organization
     const user = await User.create({
       name: name.trim(),
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
       phone: phone || "",
       subject: subject || "",
       password: hashedPassword,
@@ -234,9 +257,22 @@ export const createUser = async (req, res) => {
       isActive: true
     });
 
+    // Send account credentials and temporary password email asynchronously
+    sendAccountCredentialsEmail({
+      to: user.email,
+      name: user.name,
+      email: user.email,
+      password: password,
+      role: user.role === "teacher" ? "Faculty / Teacher" : "Student",
+      orgName: org?.name || "AssessIQ Institution",
+      loginUrl: "http://localhost:5173/login"
+    }).catch((emailErr) => {
+      console.error("[User Account Credentials Email Error]:", emailErr.message);
+    });
+
     res.status(201).json({
       success: true,
-      message: `${role === "student" ? "Student" : "Teacher"} created successfully`,
+      message: `${role === "student" ? "Student" : "Teacher"} created successfully. Login credentials sent to email.`,
       user: {
         id: user._id,
         _id: user._id,
@@ -285,7 +321,20 @@ export const updateUser = async (req, res) => {
     const { name, email, phone, password, role, status, subject, batchId } = req.body;
 
     if (name) user.name = name.trim();
-    if (email) user.email = email.toLowerCase().trim();
+    if (email) {
+      const cleanEmail = email.toLowerCase().trim();
+      if (cleanEmail !== user.email) {
+        // Enforce uniqueness across all users
+        const duplicateUser = await User.findOne({ email: cleanEmail, _id: { $ne: user._id } });
+        if (duplicateUser) {
+          return res.status(409).json({
+            success: false,
+            message: "Another user with this email already exists"
+          });
+        }
+        user.email = cleanEmail;
+      }
+    }
     if (phone !== undefined) user.phone = phone;
     if (subject !== undefined) user.subject = subject;
     if (role && ["student", "teacher"].includes(role)) user.role = role;

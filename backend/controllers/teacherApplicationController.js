@@ -2,6 +2,7 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import TeacherApplication from "../models/TeacherApplication.js";
+import OrgApplication from "../models/OrgApplication.js";
 import User from "../models/User.js";
 import Organization from "../models/Organization.js";
 import sendEmail from "../utils/sendEmail.js";
@@ -75,17 +76,37 @@ export const applyForTeacher = async (req, res) => {
       });
     }
 
-    // 2. Check for an existing pending application
+    // 2. Check for duplicate email across User, TeacherApplication, and OrgApplication
+    const cleanEmail = email.toLowerCase().trim();
+    const existingUser = await User.findOne({ email: cleanEmail });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "An account with this email address already exists. Please sign in or use another email."
+      });
+    }
+
     const existingPending = await TeacherApplication.findOne({
-      email: email.toLowerCase().trim(),
-      organizationId,
+      email: cleanEmail,
       status: "pending"
     });
 
     if (existingPending) {
       return res.status(409).json({
         success: false,
-        message: "You already have a pending teacher application for this organization."
+        message: "A teacher application with this email address is already pending review."
+      });
+    }
+
+    const existingOrgApp = await OrgApplication.findOne({
+      email: cleanEmail,
+      status: "pending"
+    });
+
+    if (existingOrgApp) {
+      return res.status(409).json({
+        success: false,
+        message: "An institutional application with this email address is already pending review."
       });
     }
 

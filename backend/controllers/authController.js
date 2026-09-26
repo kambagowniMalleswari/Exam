@@ -1,10 +1,11 @@
-// Authentication Controller with Institutional Validation and Google OAuth
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import User from "../models/User.js";
 import Organization from "../models/Organization.js";
+import OrgApplication from "../models/OrgApplication.js";
+import TeacherApplication from "../models/TeacherApplication.js";
 import generateToken from "../utils/generateToken.js";
-import sendEmail from "../utils/sendEmail.js";
+import sendEmail, { sendStudentWelcomeEmail, sendLoginNotificationEmail } from "../utils/sendEmail.js";
 
 // Register user - Public registration strictly registers Student accounts
 export const register = async (req, res) => {
@@ -74,12 +75,29 @@ export const register = async (req, res) => {
       });
     }
 
-    // 6. Check existing user
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    // 6. Check existing user and pending applications (no duplicate emails allowed)
+    const cleanEmail = email.toLowerCase().trim();
+    const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
       return res.status(409).json({
         success: false,
         message: "An account with this email already exists"
+      });
+    }
+
+    const pendingOrg = await OrgApplication.findOne({ email: cleanEmail, status: "pending" });
+    if (pendingOrg) {
+      return res.status(409).json({
+        success: false,
+        message: "An organization onboarding application with this email is currently pending review"
+      });
+    }
+
+    const pendingTeacher = await TeacherApplication.findOne({ email: cleanEmail, status: "pending" });
+    if (pendingTeacher) {
+      return res.status(409).json({
+        success: false,
+        message: "A teacher application with this email is currently pending review"
       });
     }
 
@@ -111,7 +129,7 @@ export const register = async (req, res) => {
     // 10. Create user
     const user = await User.create({
       name: name.trim(),
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
       phone: phone.toString().trim(),
       password: hashedPassword,
       role: finalRole,
@@ -123,7 +141,16 @@ export const register = async (req, res) => {
     // 11. Generate JWT token
     const token = generateToken(user);
 
-    // 12. Send response
+    // 12. Dispatch student welcome email asynchronously
+    sendStudentWelcomeEmail({
+      to: user.email,
+      name: user.name,
+      email: user.email
+    }).catch((emailErr) => {
+      console.error("[Student Welcome Email Error]:", emailErr.message);
+    });
+
+    // 13. Send response
     res.status(201).json({
       success: true,
       message: "Student account created successfully",
@@ -206,12 +233,30 @@ export const login = async (req, res) => {
       });
     }
 
+    // Super Admin security restriction: Only kambagownikmalleswari@gmail.com can log in as super_admin
+    if (user.role === "super_admin" && user.email.toLowerCase().trim() !== "kambagownikmalleswari@gmail.com") {
+      return res.status(403).json({
+        success: false,
+        message: "Access restricted: Unauthorized Super Admin credentials."
+      });
+    }
+
     // Update last login
     user.lastLogin = new Date();
     await user.save();
 
     // Generate token
     const token = generateToken(user);
+
+    // Send successful login notification email asynchronously
+    sendLoginNotificationEmail({
+      to: user.email,
+      name: user.name,
+      role: user.role,
+      email: user.email
+    }).catch((emailErr) => {
+      console.error("[Login Notification Email Error]:", emailErr.message);
+    });
 
     // Send response
     res.status(200).json({
@@ -329,6 +374,16 @@ export const googleLogin = async (req, res) => {
 
     // 4. Generate token
     const token = generateToken(user);
+
+    // Send successful login notification email asynchronously
+    sendLoginNotificationEmail({
+      to: user.email,
+      name: user.name,
+      role: user.role,
+      email: user.email
+    }).catch((emailErr) => {
+      console.error("[Google Login Notification Email Error]:", emailErr.message);
+    });
 
     res.status(200).json({
       success: true,

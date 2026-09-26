@@ -1,6 +1,7 @@
 import OrgApplication from "../models/OrgApplication.js";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
+import TeacherApplication from "../models/TeacherApplication.js";
 import bcrypt from "bcryptjs";
 import { sendEmail } from "../utils/sendEmail.js";
 
@@ -40,10 +41,19 @@ export const applyOrganization = async (req, res) => {
 
     const cleanEmail = email.toLowerCase().trim();
 
+    // Check if active user already exists with this email
+    const existingUser = await User.findOne({ email: cleanEmail });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "An account with this email address already exists on AssessIQ."
+      });
+    }
+
     // Check if active organization already registered
     const existingOrg = await Organization.findOne({ email: cleanEmail });
     if (existingOrg) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
         message: "An active organization with this email address already exists on AssessIQ."
       });
@@ -55,9 +65,21 @@ export const applyOrganization = async (req, res) => {
       status: "pending"
     });
     if (existingApp) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
         message: "An organization onboarding application with this email is already pending Super Admin review."
+      });
+    }
+
+    // Check if a teacher application is pending with this email
+    const existingTeacherApp = await TeacherApplication.findOne({
+      email: cleanEmail,
+      status: "pending"
+    });
+    if (existingTeacherApp) {
+      return res.status(409).json({
+        success: false,
+        message: "A faculty application with this email address is currently pending review."
       });
     }
 

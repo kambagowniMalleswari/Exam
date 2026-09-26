@@ -19,6 +19,16 @@ const authorize = (...roles) => {
 
     const userRole = req.user.role;
 
+    // Super Admin security enforcement
+    if (userRole === "super_admin") {
+      if (req.user.email?.toLowerCase().trim() !== "kambagownikmalleswari@gmail.com") {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied: Unauthorized Super Admin account."
+        });
+      }
+    }
+
     // Super Admin has global override unless strictly disallowed
     let hasPermission =
       userRole === "super_admin" || expandedRoles.includes(userRole);

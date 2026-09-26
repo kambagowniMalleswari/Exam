@@ -106,7 +106,7 @@ export const AuthProvider = ({ children }) => {
 
   // Role verification helpers
   const role = user?.role || "";
-  const isSuperAdmin = role === "super_admin";
+  const isSuperAdmin = role === "super_admin" && user?.email?.toLowerCase().trim() === "kambagownikmalleswari@gmail.com";
   const isOrgAdmin = role === "org_admin" || role === "admin";
   const isTeacher = role === "teacher";
   const isStudent = role === "student";

@@ -1,4 +1,4 @@
-// Auto-initialization of Default Platform Super Admin
+// Auto-initialization and Strict Enforcement of Platform Super Admin
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 
@@ -7,12 +7,19 @@ export const initSuperAdmin = async () => {
     const adminEmail = "kambagownikmalleswari@gmail.com";
     const plainPassword = process.env.SUPER_ADMIN_PASSWORD || "Admin@12345";
 
-    let superAdmin = await User.findOne({ email: adminEmail });
+    // 1. Demote any other accounts that erroneously have super_admin role
+    await User.updateMany(
+      { email: { $ne: adminEmail }, role: "super_admin" },
+      { $set: { role: "admin" } }
+    );
 
+    // 2. Hash target password
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
+    // 3. Upsert authorized Super Admin
+    let superAdmin = await User.findOne({ email: adminEmail });
+
     if (superAdmin) {
-      // Ensure super_admin role, platform-wide null organization, and active status
       superAdmin.role = "super_admin";
       superAdmin.organizationId = null;
       superAdmin.status = "active";

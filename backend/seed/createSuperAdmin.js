@@ -20,7 +20,7 @@ const createSuperAdmin = async () => {
       email: "kambagownikmalleswari@gmail.com"
     });
 
-    const hashedPassword = await bcrypt.hash("Admin@1234", 10);
+    const hashedPassword = await bcrypt.hash("Admin@12345", 10);
 
     if (admin) {
       admin.role = "super_admin";

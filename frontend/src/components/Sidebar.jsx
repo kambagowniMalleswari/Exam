@@ -22,9 +22,13 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const [pendingOrgCount, setPendingOrgCount] = useState(0);
 
+  const isAuthorizedSuperAdmin =
+    user?.role === "super_admin" &&
+    user?.email?.toLowerCase().trim() === "kambagownikmalleswari@gmail.com";
+
   // For Super Admin, poll pending organization onboarding applications
   useEffect(() => {
-    if (user?.role === "super_admin") {
+    if (isAuthorizedSuperAdmin) {
       const checkPending = async () => {
         try {
           const res = await api.get("/org-applications?status=pending");
@@ -37,7 +41,7 @@ const Sidebar = () => {
       const interval = setInterval(checkPending, 20000);
       return () => clearInterval(interval);
     }
-  }, [user?.role]);
+  }, [isAuthorizedSuperAdmin]);
 
   if (!user) return null;
 
@@ -88,8 +92,10 @@ const Sidebar = () => {
     ]
   };
 
-  const currentMenu = menuConfig[user.role] || [];
-  const orgName = user.role === "super_admin"
+  const currentMenu = isAuthorizedSuperAdmin
+    ? superAdminMenuItems
+    : (menuConfig[user.role === "super_admin" ? "admin" : user.role] || []);
+  const orgName = isAuthorizedSuperAdmin
     ? null
     : user.organizationId?.name || (user.organizationId ? "Organization" : "");
 

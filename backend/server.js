@@ -24,7 +24,15 @@ import batchRoutes from "./routes/batchRoutes.js";
 // Import error middleware
 import errorMiddleware from "./middleware/errorMiddleware.js";
 
-// Load environment variables
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables reliably from backend and process cwd
+dotenv.config({ path: path.resolve(__dirname, ".env") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 dotenv.config();
 
 // Create Express application
