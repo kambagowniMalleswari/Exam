@@ -110,8 +110,9 @@ export const register = async (req, res) => {
 
     // 8. Validate organization if provided
     let finalOrgId = null;
+    let organization = null;
     if (organizationId) {
-      const organization = await Organization.findById(organizationId);
+      organization = await Organization.findById(organizationId);
       if (!organization) {
         return res.status(404).json({
           success: false,
