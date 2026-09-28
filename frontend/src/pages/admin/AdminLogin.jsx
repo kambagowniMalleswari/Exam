@@ -12,7 +12,7 @@ import {
   GraduationCapIcon
 } from "../../components/common/Icons.jsx";
 import api from "../../services/api.js";
-import { getDefaultDashboard, isRoleAuthorizedForPath } from "../../utils/roleUtils.js";
+import { getDefaultDashboard, isRoleAuthorizedForPath, normalizeRole } from "../../utils/roleUtils.js";
 import "../Login.css";
 
 const AdminLogin = () => {
@@ -31,6 +31,11 @@ const AdminLogin = () => {
   const { login, loginWithGoogle } = useAuth();
 
   const handleRoleRedirect = (userRole) => {
+    const normalized = normalizeRole(userRole);
+    if (normalized === "super_admin") {
+      navigate("/superadmin/dashboard", { replace: true });
+      return;
+    }
     const from = location.state?.from?.pathname;
     if (from && isRoleAuthorizedForPath(userRole, from)) {
       navigate(from, { replace: true });

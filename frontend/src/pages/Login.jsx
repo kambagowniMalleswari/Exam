@@ -24,6 +24,11 @@ const Login = () => {
   const { login, loginWithGoogle } = useAuth();
 
   const handleRoleRedirect = (userRole) => {
+    const normalized = normalizeRole(userRole);
+    if (normalized === "super_admin") {
+      navigate("/superadmin/dashboard", { replace: true });
+      return;
+    }
     const from = location.state?.from?.pathname;
     if (from && isRoleAuthorizedForPath(userRole, from)) {
       navigate(from, { replace: true });
