@@ -25,21 +25,20 @@ export const getBatches = async (req, res) => {
       .populate("createdBy", "name email")
       .populate("tests", "title duration totalMarks totalQuestions status numberOfAttempts")
       .populate("selectiveStudentIds", "name email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    // Attach real student count for each batch
-    const batchesWithCounts = await Promise.all(
-      batches.map(async (batch) => {
-        const studentCount = await User.countDocuments({
-          batchId: batch._id,
-          role: "student"
-        });
-        return {
-          ...batch.toObject(),
-          studentCount
-        };
-      })
-    );
+    const batchIds = batches.map((b) => b._id);
+    const studentCounts = await User.aggregate([
+      { $match: { batchId: { $in: batchIds }, role: "student" } },
+      { $group: { _id: "$batchId", count: { $sum: 1 } } }
+    ]);
+    const scMap = new Map(studentCounts.map((s) => [s._id.toString(), s.count]));
+
+    const batchesWithCounts = batches.map((batch) => ({
+      ...batch,
+      studentCount: scMap.get(batch._id.toString()) || 0
+    }));
 
     res.status(200).json({
       success: true,
@@ -427,38 +426,41 @@ export const getAvailableBatchesForStudent = async (req, res) => {
     })
       .populate("createdBy", "name email")
       .populate("tests", "title duration totalMarks totalQuestions status numberOfAttempts")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    const studentUser = await User.findById(req.user.id);
+    const studentUser = await User.findById(req.user.id).lean();
 
-    const batchesWithStatus = await Promise.all(
-      batches.map(async (b) => {
-        const studentCount = await User.countDocuments({
-          batchId: b._id,
-          role: "student"
-        });
-        const isEnrolled =
-          studentUser?.batchId && studentUser.batchId.toString() === b._id.toString();
-        const maxLimit = b.maxStudents || 50;
-        const isFull = studentCount >= maxLimit;
+    const batchIds = batches.map((b) => b._id);
+    const studentCounts = await User.aggregate([
+      { $match: { batchId: { $in: batchIds }, role: "student" } },
+      { $group: { _id: "$batchId", count: { $sum: 1 } } }
+    ]);
+    const scMap = new Map(studentCounts.map((s) => [s._id.toString(), s.count]));
 
-        let isAuthorized = true;
-        if (b.enrollmentType === "selective") {
-          isAuthorized = b.selectiveStudentIds?.some(
-            (id) => id.toString() === studentUser?._id.toString()
-          );
-        }
+    const batchesWithStatus = batches.map((b) => {
+      const studentCount = scMap.get(b._id.toString()) || 0;
+      const isEnrolled =
+        studentUser?.batchId && studentUser.batchId.toString() === b._id.toString();
+      const maxLimit = b.maxStudents || 50;
+      const isFull = studentCount >= maxLimit;
 
-        return {
-          ...b.toObject(),
-          studentCount,
-          maxStudents: maxLimit,
-          isEnrolled,
-          isFull,
-          isAuthorized
-        };
-      })
-    );
+      let isAuthorized = true;
+      if (b.enrollmentType === "selective") {
+        isAuthorized = b.selectiveStudentIds?.some(
+          (id) => id.toString() === studentUser?._id.toString()
+        );
+      }
+
+      return {
+        ...b,
+        studentCount,
+        maxStudents: maxLimit,
+        isEnrolled,
+        isFull,
+        isAuthorized
+      };
+    });
 
     res.status(200).json({
       success: true,

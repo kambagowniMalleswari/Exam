@@ -172,20 +172,30 @@ export const getTests = async (req, res) => {
       .populate("createdBy", "name email")
       .populate("organizationId", "name slug")
       .populate("targetBatches", "name batchNumber")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    // Populate question counts and attempt counts
-    const testsWithCounts = await Promise.all(
-      tests.map(async (t) => {
-        const questionCount = await Question.countDocuments({ testId: t._id });
-        const attemptCount = await Attempt.countDocuments({ testId: t._id });
-        return {
-          ...t.toObject(),
-          questionCount,
-          totalAttempts: attemptCount
-        };
-      })
-    );
+    const testIds = tests.map((t) => t._id);
+
+    const [questionCounts, attemptCounts] = await Promise.all([
+      Question.aggregate([
+        { $match: { testId: { $in: testIds } } },
+        { $group: { _id: "$testId", count: { $sum: 1 } } }
+      ]),
+      Attempt.aggregate([
+        { $match: { testId: { $in: testIds } } },
+        { $group: { _id: "$testId", count: { $sum: 1 } } }
+      ])
+    ]);
+
+    const qMap = new Map(questionCounts.map((q) => [q._id.toString(), q.count]));
+    const aMap = new Map(attemptCounts.map((a) => [a._id.toString(), a.count]));
+
+    const testsWithCounts = tests.map((t) => ({
+      ...t,
+      questionCount: qMap.get(t._id.toString()) || 0,
+      totalAttempts: aMap.get(t._id.toString()) || 0
+    }));
 
     res.status(200).json({
       success: true,
@@ -216,19 +226,30 @@ export const getPublicTests = async (req, res) => {
     const tests = await Test.find(query)
       .populate("createdBy", "name")
       .select("-instructions")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    const testsWithDetails = await Promise.all(
-      tests.map(async (t) => {
-        const questionCount = await Question.countDocuments({ testId: t._id });
-        const attemptCount = await Attempt.countDocuments({ testId: t._id });
-        return {
-          ...t.toObject(),
-          questionCount,
-          totalAttempts: attemptCount
-        };
-      })
-    );
+    const testIds = tests.map((t) => t._id);
+
+    const [questionCounts, attemptCounts] = await Promise.all([
+      Question.aggregate([
+        { $match: { testId: { $in: testIds } } },
+        { $group: { _id: "$testId", count: { $sum: 1 } } }
+      ]),
+      Attempt.aggregate([
+        { $match: { testId: { $in: testIds } } },
+        { $group: { _id: "$testId", count: { $sum: 1 } } }
+      ])
+    ]);
+
+    const qMap = new Map(questionCounts.map((q) => [q._id.toString(), q.count]));
+    const aMap = new Map(attemptCounts.map((a) => [a._id.toString(), a.count]));
+
+    const testsWithDetails = tests.map((t) => ({
+      ...t,
+      questionCount: qMap.get(t._id.toString()) || 0,
+      totalAttempts: aMap.get(t._id.toString()) || 0
+    }));
 
     res.status(200).json({
       success: true,

@@ -4,7 +4,7 @@ import User from "../models/User.js";
 import Test from "../models/Test.js";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import { sendEmail, getClientUrl } from "../utils/sendEmail.js";
+import { sendEmail, sendEmailQuickOrBackground, getClientUrl } from "../utils/sendEmail.js";
 
 // Create a new organization (Super Admin)
 export const createOrganization = async (req, res) => {
@@ -100,11 +100,11 @@ export const createOrganization = async (req, res) => {
         });
       }
 
-      // Dispatch welcome credentials email to organization admin
+      // Dispatch welcome credentials email to organization admin (non-blocking fast response)
       const portalLoginUrl = `${getClientUrl()}/admin/login`;
       let emailDispatch = null;
       try {
-        emailDispatch = await sendEmail({
+        emailDispatch = await sendEmailQuickOrBackground({
           to: cleanEmail,
           subject: `AssessIQ — Institutional Portal Created (${organization.name})`,
           text: `Dear ${adminName || organization.name},\n\nYour institution "${organization.name}" has been registered on AssessIQ.\n\nAdministrator Credentials:\n- Admin Portal: ${portalLoginUrl}\n- Email: ${cleanEmail}\n- Temporary Password: ${tempPassword}\n- Organization Slug: ${organization.slug}\n\nPlease sign in to the Admin Console at ${portalLoginUrl} and change your password immediately.\n\nAssessIQ Enterprise Operations`,
@@ -123,13 +123,13 @@ export const createOrganization = async (req, res) => {
               <p style="font-size: 13px; color: #64748b;">Please sign in and change your temporary password immediately from your profile settings.</p>
             </div>
           `
-        });
+        }, 1000);
       } catch (emailErr) {
         console.warn("[Create Org] Email dispatch error:", emailErr.message);
         emailDispatch = { success: false, error: emailErr.message };
       }
 
-      const emailSent = Boolean(emailDispatch?.real || emailDispatch?.success);
+      const emailSent = Boolean(emailDispatch?.real || emailDispatch?.success || emailDispatch?.queued);
 
       return res.status(201).json({
         success: true,
@@ -188,20 +188,26 @@ export const getPublicOrganizations = async (req, res) => {
 // Get all organizations (Super Admin) with aggregated user & test counts
 export const getAllOrganizations = async (req, res) => {
   try {
-    const organizations = await Organization.find().sort({ createdAt: -1 });
+    const [organizations, userCounts, testCounts] = await Promise.all([
+      Organization.find().sort({ createdAt: -1 }).lean(),
+      User.aggregate([
+        { $match: { organizationId: { $ne: null } } },
+        { $group: { _id: "$organizationId", count: { $sum: 1 } } }
+      ]),
+      Test.aggregate([
+        { $match: { organizationId: { $ne: null } } },
+        { $group: { _id: "$organizationId", count: { $sum: 1 } } }
+      ])
+    ]);
 
-    // Fetch user and test counts for each organization
-    const orgsWithStats = await Promise.all(
-      organizations.map(async (org) => {
-        const userCount = await User.countDocuments({ organizationId: org._id });
-        const testCount = await Test.countDocuments({ organizationId: org._id });
-        return {
-          ...org.toObject(),
-          totalUsers: userCount,
-          totalTests: testCount
-        };
-      })
-    );
+    const userCountMap = new Map(userCounts.map((u) => [u._id.toString(), u.count]));
+    const testCountMap = new Map(testCounts.map((t) => [t._id.toString(), t.count]));
+
+    const orgsWithStats = organizations.map((org) => ({
+      ...org,
+      totalUsers: userCountMap.get(org._id.toString()) || 0,
+      totalTests: testCountMap.get(org._id.toString()) || 0
+    }));
 
     res.status(200).json({
       success: true,

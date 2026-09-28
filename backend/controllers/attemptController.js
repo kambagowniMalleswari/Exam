@@ -142,17 +142,41 @@ export const getAvailableTests = async (req, res) => {
       .populate("createdBy", "name")
       .populate("organizationId", "name slug")
       .populate("targetBatches", "name batchNumber")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const testIds = tests.map((t) => t._id);
+
+    // Batch fetch question counts and student attempts for all tests simultaneously
+    const [questionCounts, allStudentAttempts] = await Promise.all([
+      Question.aggregate([
+        { $match: { testId: { $in: testIds } } },
+        { $group: { _id: "$testId", count: { $sum: 1 } } }
+      ]),
+      Attempt.find({
+        testId: { $in: testIds },
+        studentId: req.user.id
+      })
+        .sort({ createdAt: -1 })
+        .lean()
+    ]);
+
+    const qMap = new Map(questionCounts.map((q) => [q._id.toString(), q.count]));
+    const attemptsByTestId = new Map();
+    for (const a of allStudentAttempts) {
+      const tid = a.testId.toString();
+      if (!attemptsByTestId.has(tid)) {
+        attemptsByTestId.set(tid, []);
+      }
+      attemptsByTestId.get(tid).push(a);
+    }
 
     // Map through tests to attach question counts, schedule status, and student's attempt status
     const now = new Date();
     const availableTests = await Promise.all(
       tests.map(async (test) => {
-        const questionCount = await Question.countDocuments({ testId: test._id });
-        const studentAttempts = await Attempt.find({
-          testId: test._id,
-          studentId: req.user.id
-        }).sort({ createdAt: -1 });
+        const questionCount = qMap.get(test._id.toString()) || 0;
+        const studentAttempts = attemptsByTestId.get(test._id.toString()) || [];
 
         const completedAttempts = studentAttempts.filter(
           (a) => a.status === "submitted" || a.status === "evaluated"
@@ -205,7 +229,7 @@ export const getAvailableTests = async (req, res) => {
         const canAttempt = attemptsPending > 0 && scheduleStatus === "active" && eligibility.eligible;
 
         return {
-          ...test.toObject(),
+          ...test,
           questionCount,
           studentAttemptsCount: completedCount,
           maxAttempts,

@@ -5,7 +5,7 @@ import { auth, googleProvider, signInWithPopup, isFirebaseConfigured } from "../
 import { BuildingIcon, ClockIcon, BarChartIcon, TagIcon, KeyIcon, MailIcon, CheckCircleIcon, AlertTriangleIcon } from "../components/common/Icons.jsx";
 import { BrandCrest } from "../components/common/BrandLogo.jsx";
 import api from "../services/api.js";
-import { getDefaultDashboard, isRoleAuthorizedForPath } from "../utils/roleUtils.js";
+import { getDefaultDashboard, isRoleAuthorizedForPath, normalizeRole } from "../utils/roleUtils.js";
 import "./Login.css";
 
 const Login = () => {

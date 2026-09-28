@@ -3,7 +3,7 @@ import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import TeacherApplication from "../models/TeacherApplication.js";
 import bcrypt from "bcryptjs";
-import { sendEmail, sendOrgApplicationAdminAlert, getClientUrl } from "../utils/sendEmail.js";
+import { sendEmail, sendEmailQuickOrBackground, sendOrgApplicationAdminAlert, getClientUrl } from "../utils/sendEmail.js";
 
 // 1. Submit Organization Application (Public)
 export const applyOrganization = async (req, res) => {
@@ -280,13 +280,13 @@ export const approveOrganizationApplication = async (req, res) => {
     application.createdAdminUserId = adminUser._id;
     await application.save();
 
-    // 5. Send approval email with credentials to applicant
+    // 5. Send approval email with credentials to applicant (non-blocking fast response)
     const portalLoginUrl = `${getClientUrl()}/admin/login`;
     const targetEmail = (application.email || "").toLowerCase().trim();
     let emailDispatch = null;
 
     try {
-      emailDispatch = await sendEmail({
+      emailDispatch = await sendEmailQuickOrBackground({
         to: targetEmail,
         subject: `AssessIQ — Institutional Portal Approved & Provisioned (${organization.name})`,
         text: `Dear ${application.adminName},\n\nCongratulations! Your institution application for "${organization.name}" has been officially approved by the platform administration.\n\nInstitutional Administrator Credentials:\n- Portal Login: ${portalLoginUrl}\n- Administrator Email: ${targetEmail}\n- Temporary Password: ${tempPassword}\n- Organization Slug: ${organization.slug}\n\nPlease sign in to the Admin Console at ${portalLoginUrl} and update your password immediately.\n\nAssessIQ Enterprise Operations`,
@@ -330,14 +330,14 @@ export const approveOrganizationApplication = async (req, res) => {
             <p style="font-size: 13px; color: #64748b; margin: 0; text-align: center;">AssessIQ Enterprise Multi-Tenant Platform Operations</p>
           </div>
         `
-      });
-      console.log(`[Org Approval] Email dispatched to ${targetEmail}:`, emailDispatch);
+      }, 1000);
+      console.log(`[Org Approval] Email dispatch response for ${targetEmail}:`, emailDispatch);
     } catch (emailErr) {
       console.error("[Org Approval] Email dispatch error:", emailErr);
       emailDispatch = { success: false, error: emailErr.message };
     }
 
-    const emailSent = Boolean(emailDispatch?.real || emailDispatch?.success);
+    const emailSent = Boolean(emailDispatch?.real || emailDispatch?.success || emailDispatch?.queued);
 
     res.status(200).json({
       success: true,
@@ -439,7 +439,7 @@ export const resendOrgApprovalEmail = async (req, res) => {
     let emailDispatch = null;
 
     try {
-      emailDispatch = await sendEmail({
+      emailDispatch = await sendEmailQuickOrBackground({
         to: targetEmail,
         subject: `AssessIQ — Updated Institutional Administrator Credentials (${org.name})`,
         text: `Dear ${application.adminName},\n\nYour institutional administrator credentials for "${org.name}" have been updated by platform administration:\n\nPortal Login: ${portalLoginUrl}\nAdministrator Email: ${targetEmail}\nTemporary Password: ${tempPassword}\nOrganization Slug: ${org.slug}\n\nPlease sign in to the Admin Console at ${portalLoginUrl} immediately.\n\nAssessIQ Enterprise Operations`,
@@ -474,14 +474,14 @@ export const resendOrgApprovalEmail = async (req, res) => {
             <p style="font-size: 13px; color: #64748b; margin: 0; text-align: center;">AssessIQ Enterprise Platform Operations</p>
           </div>
         `
-      });
-      console.log(`[Org Resend] Email dispatched to ${targetEmail}:`, emailDispatch);
+      }, 1000);
+      console.log(`[Org Resend] Email dispatch response for ${targetEmail}:`, emailDispatch);
     } catch (emailErr) {
       console.error("[Org Resend] Email dispatch error:", emailErr);
       emailDispatch = { success: false, error: emailErr.message };
     }
 
-    const emailSent = Boolean(emailDispatch?.real || emailDispatch?.success);
+    const emailSent = Boolean(emailDispatch?.real || emailDispatch?.success || emailDispatch?.queued);
 
     res.status(200).json({
       success: true,
@@ -530,26 +530,22 @@ export const rejectOrganizationApplication = async (req, res) => {
     application.reviewedAt = new Date();
     await application.save();
 
-    // Send rejection email to applicant
-    try {
-      await sendEmail({
-        to: application.email,
-        subject: "AssessIQ - Institutional Application Status Update",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <h2 style="color: #0f172a; margin-bottom: 12px;">Institutional Onboarding Update</h2>
-            <p>Dear ${application.adminName},</p>
-            <p>Thank you for your interest in AssessIQ. After reviewing the institutional request for <strong>${application.name}</strong>, our administrative team was unable to approve the onboarding at this time.</p>
-            <p><strong>Reason provided:</strong> ${application.rejectionReason}</p>
-            <p>If you believe this is an error or would like to provide additional institutional verification documents, please reply directly or contact support.</p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-            <p style="font-size: 13px; color: #64748b;">AssessIQ Institutional Assessment Platform</p>
-          </div>
-        `
-      });
-    } catch (emailErr) {
-      console.warn("Could not dispatch rejection email:", emailErr.message);
-    }
+    // Send rejection email to applicant (non-blocking)
+    sendEmailQuickOrBackground({
+      to: application.email,
+      subject: "AssessIQ - Institutional Application Status Update",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <h2 style="color: #0f172a; margin-bottom: 12px;">Institutional Onboarding Update</h2>
+          <p>Dear ${application.adminName},</p>
+          <p>Thank you for your interest in AssessIQ. After reviewing the institutional request for <strong>${application.name}</strong>, our administrative team was unable to approve the onboarding at this time.</p>
+          <p><strong>Reason provided:</strong> ${application.rejectionReason}</p>
+          <p>If you believe this is an error or would like to provide additional institutional verification documents, please reply directly or contact support.</p>
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+          <p style="font-size: 13px; color: #64748b;">AssessIQ Institutional Assessment Platform</p>
+        </div>
+      `
+    }).catch(err => console.warn("Could not dispatch rejection email:", err.message));
 
     res.status(200).json({
       success: true,

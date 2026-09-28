@@ -2,6 +2,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import compression from "compression";
 
 // Import MongoDB connection
 import connectDB from "./config/db.js";
@@ -42,6 +43,9 @@ const app = express();
 connectDB().then(() => {
   initSuperAdmin();
 });
+
+// Enable high-speed gzip response compression
+app.use(compression());
 
 // Enable frontend-backend communication
 app.use(cors({

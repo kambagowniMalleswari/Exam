@@ -1,6 +1,6 @@
 // Modern SaaS Sidebar Component with Real-Time Super Admin Badges
 import { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import api from "../services/api.js";
 import {
@@ -21,12 +21,13 @@ import "./Sidebar.css";
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [pendingOrgCount, setPendingOrgCount] = useState(0);
 
   const userRole = user?.role || "";
   const isAuthorizedSuperAdmin = userRole === "super_admin" || userRole === "superadmin";
 
-  // For Super Admin, poll pending organization onboarding applications
+  // For Super Admin, poll pending organization onboarding applications with relaxed interval
   useEffect(() => {
     if (isAuthorizedSuperAdmin) {
       const checkPending = async () => {
@@ -38,10 +39,10 @@ const Sidebar = () => {
         }
       };
       checkPending();
-      const interval = setInterval(checkPending, 20000);
+      const interval = setInterval(checkPending, 45000);
       return () => clearInterval(interval);
     }
-  }, [isAuthorizedSuperAdmin]);
+  }, [isAuthorizedSuperAdmin, location.pathname]);
 
   if (!user) return null;
 

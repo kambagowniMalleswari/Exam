@@ -5,7 +5,7 @@ import TeacherApplication from "../models/TeacherApplication.js";
 import OrgApplication from "../models/OrgApplication.js";
 import User from "../models/User.js";
 import Organization from "../models/Organization.js";
-import sendEmail from "../utils/sendEmail.js";
+import sendEmail, { sendEmailQuickOrBackground } from "../utils/sendEmail.js";
 
 // Submit a new Teacher Application (Public)
 export const applyForTeacher = async (req, res) => {
@@ -357,15 +357,11 @@ export const rejectTeacherApplication = async (req, res) => {
     await application.save();
 
     const orgName = application.organizationId?.name || "the institution";
-    try {
-      await sendEmail({
-        to: application.email,
-        subject: `Teacher Application Status Update — ${orgName}`,
-        text: `Dear ${application.name},\n\nThank you for applying to join ${orgName} as a Teacher. After review, we regret to inform you that we are unable to approve your application at this time.\n\nReason: ${application.rejectionReason}\n\nWe wish you the best in your professional endeavors.\n\n${orgName} Academic Team`
-      });
-    } catch (emailErr) {
-      console.warn("Could not dispatch teacher rejection email:", emailErr.message);
-    }
+    sendEmailQuickOrBackground({
+      to: application.email,
+      subject: `Teacher Application Status Update — ${orgName}`,
+      text: `Dear ${application.name},\n\nThank you for applying to join ${orgName} as a Teacher. After review, we regret to inform you that we are unable to approve your application at this time.\n\nReason: ${application.rejectionReason}\n\nWe wish you the best in your professional endeavors.\n\n${orgName} Academic Team`
+    }).catch(err => console.warn("Could not dispatch teacher rejection email:", err.message));
 
     res.status(200).json({
       success: true,

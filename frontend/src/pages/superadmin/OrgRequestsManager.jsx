@@ -603,20 +603,29 @@ const OrgRequestsManager = () => {
                       <AlertTriangleIcon size={18} style={{ flexShrink: 0, marginTop: "2px" }} />
                       <div>
                         <strong>Email delivery not completed ({provisionResult.emailError || "SMTP unavailable"}).</strong>
-                        <p>Please copy the temporary password above and share it with the administrator directly.</p>
+                        <p>Please copy the temporary password above and share it with the administrator directly, or click Resend Email below.</p>
                       </div>
                     </div>
                   )}
 
-                  <button
-                    className="btn-primary-gold"
-                    onClick={() => {
-                      setShowApproveModal(false);
-                      setProvisionResult(null);
-                    }}
-                  >
-                    Done
-                  </button>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+                    <button
+                      className="btn-secondary"
+                      onClick={handleResendCredentials}
+                      disabled={resendLoading}
+                    >
+                      {resendLoading ? "Dispatching Email..." : "Resend Email ✉️"}
+                    </button>
+                    <button
+                      className="btn-primary-gold"
+                      onClick={() => {
+                        setShowApproveModal(false);
+                        setProvisionResult(null);
+                      }}
+                    >
+                      Done
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="approval-confirm-content">
