@@ -431,7 +431,7 @@ export const googleLogin = async (req, res) => {
 // Get current logged-in user profile
 export const getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
+    let user = await User.findById(req.user.id)
       .select("-password")
       .populate("organizationId", "name slug type logo subscriptionPlan subscriptionStatus");
 
@@ -442,11 +442,16 @@ export const getCurrentUser = async (req, res) => {
       });
     }
 
+    // Ensure super_admin has no organization attached
+    if (user.role === "super_admin" && user.organizationId) {
+      await User.findByIdAndUpdate(user._id, { $unset: { organizationId: 1 } });
+      user.organizationId = null;
+    }
+
     // Issue fresh JWT token reflecting current role and organization
     const freshToken = generateToken(user);
     res.setHeader("x-new-token", freshToken);
     res.setHeader("Access-Control-Expose-Headers", "x-new-token");
-
 
     res.status(200).json({
       success: true,

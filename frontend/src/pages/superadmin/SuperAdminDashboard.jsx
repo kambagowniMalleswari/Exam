@@ -91,7 +91,12 @@ const SuperAdminDashboard = () => {
       setPendingOrgCount(orgAppsRes.data?.count ?? orgAppsRes.data?.applications?.length ?? 0);
     } catch (err) {
       console.error("Dashboard error:", err);
-      setError("Failed to load platform data. Please check MongoDB connection.");
+      const msg = err.response?.data?.message || err.message || "Failed to load platform data.";
+      if (err.response?.status === 403 || err.response?.status === 401) {
+        setError(`Access Restriction (${err.response.status}): ${msg}. Please re-login with an active Super Admin account.`);
+      } else {
+        setError(`Platform Error: ${msg}`);
+      }
     } finally {
       setLoading(false);
     }

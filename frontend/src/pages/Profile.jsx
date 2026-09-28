@@ -181,8 +181,11 @@ const Profile = () => {
     return matchesSearch && matchesBatch;
   });
 
+  const isSuperAdmin = (profileData?.role || user?.role) === "super_admin" || (profileData?.role || user?.role) === "superadmin";
   const uniqueBatches = Array.from(new Set(orgStudents.map((s) => s.batchNumber).filter(Boolean)));
-  const orgName = profileData?.organizationId?.name || user?.organizationId?.name || "Independent / Platform Admin";
+  const orgName = isSuperAdmin
+    ? "Platform Super Admin (Global Scope)"
+    : (profileData?.organizationId?.name || user?.organizationId?.name || "Independent / Platform User");
 
   return (
     <DashboardLayout title="Account & Faculty Profile">
@@ -201,8 +204,8 @@ const Profile = () => {
           <div className="profile-hero-details">
             <div className="profile-hero-name-row">
               <h2>{profileData?.name || user?.name}</h2>
-              <span className={`role-pill role-${user?.role}`}>
-                {user?.role?.replace("_", " ").toUpperCase()}
+              <span className={`role-pill role-${profileData?.role || user?.role}`}>
+                {(profileData?.role || user?.role)?.replace("_", " ").toUpperCase()}
               </span>
             </div>
 
@@ -223,9 +226,15 @@ const Profile = () => {
             </p>
 
             <div className="profile-hero-tags">
-              <span className="hero-tag">
-                <BuildingIcon size={13} /> {orgName}
-              </span>
+              {isSuperAdmin ? (
+                <span className="hero-tag" style={{ background: "rgba(99, 102, 241, 0.15)", borderColor: "rgba(99, 102, 241, 0.4)", color: "#818cf8", fontWeight: "600" }}>
+                  <ShieldIcon size={13} /> Global Platform Super Admin
+                </span>
+              ) : (
+                <span className="hero-tag">
+                  <BuildingIcon size={13} /> {orgName}
+                </span>
+              )}
               <span className="hero-tag">
                 <ShieldIcon size={13} /> Verified Account
               </span>
@@ -406,13 +415,22 @@ const Profile = () => {
 
               <div className="overview-field-card">
                 <span className="field-label">Platform Role</span>
-                <span className="field-value capitalize">{user?.role?.replace("_", " ")}</span>
+                <span className="field-value capitalize">{(profileData?.role || user?.role)?.replace("_", " ")}</span>
               </div>
 
-              <div className="overview-field-card">
-                <span className="field-label">Institution / Organization</span>
-                <span className="field-value">{orgName}</span>
-              </div>
+              {isSuperAdmin ? (
+                <div className="overview-field-card" style={{ borderColor: "rgba(99, 102, 241, 0.3)" }}>
+                  <span className="field-label">Platform Governance Scope</span>
+                  <span className="field-value" style={{ color: "#6366f1", fontWeight: 600 }}>
+                    Global Platform Administration (All Organizations)
+                  </span>
+                </div>
+              ) : (
+                <div className="overview-field-card">
+                  <span className="field-label">Institution / Organization</span>
+                  <span className="field-value">{orgName}</span>
+                </div>
+              )}
 
               {profileData?.subject && (
                 <div className="overview-field-card">
