@@ -9,29 +9,22 @@ const authorize = (...roles) => {
       });
     }
 
-    // Expand aliases (admin <=> org_admin)
+    // Expand aliases (admin <=> org_admin, super_admin <=> superadmin)
     const expandedRoles = roles.flatMap((role) => {
       if (role === "admin" || role === "org_admin") {
         return ["admin", "org_admin"];
+      }
+      if (role === "super_admin" || role === "superadmin") {
+        return ["super_admin", "superadmin"];
       }
       return [role];
     });
 
     const userRole = req.user.role;
-
-    // Super Admin security enforcement
-    if (userRole === "super_admin") {
-      if (req.user.email?.toLowerCase().trim() !== "kambagownikmalleswari@gmail.com") {
-        return res.status(403).json({
-          success: false,
-          message: "Access denied: Unauthorized Super Admin account."
-        });
-      }
-    }
+    const isSuperAdmin = userRole === "super_admin" || userRole === "superadmin";
 
     // Super Admin has global override unless strictly disallowed
-    let hasPermission =
-      userRole === "super_admin" || expandedRoles.includes(userRole);
+    let hasPermission = isSuperAdmin || expandedRoles.includes(userRole);
 
     // Hierarchical permissions:
     // 1. Org Admin / Admin have supervisory authority over Teacher resources

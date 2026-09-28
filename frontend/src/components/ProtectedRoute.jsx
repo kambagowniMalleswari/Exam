@@ -1,24 +1,7 @@
-// Route Protection Component with Strict Super Admin Verification
+// Route Protection Component with Strict Role-Based Verification
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-
-const AUTHORIZED_SUPER_ADMIN_EMAIL = "kambagownikmalleswari@gmail.com";
-
-const getDefaultDashboard = (role, email) => {
-  if (role === "super_admin" && email?.toLowerCase().trim() === AUTHORIZED_SUPER_ADMIN_EMAIL) {
-    return "/super-admin/dashboard";
-  }
-  if (role === "admin" || role === "org_admin") {
-    return "/admin/dashboard";
-  }
-  if (role === "teacher") {
-    return "/teacher/dashboard";
-  }
-  if (role === "student") {
-    return "/student/dashboard";
-  }
-  return "/login";
-};
+import { normalizeRole, getDefaultDashboard } from "../utils/roleUtils.js";
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -43,52 +26,26 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   // If user is not authenticated, redirect to login with return path
   if (!user) {
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-    if (token && storedUser) {
-      return null;
-    }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  const isAuthorizedSuperAdmin =
-    user.role === "super_admin" &&
-    user.email?.toLowerCase().trim() === AUTHORIZED_SUPER_ADMIN_EMAIL;
+  const userRole = normalizeRole(user.role);
 
   // If role check is specified
   if (allowedRoles && allowedRoles.length > 0) {
-    // 1. Strict Super Admin Route Protection:
-    // Super Admin pages should open ONLY if user is kambagownikmalleswari@gmail.com
-    const isSuperAdminOnlyRoute =
-      allowedRoles.includes("super_admin") &&
-      !allowedRoles.includes("admin") &&
-      !allowedRoles.includes("org_admin") &&
-      !allowedRoles.includes("teacher") &&
-      !allowedRoles.includes("student");
+    const normalizedAllowed = allowedRoles.map((r) => normalizeRole(r));
 
-    if (isSuperAdminOnlyRoute) {
-      if (!isAuthorizedSuperAdmin) {
-        return <Navigate to={getDefaultDashboard(user.role, user.email)} replace />;
-      }
-      return children;
+    // Check direct role permission
+    let hasAccess = normalizedAllowed.includes(userRole);
+
+    // Super Admin has platform-wide global override access across roles
+    if (!hasAccess && userRole === "super_admin") {
+      hasAccess = true;
     }
 
-    const expandedRoles = allowedRoles.flatMap((role) => {
-      if (role === "admin" || role === "org_admin") {
-        return ["admin", "org_admin", "super_admin"];
-      }
-      if (role === "teacher") {
-        return ["teacher", "admin", "org_admin", "super_admin"];
-      }
-      return [role];
-    });
-
-    // Super Admin has global override ONLY if verified authorized email
-    const hasAccess = isAuthorizedSuperAdmin || expandedRoles.includes(user.role);
-
     if (!hasAccess) {
-      // Seamlessly redirect to the user's role dashboard without showing Access Denied
-      return <Navigate to={getDefaultDashboard(user.role, user.email)} replace />;
+      // Redirect unauthorized user strictly to their own role dashboard
+      return <Navigate to={getDefaultDashboard(userRole)} replace />;
     }
   }
 

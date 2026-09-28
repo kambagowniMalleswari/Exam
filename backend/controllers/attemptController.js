@@ -686,6 +686,17 @@ export const getAttempt = async (req, res) => {
       });
     }
 
+    // Tenant check for non-superadmins
+    if (!req.isSuperAdmin && req.organizationId) {
+      const attemptOrgId = (attempt.organizationId?._id || attempt.organizationId)?.toString();
+      if (attemptOrgId && attemptOrgId !== req.organizationId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to view attempts from another organization"
+        });
+      }
+    }
+
     // Calculate remaining seconds if active
     let remainingSeconds = 0;
     if (attempt.status === "in_progress" && attempt.testId) {

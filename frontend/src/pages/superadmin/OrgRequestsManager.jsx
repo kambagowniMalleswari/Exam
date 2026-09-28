@@ -2,6 +2,16 @@
 import { useEffect, useState, useMemo } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  RefreshIcon,
+  CheckCircleIcon,
+  AlertTriangleIcon,
+  SearchIcon,
+  XIcon,
+  PhoneIcon,
+  BuildingIcon,
+  CheckIcon
+} from "../../components/common/Icons.jsx";
 import "./OrgRequestsManager.css";
 
 const OrgRequestsManager = () => {
@@ -22,9 +32,23 @@ const OrgRequestsManager = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showResendModal, setShowResendModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [modalLoading, setModalLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [provisionResult, setProvisionResult] = useState(null);
+  const [resendResult, setResendResult] = useState(null);
+  const [copiedField, setCopiedField] = useState("");
+
+  const copyToClipboard = async (text, fieldName) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(""), 2500);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
 
   // Initial load and periodic real-time polling (every 20s)
   useEffect(() => {
@@ -121,6 +145,22 @@ const OrgRequestsManager = () => {
     }
   };
 
+  const handleResendCredentials = async () => {
+    if (!selectedApp) return;
+    try {
+      setResendLoading(true);
+      const res = await api.post(`/org-applications/${selectedApp._id}/resend-email`);
+      setResendResult(res.data);
+      setFeedback(`Credentials reissued for '${selectedApp.name}'.`);
+      setTimeout(() => setFeedback(""), 6000);
+      await fetchApplications(true);
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to resend credentials.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   const handleReject = async () => {
     if (!selectedApp) return;
     try {
@@ -161,7 +201,8 @@ const OrgRequestsManager = () => {
                 disabled={refreshing}
                 title="Refresh requests from database"
               >
-                🔄 {refreshing ? "Syncing..." : "Refresh"}
+                <RefreshIcon size={14} />
+                <span>{refreshing ? "Syncing..." : "Refresh"}</span>
               </button>
             </div>
           </div>
@@ -169,12 +210,14 @@ const OrgRequestsManager = () => {
 
         {feedback && (
           <div className="req-alert alert-success">
-            <span>✓ {feedback}</span>
+            <CheckCircleIcon size={16} />
+            <span>{feedback}</span>
           </div>
         )}
         {error && (
           <div className="req-alert alert-error">
-            <span>⚠️ {error}</span>
+            <AlertTriangleIcon size={16} />
+            <span>{error}</span>
           </div>
         )}
 
@@ -217,7 +260,7 @@ const OrgRequestsManager = () => {
         {/* Search and Dropdown Filter Toolbar */}
         <div className="req-toolbar-card">
           <div className="search-input-wrap">
-            <span className="search-icon">🔍</span>
+            <span className="search-icon"><SearchIcon size={15} /></span>
             <input
               type="text"
               className="req-search-input"
@@ -227,7 +270,7 @@ const OrgRequestsManager = () => {
             />
             {searchTerm && (
               <button className="btn-clear-search" onClick={() => setSearchTerm("")}>
-                ✕
+                <XIcon size={12} />
               </button>
             )}
           </div>
@@ -293,7 +336,7 @@ const OrgRequestsManager = () => {
                       <div className="contact-cell">
                         <strong>{app.adminName}</strong>
                         <span>{app.email}</span>
-                        <span>📞 {app.phone}</span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><PhoneIcon size={12} /> {app.phone}</span>
                       </div>
                     </td>
                     <td>
@@ -347,6 +390,19 @@ const OrgRequestsManager = () => {
                             </button>
                           </>
                         )}
+                        {app.status === "approved" && (
+                          <button
+                            className="btn-action-resend"
+                            onClick={() => {
+                              setSelectedApp(app);
+                              setResendResult(null);
+                              setShowResendModal(true);
+                            }}
+                            title="Reissue administrator credentials and send email"
+                          >
+                            Resend Credentials
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -356,7 +412,7 @@ const OrgRequestsManager = () => {
           </div>
         ) : (
           <div className="req-empty-card">
-            <div className="empty-crest">🏛️</div>
+            <div className="empty-crest" style={{ display: "flex", justifyContent: "center", color: "#64748b" }}><BuildingIcon size={40} /></div>
             <h3>
               {searchTerm || typeFilter !== "all"
                 ? "No matching institution requests"
@@ -392,7 +448,7 @@ const OrgRequestsManager = () => {
                   <h3>{selectedApp.name}</h3>
                   <span className="type-badge">{selectedApp.type}</span>
                 </div>
-                <button className="modal-close-btn" onClick={() => setShowViewModal(false)}>✕</button>
+                <button className="modal-close-btn" onClick={() => setShowViewModal(false)}><XIcon size={16} /></button>
               </div>
 
               <div className="dossier-grid">
@@ -450,6 +506,18 @@ const OrgRequestsManager = () => {
                     Proceed to Approve →
                   </button>
                 )}
+                {selectedApp.status === "approved" && (
+                  <button
+                    className="btn-primary-gold"
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setResendResult(null);
+                      setShowResendModal(true);
+                    }}
+                  >
+                    Reissue Credentials
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -463,20 +531,83 @@ const OrgRequestsManager = () => {
             <div className="req-modal-box">
               <div className="modal-header">
                 <h3>Approve Institution: {selectedApp.name}</h3>
-                <button className="modal-close-btn" onClick={() => setShowApproveModal(false)}>✕</button>
+                <button className="modal-close-btn" onClick={() => setShowApproveModal(false)}><XIcon size={16} /></button>
               </div>
 
               {provisionResult ? (
                 <div className="provision-success-card">
-                  <div className="success-icon">🎉</div>
+                  <div className="success-icon" style={{ display: "flex", justifyContent: "center", color: "#16a34a" }}><CheckCircleIcon size={40} /></div>
                   <h4>Tenant Provisioned Successfully!</h4>
                   <p>Organization record and Org Admin account have been created.</p>
+
                   <div className="cred-strip">
-                    <div><strong>Admin Email:</strong> {provisionResult.adminUser?.email}</div>
-                    <div><strong>Organization Name:</strong> {provisionResult.organization?.name}</div>
-                    <div><strong>Slug:</strong> {provisionResult.organization?.slug}</div>
+                    <div className="cred-row">
+                      <div>
+                        <strong>Admin Email:</strong>{" "}
+                        <code>{provisionResult.adminUser?.email || provisionResult.organization?.email}</code>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-copy-small"
+                        onClick={() => copyToClipboard(provisionResult.adminUser?.email || provisionResult.organization?.email, "email")}
+                      >
+                        {copiedField === "email" ? "Copied!" : "Copy"}
+                      </button>
+                    </div>
+
+                    {provisionResult.temporaryPassword && (
+                      <div className="cred-row highlight-row">
+                        <div>
+                          <strong>Temporary Password:</strong>{" "}
+                          <code className="temp-pwd-code">{provisionResult.temporaryPassword}</code>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-copy-small btn-copy-gold"
+                          onClick={() => copyToClipboard(provisionResult.temporaryPassword, "password")}
+                        >
+                          {copiedField === "password" ? "Copied!" : "Copy Password"}
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="cred-row">
+                      <div>
+                        <strong>Login URL:</strong>{" "}
+                        <code>{window.location.origin}/admin/login</code>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-copy-small"
+                        onClick={() => copyToClipboard(`${window.location.origin}/admin/login`, "loginUrl")}
+                      >
+                        {copiedField === "loginUrl" ? "Copied!" : "Copy URL"}
+                      </button>
+                    </div>
+
+                    <div className="cred-row">
+                      <div>
+                        <strong>Organization Slug:</strong>{" "}
+                        <code>{provisionResult.organization?.slug}</code>
+                      </div>
+                    </div>
                   </div>
-                  <p className="notice-text">An activation email with credentials has been sent to the administrator.</p>
+
+                  {provisionResult.emailSent ? (
+                    <div className="delivery-status success" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <CheckCircleIcon size={16} />
+                      <span>Credentials email successfully dispatched to {provisionResult.adminUser?.email || provisionResult.organization?.email}.</span>
+                    </div>
+                  ) : (
+                    <div className="delivery-status warning" style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                      <AlertTriangleIcon size={18} style={{ flexShrink: 0, marginTop: "2px" }} />
+                      <div>
+                        <strong>Email delivery not completed ({provisionResult.emailError || "SMTP unavailable"}).</strong>
+                        <p>Please copy the temporary password above and share it with the administrator directly.</p>
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     className="btn-primary-gold"
                     onClick={() => {
@@ -493,9 +624,9 @@ const OrgRequestsManager = () => {
                     Are you sure you want to approve <strong>{selectedApp.name}</strong>?
                   </p>
                   <div className="checklist-box">
-                    <div>✓ Provisions new Organization tenant record</div>
-                    <div>✓ Provisions <code>org_admin</code> user account for <strong>{selectedApp.adminName}</strong></div>
-                    <div>✓ Generates secure access credentials and dispatches activation email</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><CheckIcon size={14} /> Provisions new Organization tenant record</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><CheckIcon size={14} /> Provisions <code>org_admin</code> user account for <strong>{selectedApp.adminName}</strong></div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}><CheckIcon size={14} /> Generates secure access credentials and dispatches activation email</div>
                   </div>
 
                   <div className="modal-actions">
@@ -513,6 +644,117 @@ const OrgRequestsManager = () => {
         )}
 
         {/* ========================================================= */}
+        {/* RESEND / REISSUE CREDENTIALS MODAL                        */}
+        {/* ========================================================= */}
+        {showResendModal && selectedApp && (
+          <div className="req-modal-overlay">
+            <div className="req-modal-box">
+              <div className="modal-header">
+                <h3>Reissue Credentials: {selectedApp.name}</h3>
+                <button className="modal-close-btn" onClick={() => setShowResendModal(false)}><XIcon size={16} /></button>
+              </div>
+
+              {resendResult ? (
+                <div className="provision-success-card">
+                  <div className="success-icon" style={{ display: "flex", justifyContent: "center", color: "#16a34a" }}><CheckCircleIcon size={40} /></div>
+                  <h4>Credentials Reissued!</h4>
+                  <p>A fresh temporary password has been generated for <strong>{selectedApp.adminName}</strong>.</p>
+
+                  <div className="cred-strip">
+                    <div className="cred-row">
+                      <div>
+                        <strong>Admin Email:</strong>{" "}
+                        <code>{selectedApp.email}</code>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-copy-small"
+                        onClick={() => copyToClipboard(selectedApp.email, "resendEmail")}
+                      >
+                        {copiedField === "resendEmail" ? "Copied!" : "Copy"}
+                      </button>
+                    </div>
+
+                    {resendResult.temporaryPassword && (
+                      <div className="cred-row highlight-row">
+                        <div>
+                          <strong>New Temporary Password:</strong>{" "}
+                          <code className="temp-pwd-code">{resendResult.temporaryPassword}</code>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-copy-small btn-copy-gold"
+                          onClick={() => copyToClipboard(resendResult.temporaryPassword, "resendPassword")}
+                        >
+                          {copiedField === "resendPassword" ? "Copied!" : "Copy Password"}
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="cred-row">
+                      <div>
+                        <strong>Admin Login URL:</strong>{" "}
+                        <code>{window.location.origin}/admin/login</code>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-copy-small"
+                        onClick={() => copyToClipboard(`${window.location.origin}/admin/login`, "resendLoginUrl")}
+                      >
+                        {copiedField === "resendLoginUrl" ? "Copied!" : "Copy URL"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {resendResult.emailSent ? (
+                    <div className="delivery-status success" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <CheckCircleIcon size={16} />
+                      <span>Updated credentials dispatched to {selectedApp.email}.</span>
+                    </div>
+                  ) : (
+                    <div className="delivery-status warning" style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                      <AlertTriangleIcon size={18} style={{ flexShrink: 0, marginTop: "2px" }} />
+                      <div>
+                        <strong>Email delivery failed ({resendResult.emailError || "SMTP unavailable"}).</strong>
+                        <p>Please copy the temporary password above and share it with the administrator manually.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    className="btn-primary-gold"
+                    onClick={() => {
+                      setShowResendModal(false);
+                      setResendResult(null);
+                    }}
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <div className="approval-confirm-content">
+                  <p>
+                    Reissue administrator credentials for <strong>{selectedApp.name}</strong> ({selectedApp.email})?
+                  </p>
+                  <p style={{ color: "#64748b", fontSize: "0.88rem" }}>
+                    This will reset the administrator password to a secure temporary password and attempt to send the updated credentials by email.
+                  </p>
+
+                  <div className="modal-actions">
+                    <button className="btn-secondary" onClick={() => setShowResendModal(false)} disabled={resendLoading}>
+                      Cancel
+                    </button>
+                    <button className="btn-primary-gold" onClick={handleResendCredentials} disabled={resendLoading}>
+                      {resendLoading ? "Generating & Dispatching..." : "Reissue & Send Credentials →"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
         {/* REJECT MODAL                                              */}
         {/* ========================================================= */}
         {showRejectModal && selectedApp && (
@@ -520,7 +762,7 @@ const OrgRequestsManager = () => {
             <div className="req-modal-box">
               <div className="modal-header">
                 <h3>Reject Request: {selectedApp.name}</h3>
-                <button className="modal-close-btn" onClick={() => setShowRejectModal(false)}>✕</button>
+                <button className="modal-close-btn" onClick={() => setShowRejectModal(false)}><XIcon size={16} /></button>
               </div>
 
               <p>Please specify the reason for rejection (this will be emailed to the applicant):</p>

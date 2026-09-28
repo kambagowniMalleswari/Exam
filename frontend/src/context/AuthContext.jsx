@@ -62,6 +62,11 @@ export const AuthProvider = ({ children }) => {
 
   // Login
   const login = async (email, password) => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("organizationId");
+    sessionStorage.clear();
+
     const response = await api.post("/auth/login", { email, password });
     const { token, user: loggedUser } = response.data;
 
@@ -74,6 +79,11 @@ export const AuthProvider = ({ children }) => {
 
   // Register
   const register = async (registrationData) => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("organizationId");
+    sessionStorage.clear();
+
     const response = await api.post("/auth/register", registrationData);
     const { token, user: registeredUser } = response.data;
 
@@ -86,6 +96,11 @@ export const AuthProvider = ({ children }) => {
 
   // Google OAuth Login
   const loginWithGoogle = async (googlePayload) => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("organizationId");
+    sessionStorage.clear();
+
     const response = await api.post("/auth/google", googlePayload);
     const { token, user: loggedUser } = response.data;
 
@@ -100,13 +115,14 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("organizationId");
+    sessionStorage.clear();
     setUser(null);
     window.location.href = "/login";
   };
 
-  // Role verification helpers
   const role = user?.role || "";
-  const isSuperAdmin = role === "super_admin" && user?.email?.toLowerCase().trim() === "kambagownikmalleswari@gmail.com";
+  const isSuperAdmin = role === "super_admin" || role === "superadmin";
   const isOrgAdmin = role === "org_admin" || role === "admin";
   const isTeacher = role === "teacher";
   const isStudent = role === "student";

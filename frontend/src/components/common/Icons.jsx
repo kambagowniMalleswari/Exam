@@ -229,3 +229,54 @@ export const PlusIcon = ({ size = 16, className = "" }) => (
     <line x1="5" y1="12" x2="19" y2="12" />
   </svg>
 );
+
+export const PrinterIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-printer ${className}`}>
+    <polyline points="6 9 6 2 18 2 18 9" />
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+    <rect x="6" y="14" width="12" height="8" />
+  </svg>
+);
+
+export const RefreshIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-refresh ${className}`}>
+    <polyline points="23 4 23 10 17 10" />
+    <polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </svg>
+);
+
+export const CreditCardIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-credit-card ${className}`}>
+    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+    <line x1="1" y1="10" x2="23" y2="10" />
+  </svg>
+);
+
+export const CheckIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-check ${className}`}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+export const XIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-x ${className}`}>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+export const TrendingUpIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-trending-up ${className}`}>
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+    <polyline points="17 6 23 6 23 12" />
+  </svg>
+);
+
+export const TrendingDownIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-trending-down ${className}`}>
+    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+    <polyline points="17 18 23 18 23 12" />
+  </svg>
+);
+

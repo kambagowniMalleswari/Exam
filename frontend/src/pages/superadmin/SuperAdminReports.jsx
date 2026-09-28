@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  PrinterIcon,
+  RefreshIcon,
+  AlertTriangleIcon,
+  BuildingIcon,
+  UsersIcon,
+  FileTextIcon,
+  TargetIcon,
+  TrendingUpIcon,
+  AwardIcon
+} from "../../components/common/Icons.jsx";
 import "./SuperAdminReports.css";
 
 const SuperAdminReports = () => {
@@ -44,10 +55,12 @@ const SuperAdminReports = () => {
           </div>
           <div className="sar-actions">
             <button className="btn-print" onClick={handlePrint}>
-              🖨️ Print Report
+              <PrinterIcon size={15} />
+              <span>Print Report</span>
             </button>
             <button className="btn-refresh" onClick={fetchPlatformData}>
-              🔄 Refresh
+              <RefreshIcon size={15} />
+              <span>Refresh</span>
             </button>
           </div>
         </div>
@@ -62,7 +75,7 @@ const SuperAdminReports = () => {
 
         {!loading && error && (
           <div className="sar-state">
-            <span>⚠️</span>
+            <AlertTriangleIcon size={32} />
             <p>{error}</p>
           </div>
         )}
@@ -72,7 +85,9 @@ const SuperAdminReports = () => {
             {/* Macro KPIs */}
             <div className="sar-kpi-grid">
               <div className="sar-card orgs">
-                <div className="sar-icon">🏢</div>
+                <div className="sar-icon">
+                  <BuildingIcon size={24} />
+                </div>
                 <div className="sar-info">
                   <span className="sar-val">
                     {report.activeOrganizations} <small>/ {report.totalOrganizations}</small>
@@ -82,7 +97,9 @@ const SuperAdminReports = () => {
               </div>
 
               <div className="sar-card users">
-                <div className="sar-icon">👥</div>
+                <div className="sar-icon">
+                  <UsersIcon size={24} />
+                </div>
                 <div className="sar-info">
                   <span className="sar-val">{report.totalUsers}</span>
                   <span className="sar-label">Total Platform Users</span>
@@ -90,7 +107,9 @@ const SuperAdminReports = () => {
               </div>
 
               <div className="sar-card tests">
-                <div className="sar-icon">📝</div>
+                <div className="sar-icon">
+                  <FileTextIcon size={24} />
+                </div>
                 <div className="sar-info">
                   <span className="sar-val">{report.totalTests}</span>
                   <span className="sar-label">Tests Configured</span>
@@ -98,7 +117,9 @@ const SuperAdminReports = () => {
               </div>
 
               <div className="sar-card attempts">
-                <div className="sar-icon">🎯</div>
+                <div className="sar-icon">
+                  <TargetIcon size={24} />
+                </div>
                 <div className="sar-info">
                   <span className="sar-val">{report.totalAttempts}</span>
                   <span className="sar-label">Total Exam Attempts</span>
@@ -106,7 +127,9 @@ const SuperAdminReports = () => {
               </div>
 
               <div className="sar-card pass">
-                <div className="sar-icon">📈</div>
+                <div className="sar-icon">
+                  <TrendingUpIcon size={24} />
+                </div>
                 <div className="sar-info">
                   <span className="sar-val">{report.globalPassRate}%</span>
                   <span className="sar-label">Global Pass Rate</span>
@@ -114,7 +137,9 @@ const SuperAdminReports = () => {
               </div>
 
               <div className="sar-card score">
-                <div className="sar-icon">🏆</div>
+                <div className="sar-icon">
+                  <AwardIcon size={24} />
+                </div>
                 <div className="sar-info">
                   <span className="sar-val">{report.globalAvgScore}%</span>
                   <span className="sar-label">Global Avg Score</span>

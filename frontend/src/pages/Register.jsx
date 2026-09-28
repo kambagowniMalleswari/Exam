@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { BrandCrest } from "../components/common/BrandLogo.jsx";
 import api from "../services/api.js";
 import "./Register.css";
 
@@ -24,6 +25,7 @@ const Register = () => {
   const { register, loginWithGoogle } = useAuth();
 
   useEffect(() => {
+    document.title = "Student Registration | AssessIQ";
     // Fetch active public organizations for student affiliation
     const fetchOrgs = async () => {
       try {
@@ -136,12 +138,8 @@ const Register = () => {
       <div className="auth-form-panel register-panel">
         <div className="auth-panel-top">
           <Link to="/" className="auth-brand-header">
-            <div className="brand-icon-box">
-              <svg viewBox="0 0 40 40" fill="none" width="26" height="26">
-                <rect width="40" height="40" rx="10" fill="#1e40af" />
-                <path d="M12 28L20 12L28 28" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="20" cy="23" r="3" fill="#38bdf8" />
-              </svg>
+            <div className="brand-icon-box" style={{ background: "transparent", border: "none", boxShadow: "none" }}>
+              <BrandCrest size={32} />
             </div>
             <div className="brand-text-stack">
               <span className="brand-name">AssessIQ</span>

@@ -129,6 +129,22 @@ export const getQuestionsByTest = async (req, res) => {
       });
     }
 
+    // Permission check
+    if (!req.isSuperAdmin) {
+      if (req.user.role === "teacher" && test.createdBy.toString() !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "Teachers can only view questions for tests they authored"
+        });
+      }
+      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to view questions from another organization"
+        });
+      }
+    }
+
     const questions = await Question.find({ testId }).sort({ order: 1 });
 
     res.status(200).json({
@@ -162,6 +178,18 @@ export const getQuestionsForStudent = async (req, res) => {
         success: false,
         message: "Test is not published or does not exist"
       });
+    }
+
+    // Tenant check for non-public tests
+    if (!req.isSuperAdmin && test.type !== "public") {
+      const studentOrgId = (req.organizationId || req.user.organizationId)?.toString();
+      const testOrgId = (test.organizationId?._id || test.organizationId)?.toString();
+      if (!studentOrgId || !testOrgId || studentOrgId !== testOrgId) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to view questions for this private test"
+        });
+      }
     }
 
     // Exclude correctAnswer and explanation to prevent cheating
@@ -237,6 +265,30 @@ export const updateQuestion = async (req, res) => {
       });
     }
 
+    const test = await Test.findById(question.testId);
+    if (!test) {
+      return res.status(404).json({
+        success: false,
+        message: "Associated test not found"
+      });
+    }
+
+    // Permission check
+    if (!req.isSuperAdmin) {
+      if (req.user.role === "teacher" && test.createdBy.toString() !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "Teachers can only edit questions for tests they authored"
+        });
+      }
+      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "You do not have permission to edit questions from another organization"
+        });
+      }
+    }
+
     const {
       questionText,
       options,
@@ -301,6 +353,30 @@ export const deleteQuestion = async (req, res) => {
         success: false,
         message: "Question not found"
       });
+    }
+
+    const test = await Test.findById(question.testId);
+    if (!test) {
+      return res.status(404).json({
+        success: false,
+        message: "Associated test not found"
+      });
+    }
+
+    // Permission check
+    if (!req.isSuperAdmin) {
+      if (req.user.role === "teacher" && test.createdBy.toString() !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "Teachers can only delete questions for tests they authored"
+        });
+      }
+      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "You do not have permission to delete questions from another organization"
+        });
+      }
     }
 
     const testId = question.testId;

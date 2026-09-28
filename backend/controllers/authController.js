@@ -198,20 +198,34 @@ export const login = async (req, res) => {
       });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim()) || password.length < 6) {
+    if (password.length < 6) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password."
+        message: "Invalid email/username or password."
       });
     }
 
-    // Find user
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    // Find user by exact email or username prefix
+    const rawIdentifier = (email || "").trim();
+    const cleanIdentifier = rawIdentifier.toLowerCase();
+
+    let user = await User.findOne({ email: cleanIdentifier });
+
+    if (!user) {
+      if (!cleanIdentifier.includes("@")) {
+        user = await User.findOne({
+          $or: [
+            { email: `${cleanIdentifier}@gmail.com` },
+            { email: new RegExp(`^${cleanIdentifier}@`, "i") }
+          ]
+        });
+      }
+    }
+
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password."
+        message: "Invalid email/username or password."
       });
     }
 
@@ -223,8 +237,9 @@ export const login = async (req, res) => {
       });
     }
 
-    // Check organization status if user belongs to one
-    if (user.organizationId && user.role !== "super_admin") {
+    // Check organization status if user belongs to one (exempt super admins)
+    const isSuperAdminRole = user.role === "super_admin" || user.role === "superadmin";
+    if (user.organizationId && !isSuperAdminRole) {
       const org = await Organization.findById(user.organizationId);
       if (org && (org.isActive === false || org.status === "suspended")) {
         return res.status(403).json({
@@ -239,15 +254,7 @@ export const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password."
-      });
-    }
-
-    // Super Admin security restriction: Only kambagownikmalleswari@gmail.com can log in as super_admin
-    if (user.role === "super_admin" && user.email.toLowerCase().trim() !== "kambagownikmalleswari@gmail.com") {
-      return res.status(403).json({
-        success: false,
-        message: "Access restricted: Unauthorized Super Admin credentials."
+        message: "Invalid email/username or password."
       });
     }
 

@@ -66,12 +66,12 @@ function App() {
       <Route path="/join-us" element={<JoinWithUs />} />
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/donate" element={<Donate />} />
-      <Route path="/unauthorized" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="/public-tests" element={<PublicTests />} />
 
-      {/* Super Admin Routes */}
+      {/* Super Admin Canonical Routes */}
       <Route
-        path="/super-admin/dashboard"
+        path="/superadmin/dashboard"
         element={
           <ProtectedRoute allowedRoles={["super_admin"]}>
             <SuperAdminDashboard />
@@ -79,7 +79,7 @@ function App() {
         }
       />
       <Route
-        path="/super-admin/organizations"
+        path="/superadmin/organizations"
         element={
           <ProtectedRoute allowedRoles={["super_admin"]}>
             <Organizations />
@@ -87,7 +87,7 @@ function App() {
         }
       />
       <Route
-        path="/super-admin/org-requests"
+        path="/superadmin/org-requests"
         element={
           <ProtectedRoute allowedRoles={["super_admin"]}>
             <OrgRequestsManager />
@@ -95,7 +95,7 @@ function App() {
         }
       />
       <Route
-        path="/super-admin/teacher-requests"
+        path="/superadmin/teacher-requests"
         element={
           <ProtectedRoute allowedRoles={["super_admin"]}>
             <TeacherRequestsManager />
@@ -103,7 +103,7 @@ function App() {
         }
       />
       <Route
-        path="/super-admin/reports"
+        path="/superadmin/reports"
         element={
           <ProtectedRoute allowedRoles={["super_admin"]}>
             <SuperAdminReports />
@@ -111,7 +111,7 @@ function App() {
         }
       />
       <Route
-        path="/super-admin/subscriptions"
+        path="/superadmin/subscriptions"
         element={
           <ProtectedRoute allowedRoles={["super_admin"]}>
             <SuperAdminSubscriptions />
@@ -119,9 +119,18 @@ function App() {
         }
       />
       <Route
-        path="/super-admin/*"
-        element={<Navigate to="/super-admin/dashboard" replace />}
+        path="/superadmin/*"
+        element={<Navigate to="/superadmin/dashboard" replace />}
       />
+
+      {/* Super Admin Legacy/Transitional Route Redirects */}
+      <Route path="/super-admin/dashboard" element={<Navigate to="/superadmin/dashboard" replace />} />
+      <Route path="/super-admin/organizations" element={<Navigate to="/superadmin/organizations" replace />} />
+      <Route path="/super-admin/org-requests" element={<Navigate to="/superadmin/org-requests" replace />} />
+      <Route path="/super-admin/teacher-requests" element={<Navigate to="/superadmin/teacher-requests" replace />} />
+      <Route path="/super-admin/reports" element={<Navigate to="/superadmin/reports" replace />} />
+      <Route path="/super-admin/subscriptions" element={<Navigate to="/superadmin/subscriptions" replace />} />
+      <Route path="/super-admin/*" element={<Navigate to="/superadmin/dashboard" replace />} />
 
       {/* Admin Routes */}
       <Route
@@ -204,6 +213,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
 
       {/* Teacher Routes */}
       <Route
@@ -246,6 +256,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/teacher/*" element={<Navigate to="/teacher/dashboard" replace />} />
 
       {/* Student Routes */}
       <Route
@@ -264,6 +275,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/student/tests" element={<Navigate to="/student/available-tests" replace />} />
       <Route
         path="/student/batches"
         element={
@@ -304,6 +316,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/student/*" element={<Navigate to="/student/dashboard" replace />} />
 
       {/* Unified Profile Route for All Account Roles */}
       <Route

@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { BrandCrest } from "../components/common/BrandLogo.jsx";
 import "./ContactUs.css";
 
 const ContactUs = () => {
+  useEffect(() => {
+    document.title = "Contact Support & Inquiries | AssessIQ";
+  }, []);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -35,11 +39,7 @@ const ContactUs = () => {
         <div className="public-nav-inner">
           <Link to="/" className="public-brand">
             <div className="brand-shield-mark">
-              <svg viewBox="0 0 64 64" fill="none">
-                <path d="M32 4 C44 4 54 11 56 22 C56 40 44 54 32 60 C20 54 8 40 8 22 C10 11 20 4 32 4 Z" fill="#1e3a8a" stroke="#3b82f6" strokeWidth="2" />
-                <polygon points="32,16 46,24 32,32 18,24" fill="#fbbf24" />
-                <path d="M26 44 L30 48 L39 39" stroke="#38bdf8" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <BrandCrest size={32} />
             </div>
             <span className="public-brand-title">AssessIQ</span>
           </Link>

@@ -126,7 +126,7 @@ export const applyForTeacher = async (req, res) => {
     });
 
     // 4. Send email confirmation to applicant & administration
-    const adminAlertEmail = process.env.EMAIL_USER || "kambagownikmalleswari@gmail.com";
+    const adminAlertEmail = process.env.SUPER_ADMIN_EMAIL || process.env.EMAIL_USER || "";
     await Promise.allSettled([
       sendEmail({
         to: application.email,
@@ -291,7 +291,7 @@ export const approveTeacherApplication = async (req, res) => {
     }
     emailText += `Welcome to the faculty!\n${orgName} Management`;
 
-    const adminEmail = process.env.EMAIL_USER || "kambagownikmalleswari@gmail.com";
+    const adminEmail = process.env.SUPER_ADMIN_EMAIL || process.env.EMAIL_USER || "";
     await Promise.allSettled([
       sendEmail({
         to: application.email,

@@ -281,49 +281,222 @@ export const approveOrganizationApplication = async (req, res) => {
     await application.save();
 
     // 5. Send approval email with credentials to applicant
-    const portalLoginUrl = `${getClientUrl()}/login`;
+    const portalLoginUrl = `${getClientUrl()}/admin/login`;
+    const targetEmail = (application.email || "").toLowerCase().trim();
+    let emailDispatch = null;
+
     try {
-      await sendEmail({
-        to: application.email,
-        subject: "🎉 AssessIQ - Institutional Portal Approved & Provisioned",
+      emailDispatch = await sendEmail({
+        to: targetEmail,
+        subject: `AssessIQ — Institutional Portal Approved & Provisioned (${organization.name})`,
+        text: `Dear ${application.adminName},\n\nCongratulations! Your institution application for "${organization.name}" has been officially approved by the platform administration.\n\nInstitutional Administrator Credentials:\n- Portal Login: ${portalLoginUrl}\n- Administrator Email: ${targetEmail}\n- Temporary Password: ${tempPassword}\n- Organization Slug: ${organization.slug}\n\nPlease sign in to the Admin Console at ${portalLoginUrl} and update your password immediately.\n\nAssessIQ Enterprise Operations`,
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <h2 style="color: #0f172a; margin-bottom: 8px;">Welcome to AssessIQ Enterprise!</h2>
-            <p>Dear ${application.adminName},</p>
-            <p>Congratulations! Your institution application for <strong>${organization.name}</strong> has been officially approved by the platform administration.</p>
-            <div style="background: #f8fafc; padding: 18px; border-radius: 8px; margin: 20px 0; border: 1px solid #e2e8f0;">
-              <h4 style="margin: 0 0 10px 0; color: #0284c7;">Institutional Administrator Credentials:</h4>
-              <p style="margin: 4px 0;"><strong>Portal Login:</strong> <a href="${portalLoginUrl}" style="color: #0284c7; font-weight: bold;">Access Portal (${portalLoginUrl})</a></p>
-              <p style="margin: 4px 0;"><strong>Admin Email:</strong> ${application.email}</p>
-              <p style="margin: 4px 0;"><strong>Temporary Password:</strong> <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-weight: bold;">${tempPassword}</code></p>
-              <p style="margin: 4px 0;"><strong>Organization Slug:</strong> ${organization.slug}</p>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+            <div style="display: flex; align-items: center; margin-bottom: 24px; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px;">
+              <div style="width: 44px; height: 44px; background: #1e1b4b; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fbbf24; font-weight: 800; font-size: 20px; margin-right: 14px;">IQ</div>
+              <div>
+                <h2 style="margin: 0; color: #0f172a; font-size: 20px;">AssessIQ Platform Operations</h2>
+                <span style="font-size: 13px; color: #64748b;">Enterprise Multi-Tenant Examination System</span>
+              </div>
             </div>
-            <p style="color: #d97706; font-size: 13px;">Please change your password immediately after your first sign in.</p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-            <p style="font-size: 13px; color: #64748b;">AssessIQ Platform Operations</p>
+
+            <h3 style="color: #0f172a; font-size: 19px; margin-bottom: 12px;">Welcome to AssessIQ Enterprise!</h3>
+            <p style="color: #334155; font-size: 15px; line-height: 1.6;">Dear <strong>${application.adminName}</strong>,</p>
+            <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+              Congratulations! Your institution application for <strong>${organization.name}</strong> has been officially approved by the platform administration. Your hermetically isolated tenant has been provisioned and your institutional administrator account is ready.
+            </p>
+
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 22px; margin: 24px 0;">
+              <h4 style="margin: 0 0 14px 0; color: #0369a1; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                Institutional Administrator Access Credentials
+              </h4>
+              <p style="margin: 8px 0; font-size: 14px; color: #334155;"><strong>Admin Portal Login:</strong> <a href="${portalLoginUrl}" style="color: #2563eb; font-weight: 700; text-decoration: underline;">Click Here to Access Admin Console</a></p>
+              <p style="margin: 8px 0; font-size: 14px; color: #334155;"><strong>Administrator Email:</strong> <code style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-weight: 600; color: #0f172a;">${targetEmail}</code></p>
+              <p style="margin: 8px 0; font-size: 14px; color: #334155;"><strong>Temporary Password:</strong> <code style="background: #fef3c7; color: #b45309; padding: 4px 10px; border-radius: 4px; font-weight: 800; font-size: 16px; border: 1px dashed #f59e0b;">${tempPassword}</code></p>
+              <p style="margin: 8px 0; font-size: 14px; color: #334155;"><strong>Organization Slug:</strong> <code style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-weight: 600; color: #475569;">${organization.slug}</code></p>
+            </div>
+
+            <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 14px 18px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+              <p style="margin: 0; font-size: 13px; color: #92400e; line-height: 1.5;">
+                Security Notice: Please sign in and update your password immediately from your admin profile settings upon your first login.
+              </p>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0 20px 0;">
+              <a href="${portalLoginUrl}" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 15px; display: inline-block;">Log In to Institutional Admin Console →</a>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 28px 0 16px 0;" />
+            <p style="font-size: 13px; color: #64748b; margin: 0; text-align: center;">AssessIQ Enterprise Multi-Tenant Platform Operations</p>
           </div>
         `
       });
+      console.log(`[Org Approval] Email dispatched to ${targetEmail}:`, emailDispatch);
     } catch (emailErr) {
-      console.warn("Could not dispatch approval email:", emailErr.message);
+      console.error("[Org Approval] Email dispatch error:", emailErr);
+      emailDispatch = { success: false, error: emailErr.message };
     }
+
+    const emailSent = Boolean(emailDispatch?.real || emailDispatch?.success);
 
     res.status(200).json({
       success: true,
-      message: `Organization '${organization.name}' approved and Org Admin account provisioned.`,
+      message: emailSent
+        ? `Organization '${organization.name}' approved and credentials dispatched to ${targetEmail}.`
+        : `Organization '${organization.name}' approved, but credentials email could not be delivered. Please provide the temporary password manually.`,
       organization,
       adminUser: {
         _id: adminUser._id,
         name: adminUser.name,
         email: adminUser.email,
         role: adminUser.role
-      }
+      },
+      temporaryPassword: tempPassword,
+      emailSent,
+      emailMessageId: emailDispatch?.messageId,
+      emailError: emailSent ? null : (emailDispatch?.error || "Email delivery failed")
     });
   } catch (error) {
     console.error("Approve organization error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to approve organization application",
+      error: error.message
+    });
+  }
+};
+
+// 4. Resend Organization Approval Email / Credentials (Super Admin only)
+export const resendOrgApprovalEmail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const application = await OrgApplication.findById(id);
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Organization application not found."
+      });
+    }
+
+    if (application.status !== "approved") {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot resend credentials: Application is currently '${application.status}'. Only approved organizations can receive credentials.`
+      });
+    }
+
+    const org = await Organization.findOne({
+      $or: [
+        { _id: application.createdOrganizationId },
+        { email: application.email }
+      ]
+    });
+
+    let adminUser = await User.findOne({
+      $or: [
+        { _id: application.createdAdminUserId },
+        { email: application.email }
+      ]
+    });
+
+    if (!org) {
+      return res.status(404).json({
+        success: false,
+        message: "Associated organization record could not be found."
+      });
+    }
+
+    // Generate fresh temporary password
+    const tempPassword = `OrgAdmin#${Math.random().toString(36).slice(-6)}!`;
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(tempPassword, salt);
+
+    if (adminUser) {
+      adminUser.password = hashedPassword;
+      adminUser.status = "active";
+      adminUser.isActive = true;
+      adminUser.role = "org_admin";
+      adminUser.organizationId = org._id;
+      await adminUser.save();
+    } else {
+      adminUser = await User.create({
+        name: application.adminName,
+        email: application.email,
+        phone: application.phone,
+        password: hashedPassword,
+        role: "org_admin",
+        organizationId: org._id,
+        status: "active",
+        isActive: true
+      });
+      application.createdAdminUserId = adminUser._id;
+      await application.save();
+    }
+
+    const portalLoginUrl = `${getClientUrl()}/admin/login`;
+    const targetEmail = application.email.toLowerCase().trim();
+    let emailDispatch = null;
+
+    try {
+      emailDispatch = await sendEmail({
+        to: targetEmail,
+        subject: `AssessIQ — Updated Institutional Administrator Credentials (${org.name})`,
+        text: `Dear ${application.adminName},\n\nYour institutional administrator credentials for "${org.name}" have been updated by platform administration:\n\nPortal Login: ${portalLoginUrl}\nAdministrator Email: ${targetEmail}\nTemporary Password: ${tempPassword}\nOrganization Slug: ${org.slug}\n\nPlease sign in to the Admin Console at ${portalLoginUrl} immediately.\n\nAssessIQ Enterprise Operations`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+            <div style="display: flex; align-items: center; margin-bottom: 24px; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px;">
+              <div style="width: 44px; height: 44px; background: #1e1b4b; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fbbf24; font-weight: 800; font-size: 20px; margin-right: 14px;">IQ</div>
+              <div>
+                <h2 style="margin: 0; color: #0f172a; font-size: 20px;">AssessIQ Platform Operations</h2>
+                <span style="font-size: 13px; color: #64748b;">Enterprise Multi-Tenant Examination System</span>
+              </div>
+            </div>
+
+            <h3 style="color: #0f172a; font-size: 19px; margin-bottom: 12px;">Institutional Access Credentials</h3>
+            <p style="color: #334155; font-size: 15px; line-height: 1.6;">Dear <strong>${application.adminName}</strong>,</p>
+            <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+              Your administrator access credentials for <strong>${org.name}</strong> have been reissued by the AssessIQ platform administrator.
+            </p>
+
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 22px; margin: 24px 0;">
+              <h4 style="margin: 0 0 14px 0; color: #0369a1; font-size: 16px;">Institutional Administrator Credentials:</h4>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Admin Portal:</strong> <a href="${portalLoginUrl}" style="color: #2563eb; font-weight: 700; text-decoration: underline;">${portalLoginUrl}</a></p>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Admin Email:</strong> <code style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-weight: 600;">${targetEmail}</code></p>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Temporary Password:</strong> <code style="background: #fef3c7; color: #b45309; padding: 4px 10px; border-radius: 4px; font-weight: 800; font-size: 16px; border: 1px dashed #f59e0b;">${tempPassword}</code></p>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Organization Slug:</strong> <code style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-weight: 600;">${org.slug}</code></p>
+            </div>
+
+            <div style="text-align: center; margin: 28px 0 16px 0;">
+              <a href="${portalLoginUrl}" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 15px; display: inline-block;">Sign In to Admin Console →</a>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px 0;" />
+            <p style="font-size: 13px; color: #64748b; margin: 0; text-align: center;">AssessIQ Enterprise Platform Operations</p>
+          </div>
+        `
+      });
+      console.log(`[Org Resend] Email dispatched to ${targetEmail}:`, emailDispatch);
+    } catch (emailErr) {
+      console.error("[Org Resend] Email dispatch error:", emailErr);
+      emailDispatch = { success: false, error: emailErr.message };
+    }
+
+    const emailSent = Boolean(emailDispatch?.real || emailDispatch?.success);
+
+    res.status(200).json({
+      success: true,
+      message: emailSent
+        ? `Updated administrator credentials dispatched to ${targetEmail}!`
+        : `Credentials updated, but email could not be delivered. Please provide the temporary password manually.`,
+      temporaryPassword: tempPassword,
+      emailSent,
+      emailError: emailSent ? null : (emailDispatch?.error || "Email delivery failed")
+    });
+  } catch (error) {
+    console.error("Resend org approval error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to resend approval email",
       error: error.message
     });
   }

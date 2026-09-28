@@ -15,6 +15,7 @@ import {
   UserIcon,
   ShieldIcon
 } from "./common/Icons.jsx";
+import { BrandCrest } from "./common/BrandLogo.jsx";
 import "./Sidebar.css";
 
 const Sidebar = () => {
@@ -22,9 +23,8 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const [pendingOrgCount, setPendingOrgCount] = useState(0);
 
-  const isAuthorizedSuperAdmin =
-    user?.role === "super_admin" &&
-    user?.email?.toLowerCase().trim() === "kambagownikmalleswari@gmail.com";
+  const userRole = user?.role || "";
+  const isAuthorizedSuperAdmin = userRole === "super_admin" || userRole === "superadmin";
 
   // For Super Admin, poll pending organization onboarding applications
   useEffect(() => {
@@ -59,21 +59,22 @@ const Sidebar = () => {
   ];
 
   const superAdminMenuItems = [
-    { label: "Platform Dashboard", path: "/super-admin/dashboard", icon: <BarChartIcon size={18} /> },
-    { label: "Institutional Clients", path: "/super-admin/organizations", icon: <BuildingIcon size={18} /> },
+    { label: "Platform Dashboard", path: "/superadmin/dashboard", icon: <BarChartIcon size={18} /> },
+    { label: "Institutional Clients", path: "/superadmin/organizations", icon: <BuildingIcon size={18} /> },
     {
       label: "Institution Requests",
-      path: "/super-admin/org-requests",
+      path: "/superadmin/org-requests",
       icon: <FileTextIcon size={18} />,
       badge: pendingOrgCount > 0 ? pendingOrgCount : null
     },
-    { label: "Platform Reports", path: "/super-admin/reports", icon: <BarChartIcon size={18} /> },
-    { label: "SaaS Subscriptions", path: "/super-admin/subscriptions", icon: <ShieldIcon size={18} /> },
+    { label: "Platform Reports", path: "/superadmin/reports", icon: <BarChartIcon size={18} /> },
+    { label: "SaaS Subscriptions", path: "/superadmin/subscriptions", icon: <ShieldIcon size={18} /> },
     { label: "My Profile", path: "/profile", icon: <UserIcon size={18} /> }
   ];
 
   const menuConfig = {
     super_admin: superAdminMenuItems,
+    superadmin: superAdminMenuItems,
     admin: adminMenuItems,
     org_admin: adminMenuItems,
     teacher: [
@@ -94,7 +95,7 @@ const Sidebar = () => {
 
   const currentMenu = isAuthorizedSuperAdmin
     ? superAdminMenuItems
-    : (menuConfig[user.role === "super_admin" ? "admin" : user.role] || []);
+    : (menuConfig[user.role] || []);
   const orgName = isAuthorizedSuperAdmin
     ? null
     : user.organizationId?.name || (user.organizationId ? "Organization" : "");
@@ -105,11 +106,7 @@ const Sidebar = () => {
       <div className="sidebar-header">
         <div className="sidebar-logo" onClick={() => navigate("/")} role="button" tabIndex={0}>
           <div className="sidebar-logo-mark">
-            <svg viewBox="0 0 64 64" fill="none" width="28" height="28">
-              <path d="M32 4 C44 4 54 11 56 22 C56 40 44 54 32 60 C20 54 8 40 8 22 C10 11 20 4 32 4 Z" fill="#1e3a8a" stroke="#3b82f6" strokeWidth="2"/>
-              <polygon points="32,16 46,24 32,32 18,24" fill="#fbbf24"/>
-              <path d="M26 44 L30 48 L39 39" stroke="#38bdf8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <BrandCrest size={28} />
           </div>
           <div className="sidebar-brand-text">
             <span className="brand-name">AssessIQ</span>

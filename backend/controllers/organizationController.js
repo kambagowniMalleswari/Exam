@@ -3,6 +3,8 @@ import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import Test from "../models/Test.js";
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+import { sendEmail, getClientUrl } from "../utils/sendEmail.js";
 
 // Create a new organization (Super Admin)
 export const createOrganization = async (req, res) => {
@@ -67,9 +69,89 @@ export const createOrganization = async (req, res) => {
       subscriptionStatus: "active"
     });
 
+    // Provision Org Admin user if email and adminName provided
+    let tempPassword = "";
+    let adminUser = null;
+    const cleanEmail = email.toLowerCase().trim();
+
+    if (cleanEmail) {
+      tempPassword = `OrgAdmin#${Math.random().toString(36).slice(-6)}!`;
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(tempPassword, salt);
+
+      adminUser = await User.findOne({ email: cleanEmail });
+      if (adminUser) {
+        adminUser.role = "org_admin";
+        adminUser.organizationId = organization._id;
+        adminUser.status = "active";
+        adminUser.isActive = true;
+        adminUser.password = hashedPassword;
+        await adminUser.save();
+      } else {
+        adminUser = await User.create({
+          name: adminName || `${name.trim()} Administrator`,
+          email: cleanEmail,
+          phone: phone || "",
+          password: hashedPassword,
+          role: "org_admin",
+          organizationId: organization._id,
+          status: "active",
+          isActive: true
+        });
+      }
+
+      // Dispatch welcome credentials email to organization admin
+      const portalLoginUrl = `${getClientUrl()}/admin/login`;
+      let emailDispatch = null;
+      try {
+        emailDispatch = await sendEmail({
+          to: cleanEmail,
+          subject: `AssessIQ — Institutional Portal Created (${organization.name})`,
+          text: `Dear ${adminName || organization.name},\n\nYour institution "${organization.name}" has been registered on AssessIQ.\n\nAdministrator Credentials:\n- Admin Portal: ${portalLoginUrl}\n- Email: ${cleanEmail}\n- Temporary Password: ${tempPassword}\n- Organization Slug: ${organization.slug}\n\nPlease sign in to the Admin Console at ${portalLoginUrl} and change your password immediately.\n\nAssessIQ Enterprise Operations`,
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+              <h2 style="color: #0f172a; margin-top: 0;">AssessIQ Platform Operations</h2>
+              <h3>Welcome to AssessIQ Enterprise!</h3>
+              <p>Your institution <strong>${organization.name}</strong> has been provisioned on AssessIQ.</p>
+              <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 20px; margin: 20px 0;">
+                <h4 style="margin: 0 0 10px 0; color: #0369a1;">Institutional Administrator Credentials:</h4>
+                <p style="margin: 6px 0;"><strong>Admin Portal:</strong> <a href="${portalLoginUrl}" style="color: #2563eb; font-weight: bold;">${portalLoginUrl}</a></p>
+                <p style="margin: 6px 0;"><strong>Admin Email:</strong> <code>${cleanEmail}</code></p>
+                <p style="margin: 6px 0;"><strong>Temporary Password:</strong> <code style="background: #fef3c7; color: #b45309; padding: 2px 6px; border-radius: 4px; font-weight: bold;">${tempPassword}</code></p>
+                <p style="margin: 6px 0;"><strong>Organization Slug:</strong> <code>${organization.slug}</code></p>
+              </div>
+              <p style="font-size: 13px; color: #64748b;">Please sign in and change your temporary password immediately from your profile settings.</p>
+            </div>
+          `
+        });
+      } catch (emailErr) {
+        console.warn("[Create Org] Email dispatch error:", emailErr.message);
+        emailDispatch = { success: false, error: emailErr.message };
+      }
+
+      const emailSent = Boolean(emailDispatch?.real || emailDispatch?.success);
+
+      return res.status(201).json({
+        success: true,
+        message: emailSent
+          ? "Organization registered and administrator credentials dispatched."
+          : "Organization registered. Email delivery failed, please provide temporary password manually.",
+        organization,
+        adminUser: {
+          _id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+          role: adminUser.role
+        },
+        temporaryPassword: tempPassword,
+        emailSent,
+        emailError: emailSent ? null : (emailDispatch?.error || "Email delivery failed")
+      });
+    }
+
     res.status(201).json({
       success: true,
-      message: "Organization created successfully",
+      message: "Organization registered successfully.",
       organization
     });
   } catch (error) {

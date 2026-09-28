@@ -11,7 +11,8 @@ import {
   TargetIcon,
   BuildingIcon,
   ClockIcon,
-  ShieldIcon
+  ShieldIcon,
+  AlertTriangleIcon
 } from "../../components/common/Icons.jsx";
 import "./StudentDashboard.css";
 
@@ -129,7 +130,8 @@ const StudentDashboard = () => {
 
         {error && (
           <div className="academic-alert alert-error">
-            <span>⚠️ {error}</span>
+            <AlertTriangleIcon size={16} />
+            <span>{error}</span>
           </div>
         )}
 
@@ -186,10 +188,10 @@ const StudentDashboard = () => {
             </div>
             <div className="kpi-body">
               <div className="kpi-value">
-                {report?.averageScore !== undefined ? `${report.averageScore}%` : "N/A"}
+                {report?.averageScore !== undefined && report?.completedTestsCount > 0 ? `${report.averageScore}%` : "0%"}
               </div>
               <div className="kpi-meta">
-                {report?.passRate !== undefined ? `${report.passRate}% Qualification Rate` : "No attempts recorded"}
+                {report?.passRate !== undefined && report?.completedTestsCount > 0 ? `${report.passRate}% Qualification Rate` : "No attempts recorded"}
               </div>
             </div>
           </div>
@@ -207,9 +209,11 @@ const StudentDashboard = () => {
             </div>
             <div className="kpi-body">
               <div className="kpi-value">
-                {report?.accuracyRate !== undefined ? `${report.accuracyRate}%` : "N/A"}
+                {report?.accuracyRate !== undefined && report?.completedTestsCount > 0 ? `${report.accuracyRate}%` : "0%"}
               </div>
-              <div className="kpi-meta">Questions answered correctly</div>
+              <div className="kpi-meta">
+                {report?.completedTestsCount > 0 ? "Questions answered correctly" : "No questions attempted"}
+              </div>
             </div>
           </div>
         </div>
@@ -278,13 +282,13 @@ const StudentDashboard = () => {
                       <div className="assessment-meta-tags">
                         <span className="subject-chip">{test.subject}</span>
                         {getScheduleBadge(test)}
-                        <span className="duration-chip">⏱️ {test.duration} min</span>
+                        <span className="duration-chip"><ClockIcon size={12} /> {test.duration} min</span>
                       </div>
                       <h4 className="assessment-title">{test.title}</h4>
                       <div className="assessment-details-row">
                         <span>{test.questionCount || 0} Questions</span>
                         <span>•</span>
-                        <span>Pass Mark: {test.passingPercentage || 40}%</span>
+                        <span>Pass Mark: {test.passingPercentage !== undefined ? `${test.passingPercentage}%` : "—"}</span>
                         {test.organizationId?.name && (
                           <>
                             <span>•</span>

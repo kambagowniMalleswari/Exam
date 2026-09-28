@@ -2,12 +2,17 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import api from "../services/api.js";
+import { BrandCrest } from "../components/common/BrandLogo.jsx";
 import "./JoinWithUs.css";
 
 const JoinWithUs = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTrack = searchParams.get("track") === "teacher" ? "teacher" : "organization";
   const [activeTrack, setActiveTrack] = useState(initialTrack);
+
+  useEffect(() => {
+    document.title = "Partner With AssessIQ | Institutional Onboarding";
+  }, []);
 
   // Form states for Organization Onboarding
   const [orgForm, setOrgForm] = useState({
@@ -154,7 +159,7 @@ const JoinWithUs = () => {
       <header className="join-nav">
         <div className="join-nav-container">
           <Link to="/" className="join-brand">
-            <div className="brand-crest">IQ</div>
+            <BrandCrest size={34} />
             <div className="brand-titles">
               <span className="brand-name">AssessIQ</span>
               <span className="brand-subtitle">Partnership Desk</span>

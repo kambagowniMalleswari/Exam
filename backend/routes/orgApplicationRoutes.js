@@ -3,6 +3,7 @@ import {
   applyOrganization,
   getOrganizationApplications,
   approveOrganizationApplication,
+  resendOrgApprovalEmail,
   rejectOrganizationApplication
 } from "../controllers/orgApplicationController.js";
 import protect from "../middleware/authMiddleware.js";
@@ -19,6 +20,7 @@ router.use(authorize("super_admin"));
 
 router.get("/", getOrganizationApplications);
 router.patch("/:id/approve", approveOrganizationApplication);
+router.post("/:id/resend-email", resendOrgApprovalEmail);
 router.patch("/:id/reject", rejectOrganizationApplication);
 
 export default router;

@@ -67,7 +67,7 @@ const BatchesManager = () => {
   const loadPrerequisites = async () => {
     try {
       const [testsRes, usersRes] = await Promise.all([
-        api.get("/tests").catch(() => ({ data: { tests: [] } })),
+        api.get("/tests?scope=organization").catch(() => ({ data: { tests: [] } })),
         api.get("/users?role=student").catch(() => ({ data: { users: [] } }))
       ]);
       setAvailableTests(testsRes.data?.tests || []);

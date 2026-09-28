@@ -142,11 +142,7 @@ export const getTests = async (req, res) => {
   try {
     const query = {};
 
-    if (req.user.role === "teacher" && req.query.myOnly === "true") {
-      // Teacher views only tests they authored
-      query.createdBy = req.user.id;
-    } else if (!req.isSuperAdmin) {
-      // Organization user sees organization tests
+    if (!req.isSuperAdmin) {
       if (!req.organizationId) {
         return res.status(403).json({
           success: false,
@@ -156,6 +152,15 @@ export const getTests = async (req, res) => {
       query.organizationId = req.organizationId;
     } else if (req.query.organizationId) {
       query.organizationId = req.query.organizationId;
+    }
+
+    if (req.user.role === "teacher") {
+      // By default a teacher manages their own authored tests, unless organization scope is explicitly requested
+      if (req.query.scope !== "organization" && req.query.scope !== "all") {
+        query.createdBy = req.user.id;
+      }
+    } else if (req.query.myOnly === "true") {
+      query.createdBy = req.user.id;
     }
 
     // Optional filters
@@ -263,16 +268,20 @@ export const getTestById = async (req, res) => {
 
     // Permission check for non-superadmins
     if (!req.isSuperAdmin && test.type !== "public") {
-      if (req.user.role === "teacher" && test.createdBy._id.toString() !== req.user.id && (!test.organizationId || test.organizationId._id.toString() !== req.organizationId?.toString())) {
-        return res.status(403).json({
-          success: false,
-          message: "You are not authorized to view this test"
-        });
-      }
-      if (req.organizationId && test.organizationId && test.organizationId._id.toString() !== req.organizationId.toString()) {
+      const userOrgId = (req.organizationId || req.user.organizationId)?.toString();
+      const testOrgId = (test.organizationId?._id || test.organizationId)?.toString();
+
+      if (!userOrgId || !testOrgId || userOrgId !== testOrgId) {
         return res.status(403).json({
           success: false,
           message: "Access denied. Cross-organization test access is forbidden."
+        });
+      }
+
+      if (req.user.role === "teacher" && test.createdBy?._id?.toString() !== req.user.id && testOrgId !== userOrgId) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to view this test"
         });
       }
     }
@@ -519,6 +528,22 @@ export const publishTest = async (req, res) => {
       });
     }
 
+    // Ownership and organization check
+    if (!req.isSuperAdmin) {
+      if (req.user.role === "teacher" && test.createdBy.toString() !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "Teachers can only publish tests they authored"
+        });
+      }
+      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "You do not have permission to publish this test"
+        });
+      }
+    }
+
     // Check questions
     const questionCount = await Question.countDocuments({ testId: id });
     if (questionCount === 0) {
@@ -571,6 +596,22 @@ export const unpublishTest = async (req, res) => {
       });
     }
 
+    // Ownership and organization check
+    if (!req.isSuperAdmin) {
+      if (req.user.role === "teacher" && test.createdBy.toString() !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "Teachers can only unpublish tests they authored"
+        });
+      }
+      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: "You do not have permission to unpublish this test"
+        });
+      }
+    }
+
     test.status = "draft";
     await test.save();
 
@@ -608,6 +649,20 @@ export const duplicateTest = async (req, res) => {
       });
     }
 
+    // Ownership and organization check
+    if (!req.isSuperAdmin && originalTest.type !== "public") {
+      const userOrgId = (req.organizationId || req.user.organizationId)?.toString();
+      const testOrgId = (originalTest.organizationId?._id || originalTest.organizationId)?.toString();
+      if (!userOrgId || !testOrgId || userOrgId !== testOrgId) {
+        return res.status(403).json({
+          success: false,
+          message: "You do not have permission to duplicate tests from another organization"
+        });
+      }
+    }
+
+    const targetOrgId = req.organizationId || req.user.organizationId || originalTest.organizationId;
+
     // Create cloned test
     const clonedTest = await Test.create({
       title: `${originalTest.title} (Copy)`,
@@ -621,7 +676,7 @@ export const duplicateTest = async (req, res) => {
       type: originalTest.type,
       status: "draft",
       instructions: originalTest.instructions,
-      organizationId: originalTest.organizationId,
+      organizationId: targetOrgId,
       createdBy: req.user.id
     });
 

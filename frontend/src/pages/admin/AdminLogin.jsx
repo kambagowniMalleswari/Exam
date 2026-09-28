@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { auth, googleProvider, signInWithPopup } from "../../config/firebase.js";
+import { BrandCrest } from "../../components/common/BrandLogo.jsx";
 import {
   BuildingIcon,
   ShieldIcon,
@@ -11,6 +12,7 @@ import {
   GraduationCapIcon
 } from "../../components/common/Icons.jsx";
 import api from "../../services/api.js";
+import { getDefaultDashboard, isRoleAuthorizedForPath } from "../../utils/roleUtils.js";
 import "../Login.css";
 
 const AdminLogin = () => {
@@ -20,44 +22,32 @@ const AdminLogin = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    document.title = "Admin Console Sign In | AssessIQ";
+  }, []);
+
   const navigate = useNavigate();
   const location = useLocation();
   const { login, loginWithGoogle } = useAuth();
 
   const handleRoleRedirect = (userRole) => {
     const from = location.state?.from?.pathname;
-    if (from && from !== "/unauthorized" && from !== "/admin/login" && from !== "/login") {
+    if (from && isRoleAuthorizedForPath(userRole, from)) {
       navigate(from, { replace: true });
       return;
     }
 
-    if (userRole === "super_admin") {
-      navigate("/super-admin/dashboard");
-    } else if (userRole === "admin" || userRole === "org_admin") {
-      navigate("/admin/dashboard");
-    } else if (userRole === "teacher") {
-      navigate("/teacher/dashboard");
-    } else if (userRole === "student") {
-      navigate("/student/dashboard");
-    } else {
-      navigate("/");
-    }
+    navigate(getDefaultDashboard(userRole), { replace: true });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    const trimmedEmail = email.trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const trimmedInput = email.trim();
 
-    if (!trimmedEmail || !password) {
-      setError("Please fill in both administrator email and password.");
-      return;
-    }
-
-    if (!emailRegex.test(trimmedEmail)) {
-      setError("Please enter a valid email address.");
+    if (!trimmedInput || !password) {
+      setError("Please fill in both administrator email/username and password.");
       return;
     }
 
@@ -68,7 +58,7 @@ const AdminLogin = () => {
 
     try {
       setLoading(true);
-      const res = await login(trimmedEmail, password);
+      const res = await login(trimmedInput, password);
       handleRoleRedirect(res.user?.role);
     } catch (err) {
       setError(err.response?.data?.message || "Invalid administrator credentials or access restricted.");
@@ -197,12 +187,8 @@ const AdminLogin = () => {
       <div className="auth-form-panel">
         <div className="auth-panel-top">
           <Link to="/" className="auth-brand-header">
-            <div className="brand-icon-box">
-              <svg viewBox="0 0 40 40" fill="none" width="26" height="26">
-                <rect width="40" height="40" rx="10" fill="#1e1b4b" />
-                <path d="M12 28L20 12L28 28" stroke="#d4af37" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="20" cy="23" r="3" fill="#38bdf8" />
-              </svg>
+            <div className="brand-icon-box" style={{ background: "transparent", border: "none", boxShadow: "none" }}>
+              <BrandCrest size={32} />
             </div>
             <div className="brand-text-stack">
               <span className="brand-name">AssessIQ</span>
@@ -236,7 +222,7 @@ const AdminLogin = () => {
 
           <form onSubmit={handleSubmit} className="auth-form-fields">
             <div className="field-group">
-              <label htmlFor="admin-email" className="field-label">Administrator Email Address</label>
+              <label htmlFor="admin-email" className="field-label">Administrator Email or Username</label>
               <div className="field-input-box">
                 <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="2" y="4" width="20" height="16" rx="3"></rect>
@@ -244,12 +230,12 @@ const AdminLogin = () => {
                 </svg>
                 <input
                   id="admin-email"
-                  type="email"
+                  type="text"
                   className="field-input"
-                  placeholder="e.g. admin@institution.edu"
+                  placeholder="e.g. admin@institution.edu or kambagownikmalleswari"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
+                  autoComplete="username"
                   required
                 />
               </div>

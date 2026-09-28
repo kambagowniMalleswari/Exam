@@ -211,6 +211,13 @@ export const getAllResults = async (req, res) => {
       query.organizationId = req.query.organizationId;
     }
 
+    if (req.user.role === "teacher") {
+      // Teachers view student results only for their authored tests
+      const myTests = await Test.find({ createdBy: req.user.id }).select("_id");
+      const myTestIds = myTests.map((t) => t._id);
+      query.testId = { $in: myTestIds };
+    }
+
     const results = await Result.find(query)
       .populate("testId", "title subject totalMarks passingPercentage")
       .populate("studentId", "name email")

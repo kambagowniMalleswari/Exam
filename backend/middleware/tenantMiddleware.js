@@ -8,13 +8,7 @@ const tenantMiddleware = (req, res, next) => {
   }
 
   // 1. Super Admin has platform-wide global visibility
-  if (req.user.role === "super_admin") {
-    if (req.user.email?.toLowerCase().trim() !== "kambagownikmalleswari@gmail.com") {
-      return res.status(403).json({
-        success: false,
-        message: "Access restricted: Unauthorized Super Admin account."
-      });
-    }
+  if (req.user.role === "super_admin" || req.user.role === "superadmin") {
     // If a specific organizationId is passed via header or query, attach it
     req.organizationId = req.headers["x-organization-id"] || req.query.organizationId || null;
     req.isSuperAdmin = true;

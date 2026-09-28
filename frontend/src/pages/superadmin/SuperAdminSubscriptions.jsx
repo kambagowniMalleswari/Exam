@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  RefreshIcon,
+  CreditCardIcon,
+  BuildingIcon,
+  AwardIcon,
+  FileTextIcon,
+  SearchIcon,
+  AlertTriangleIcon
+} from "../../components/common/Icons.jsx";
 import "./SuperAdminSubscriptions.css";
 
 const SuperAdminSubscriptions = () => {
@@ -68,14 +77,17 @@ const SuperAdminSubscriptions = () => {
             <p>Monitor enterprise recurring revenue, active subscription tiers, and tenant resource allocations.</p>
           </div>
           <button className="btn-refresh" onClick={fetchSubscriptions}>
-            🔄 Refresh
+            <RefreshIcon size={14} />
+            <span>Refresh</span>
           </button>
         </div>
 
         {/* Global KPI Cards */}
         <div className="sa-kpi-grid">
           <div className="sa-kpi-card mrr">
-            <span className="sa-icon">💳</span>
+            <span className="sa-icon" style={{ color: "#0284c7" }}>
+              <CreditCardIcon size={22} />
+            </span>
             <div className="sa-kpi-info">
               <span className="sa-num">${stats.mrr}</span>
               <span className="sa-label">Monthly Recurring Revenue</span>
@@ -83,7 +95,9 @@ const SuperAdminSubscriptions = () => {
           </div>
 
           <div className="sa-kpi-card active">
-            <span className="sa-icon">🏢</span>
+            <span className="sa-icon" style={{ color: "#16a34a" }}>
+              <BuildingIcon size={22} />
+            </span>
             <div className="sa-kpi-info">
               <span className="sa-num">{stats.active}</span>
               <span className="sa-label">Active Subscriptions</span>
@@ -91,7 +105,9 @@ const SuperAdminSubscriptions = () => {
           </div>
 
           <div className="sa-kpi-card enterprise">
-            <span className="sa-icon">👑</span>
+            <span className="sa-icon" style={{ color: "#8b5cf6" }}>
+              <AwardIcon size={22} />
+            </span>
             <div className="sa-kpi-info">
               <span className="sa-num">{stats.enterprise}</span>
               <span className="sa-label">Enterprise Tenants</span>
@@ -99,7 +115,9 @@ const SuperAdminSubscriptions = () => {
           </div>
 
           <div className="sa-kpi-card total">
-            <span className="sa-icon">📑</span>
+            <span className="sa-icon" style={{ color: "#d97706" }}>
+              <FileTextIcon size={22} />
+            </span>
             <div className="sa-kpi-info">
               <span className="sa-num">{stats.total}</span>
               <span className="sa-label">Total Subscriptions</span>
@@ -110,7 +128,9 @@ const SuperAdminSubscriptions = () => {
         {/* Controls */}
         <div className="sa-controls">
           <div className="sa-search">
-            <span>🔍</span>
+            <span style={{ display: "flex", alignItems: "center", color: "#64748b" }}>
+              <SearchIcon size={16} />
+            </span>
             <input
               type="text"
               placeholder="Search by organization name, slug, or email..."
@@ -142,14 +162,14 @@ const SuperAdminSubscriptions = () => {
 
         {!loading && error && (
           <div className="sa-state">
-            <span>⚠️</span>
+            <AlertTriangleIcon size={32} />
             <p>{error}</p>
           </div>
         )}
 
         {!loading && !error && filtered.length === 0 && (
           <div className="sa-state">
-            <span>📑</span>
+            <FileTextIcon size={32} />
             <h3>No subscriptions found</h3>
             <p>{search ? "Try adjusting your search criteria." : "No tenant subscriptions have been created yet."}</p>
           </div>

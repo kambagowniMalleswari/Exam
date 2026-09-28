@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api.js";
+import { BrandCrest } from "../components/common/BrandLogo.jsx";
 import {
   ClockIcon,
   HelpCircleIcon,
@@ -22,6 +23,7 @@ const PublicTests = () => {
   const [subjects, setSubjects] = useState([]);
 
   useEffect(() => {
+    document.title = "Public Examination Catalog | AssessIQ";
     fetchPublicTests();
   }, []);
 
@@ -58,8 +60,8 @@ const PublicTests = () => {
     <div className="public-tests-page">
       {/* Navbar */}
       <nav className="public-nav">
-        <Link to="/" className="public-nav-brand">
-          <span className="brand-mark">IQ</span>
+        <Link to="/" className="public-nav-brand" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <BrandCrest size={28} />
           <span className="brand-name">AssessIQ</span>
         </Link>
         <div className="public-nav-actions">
@@ -71,11 +73,11 @@ const PublicTests = () => {
       {/* Hero */}
       <section className="public-tests-hero">
         <div className="hero-content">
-          <span className="hero-badge">🌐 Public Test Library</span>
+          <span className="hero-badge"><GlobeIcon size={14} /> Public Test Catalog</span>
           <h1>Explore Free MCQ Tests</h1>
           <p>Browse hundreds of publicly available tests from verified creators and institutions. No account required to preview.</p>
           <div className="public-search-bar">
-            <span className="search-icon">🔍</span>
+            <span className="search-icon"><SearchIcon size={16} /></span>
             <input
               type="text"
               placeholder="Search by title, subject, or topic..."

@@ -1,6 +1,19 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  PrinterIcon,
+  RefreshIcon,
+  AlertTriangleIcon,
+  BarChartIcon,
+  GraduationCapIcon,
+  UsersIcon,
+  FileTextIcon,
+  TargetIcon,
+  TrendingUpIcon,
+  TrendingDownIcon,
+  AwardIcon
+} from "../../components/common/Icons.jsx";
 import "./AdminReports.css";
 
 const AdminReports = () => {
@@ -50,10 +63,12 @@ const AdminReports = () => {
           </div>
           <div className="rep-actions">
             <button className="btn-print" onClick={handlePrint}>
-              🖨️ Print Report
+              <PrinterIcon size={15} />
+              <span>Print Report</span>
             </button>
             <button className="btn-refresh" onClick={fetchReport}>
-              🔄 Refresh
+              <RefreshIcon size={15} />
+              <span>Refresh</span>
             </button>
           </div>
         </div>
@@ -68,14 +83,14 @@ const AdminReports = () => {
 
         {!loading && error && (
           <div className="rep-state">
-            <span>⚠️</span>
+            <AlertTriangleIcon size={32} />
             <p>{error}</p>
           </div>
         )}
 
         {!loading && !error && !report && (
           <div className="rep-state">
-            <span>📊</span>
+            <BarChartIcon size={32} />
             <h3>No data available</h3>
             <p>Activity will appear here once tests are created and attempted.</p>
           </div>
@@ -87,7 +102,9 @@ const AdminReports = () => {
             {/* Top KPI Grid */}
             <div className="rep-kpi-grid">
               <div className="rep-card">
-                <div className="rep-card-icon">👥</div>
+                <div className="rep-card-icon" style={{ color: "#2563eb" }}>
+                  <GraduationCapIcon size={22} />
+                </div>
                 <div className="rep-card-body">
                   <span className="rep-num">{report.totalStudents}</span>
                   <span className="rep-label">Enrolled Students</span>
@@ -95,7 +112,9 @@ const AdminReports = () => {
               </div>
 
               <div className="rep-card">
-                <div className="rep-card-icon">👨‍🏫</div>
+                <div className="rep-card-icon" style={{ color: "#059669" }}>
+                  <UsersIcon size={22} />
+                </div>
                 <div className="rep-card-body">
                   <span className="rep-num">{report.totalTeachers}</span>
                   <span className="rep-label">Active Instructors</span>
@@ -103,7 +122,9 @@ const AdminReports = () => {
               </div>
 
               <div className="rep-card">
-                <div className="rep-card-icon">📝</div>
+                <div className="rep-card-icon" style={{ color: "#d97706" }}>
+                  <FileTextIcon size={22} />
+                </div>
                 <div className="rep-card-body">
                   <span className="rep-num">
                     {report.publishedTests} <small>/ {report.totalTests}</small>
@@ -113,7 +134,9 @@ const AdminReports = () => {
               </div>
 
               <div className="rep-card">
-                <div className="rep-card-icon">🎯</div>
+                <div className="rep-card-icon" style={{ color: "#7c3aed" }}>
+                  <TargetIcon size={22} />
+                </div>
                 <div className="rep-card-body">
                   <span className="rep-num">{report.totalAttempts}</span>
                   <span className="rep-label">Total Exam Attempts</span>
@@ -121,7 +144,9 @@ const AdminReports = () => {
               </div>
 
               <div className="rep-card">
-                <div className="rep-card-icon">📈</div>
+                <div className="rep-card-icon" style={{ color: "#16a34a" }}>
+                  <TrendingUpIcon size={22} />
+                </div>
                 <div className="rep-card-body">
                   <span className="rep-num">{report.passRate}%</span>
                   <span className="rep-label">Institutional Pass Rate</span>
@@ -129,7 +154,9 @@ const AdminReports = () => {
               </div>
 
               <div className="rep-card">
-                <div className="rep-card-icon">📊</div>
+                <div className="rep-card-icon" style={{ color: "#0284c7" }}>
+                  <BarChartIcon size={22} />
+                </div>
                 <div className="rep-card-body">
                   <span className="rep-num">{report.averagePercentage}%</span>
                   <span className="rep-label">Average Score</span>
@@ -137,7 +164,9 @@ const AdminReports = () => {
               </div>
 
               <div className="rep-card">
-                <div className="rep-card-icon">🏆</div>
+                <div className="rep-card-icon" style={{ color: "#eab308" }}>
+                  <AwardIcon size={22} />
+                </div>
                 <div className="rep-card-body">
                   <span className="rep-num">{report.highestPercentage}%</span>
                   <span className="rep-label">Highest Score</span>
@@ -145,7 +174,9 @@ const AdminReports = () => {
               </div>
 
               <div className="rep-card">
-                <div className="rep-card-icon">📉</div>
+                <div className="rep-card-icon" style={{ color: "#dc2626" }}>
+                  <TrendingDownIcon size={22} />
+                </div>
                 <div className="rep-card-body">
                   <span className="rep-num">{report.lowestPercentage}%</span>
                   <span className="rep-label">Lowest Score</span>

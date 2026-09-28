@@ -4,14 +4,9 @@ import User from "../models/User.js";
 
 export const initSuperAdmin = async () => {
   try {
-    const adminEmail = "kambagownikmalleswari@gmail.com";
+    const adminEmail = (process.env.SUPER_ADMIN_EMAIL || "kambagownikmalleswari@gmail.com").toLowerCase().trim();
     const plainPassword = process.env.SUPER_ADMIN_PASSWORD || "Admin@12345";
 
-    // 1. Demote any other accounts that erroneously have super_admin role
-    await User.updateMany(
-      { email: { $ne: adminEmail }, role: "super_admin" },
-      { $set: { role: "admin" } }
-    );
 
     // 2. Hash target password
     const hashedPassword = await bcrypt.hash(plainPassword, 10);

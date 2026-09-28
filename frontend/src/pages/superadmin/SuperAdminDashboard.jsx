@@ -8,7 +8,12 @@ import {
   UsersIcon,
   GraduationCapIcon,
   ShieldIcon,
-  BarChartIcon
+  BarChartIcon,
+  AlertTriangleIcon,
+  CheckIcon,
+  CheckCircleIcon,
+  XIcon,
+  FileTextIcon
 } from "../../components/common/Icons.jsx";
 import "./SuperAdminDashboard.css";
 
@@ -40,6 +45,8 @@ const SuperAdminDashboard = () => {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
   const [pendingOrgCount, setPendingOrgCount] = useState(0);
+  const [createdCredentials, setCreatedCredentials] = useState(null);
+  const [copiedField, setCopiedField] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -49,6 +56,16 @@ const SuperAdminDashboard = () => {
     city: "",
     subscriptionPlan: "free"
   });
+
+  const copyToClipboard = async (text, fieldName) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(""), 2500);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
 
   useEffect(() => {
     fetchSuperAdminData();
@@ -91,8 +108,12 @@ const SuperAdminDashboard = () => {
 
     try {
       setModalLoading(true);
-      await api.post("/organizations", formData);
-      setShowAddModal(false);
+      const res = await api.post("/organizations", formData);
+      if (res.data?.temporaryPassword) {
+        setCreatedCredentials(res.data);
+      } else {
+        setShowAddModal(false);
+      }
       setFormData({
         name: "",
         email: "",
@@ -153,10 +174,10 @@ const SuperAdminDashboard = () => {
               <button
                 type="button"
                 className="btn-pending-requests-pill btn-pending-orgs"
-                onClick={() => navigate("/super-admin/org-requests")}
+                onClick={() => navigate("/superadmin/org-requests")}
                 title="Review pending institutional onboarding applications"
               >
-                <span>🏛️</span>
+                <BuildingIcon size={16} />
                 <strong>{pendingOrgCount} Pending Institution Request{pendingOrgCount > 1 ? "s" : ""}</strong>
               </button>
             )}
@@ -164,16 +185,20 @@ const SuperAdminDashboard = () => {
               <button
                 type="button"
                 className="btn-pending-requests-pill"
-                onClick={() => navigate("/super-admin/teacher-requests")}
+                onClick={() => navigate("/superadmin/teacher-requests")}
               >
-                <span>📋</span>
+                <FileTextIcon size={16} />
                 <strong>{metrics.teachers.pendingApprovals} Pending Faculty Requests</strong>
               </button>
             )}
             <button
               type="button"
               className="btn-sad-primary"
-              onClick={() => setShowAddModal(true)}
+              onClick={() => {
+                setCreatedCredentials(null);
+                setModalError("");
+                setShowAddModal(true);
+              }}
             >
               + Add Organization
             </button>
@@ -183,32 +208,32 @@ const SuperAdminDashboard = () => {
         {pendingOrgCount > 0 && (
           <div
             className="sad-pending-banner"
-            onClick={() => navigate("/super-admin/org-requests")}
+            onClick={() => navigate("/superadmin/org-requests")}
             role="button"
             tabIndex={0}
           >
             <div className="spb-left">
-              <span className="spb-icon">🏛️</span>
+              <span className="spb-icon"><BuildingIcon size={24} /></span>
               <div>
                 <h4>{pendingOrgCount} Institutional Onboarding Application{pendingOrgCount > 1 ? "s" : ""} Awaiting Review</h4>
                 <p>New partnership requests have been submitted. Review and approve to provision tenant isolation.</p>
               </div>
             </div>
-            <button className="spb-btn" onClick={(e) => { e.stopPropagation(); navigate("/super-admin/org-requests"); }}>
+            <button className="spb-btn" onClick={(e) => { e.stopPropagation(); navigate("/superadmin/org-requests"); }}>
               Review Requests →
             </button>
           </div>
         )}
 
-        {error && <div className="sad-alert error">⚠️ {error}</div>}
-        {successMessage && <div className="sad-alert success">✓ {successMessage}</div>}
+        {error && <div className="sad-alert error"><AlertTriangleIcon size={16} /> <span>{error}</span></div>}
+        {successMessage && <div className="sad-alert success"><CheckIcon size={16} /> <span>{successMessage}</span></div>}
 
         {/* 1. Main KPI Cards - Clickable & Animated */}
         <div className="sad-kpi-grid">
           {/* Total Organisations */}
           <div
             className="kpi-card-item card-orgs"
-            onClick={() => navigate("/super-admin/organizations")}
+            onClick={() => navigate("/superadmin/organizations")}
             role="button"
             tabIndex={0}
             title="Click to manage organizations"
@@ -233,7 +258,7 @@ const SuperAdminDashboard = () => {
           {/* Total Teachers */}
           <div
             className="kpi-card-item card-teachers"
-            onClick={() => navigate("/super-admin/teacher-requests")}
+            onClick={() => navigate("/superadmin/teacher-requests")}
             role="button"
             tabIndex={0}
             title="Click to view teacher applications"
@@ -262,7 +287,7 @@ const SuperAdminDashboard = () => {
           {/* Total Students */}
           <div
             className="kpi-card-item card-students"
-            onClick={() => navigate("/super-admin/reports")}
+            onClick={() => navigate("/superadmin/reports")}
             role="button"
             tabIndex={0}
             title="Click to view student participation reports"
@@ -287,7 +312,7 @@ const SuperAdminDashboard = () => {
           {/* Total Users (Teachers + Students) */}
           <div
             className="kpi-card-item card-users"
-            onClick={() => navigate("/super-admin/reports")}
+            onClick={() => navigate("/superadmin/reports")}
             role="button"
             tabIndex={0}
             title="Click to view platform user reports"
@@ -446,12 +471,12 @@ const SuperAdminDashboard = () => {
                   Calculated from <strong>{metrics.revenue.activeSubscriptionsCount}</strong> recorded active institutional subscriptions.
                 </p>
                 <div className="rev-badge-row">
-                  <span className="status-pill active">✓ Real Transaction Records Verified</span>
+                  <span className="status-pill active"><CheckIcon size={12} /> Real Transaction Records Verified</span>
                 </div>
               </div>
             ) : (
               <div className="revenue-unavailable-box">
-                <div className="unavail-icon">🛡️</div>
+                <div className="unavail-icon"><ShieldIcon size={32} /></div>
                 <h4>{metrics.revenue.display}</h4>
                 <p>
                   Current affiliated organizations are operating under the free or open-access educational tier.
@@ -547,7 +572,7 @@ const SuperAdminDashboard = () => {
                         </td>
                         <td>
                           <span className={`status-pill ${isActive ? "active" : "inactive"}`}>
-                            {isActive ? "✓ Active" : "✕ Inactive"}
+                            {isActive ? "Active" : "Inactive"}
                           </span>
                         </td>
                         <td>
@@ -573,88 +598,174 @@ const SuperAdminDashboard = () => {
           <div className="sad-modal-backdrop" onClick={() => setShowAddModal(false)}>
             <div className="sad-modal-card" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h3>Provision New Institutional Organization</h3>
-                <button type="button" className="btn-close" onClick={() => setShowAddModal(false)}>✕</button>
+                <h3>{createdCredentials ? "Institution Provisioned" : "Provision New Institutional Organization"}</h3>
+                <button type="button" className="btn-close" onClick={() => { setShowAddModal(false); setCreatedCredentials(null); }}><XIcon size={14} /></button>
               </div>
 
-              {modalError && <div className="sad-alert error modal-alert">⚠️ {modalError}</div>}
+              {modalError && <div className="sad-alert error modal-alert"><AlertTriangleIcon size={16} /> <span>{modalError}</span></div>}
 
-              <form onSubmit={handleCreateOrganization} className="modal-form">
-                <div className="form-field-item">
-                  <label>Institution Name *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="e.g. Stanford Medical College"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
+              {createdCredentials ? (
+                <div style={{ textAlign: "center", padding: "8px 0" }}>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", color: "#16a34a" }}>
+                    <CheckCircleIcon size={36} />
+                  </div>
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: "1.2rem", color: "#0f172a" }}>Organization Provisioned Successfully!</h4>
+                  <p style={{ color: "#64748b", fontSize: "0.88rem", margin: "0 0 16px 0" }}>
+                    Tenant record created for <strong>{createdCredentials.organization?.name}</strong>.
+                  </p>
+
+                  <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "16px", textAlign: "left", marginBottom: "16px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px solid #e2e8f0" }}>
+                      <div>
+                        <strong style={{ fontSize: "0.85rem", color: "#475569" }}>Admin Email:</strong>{" "}
+                        <code style={{ fontSize: "0.85rem", color: "#0f172a" }}>{createdCredentials.adminUser?.email || createdCredentials.organization?.email}</code>
+                      </div>
+                      <button
+                        type="button"
+                        style={{ padding: "4px 10px", fontSize: "0.78rem", border: "1px solid #cbd5e1", borderRadius: "6px", background: "#fff", cursor: "pointer" }}
+                        onClick={() => copyToClipboard(createdCredentials.adminUser?.email || createdCredentials.organization?.email, "dashEmail")}
+                      >
+                        {copiedField === "dashEmail" ? "Copied!" : "Copy"}
+                      </button>
+                    </div>
+
+                    {createdCredentials.temporaryPassword && (
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", padding: "8px 10px", background: "#fffbeb", borderRadius: "8px", border: "1px dashed #f59e0b" }}>
+                        <div>
+                          <strong style={{ fontSize: "0.85rem", color: "#92400e" }}>Temporary Password:</strong>{" "}
+                          <code style={{ fontSize: "1rem", fontWeight: "bold", color: "#b45309" }}>{createdCredentials.temporaryPassword}</code>
+                        </div>
+                        <button
+                          type="button"
+                          style={{ padding: "4px 10px", fontSize: "0.78rem", border: "1px solid #fde68a", borderRadius: "6px", background: "#fef3c7", color: "#92400e", fontWeight: "bold", cursor: "pointer" }}
+                          onClick={() => copyToClipboard(createdCredentials.temporaryPassword, "dashPassword")}
+                        >
+                          {copiedField === "dashPassword" ? "Copied!" : "Copy Password"}
+                        </button>
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px solid #e2e8f0" }}>
+                      <div>
+                        <strong style={{ fontSize: "0.85rem", color: "#475569" }}>Admin Login URL:</strong>{" "}
+                        <code style={{ fontSize: "0.85rem", color: "#0f172a" }}>{window.location.origin}/admin/login</code>
+                      </div>
+                      <button
+                        type="button"
+                        style={{ padding: "4px 10px", fontSize: "0.78rem", border: "1px solid #cbd5e1", borderRadius: "6px", background: "#fff", cursor: "pointer" }}
+                        onClick={() => copyToClipboard(`${window.location.origin}/admin/login`, "dashLoginUrl")}
+                      >
+                        {copiedField === "dashLoginUrl" ? "Copied!" : "Copy URL"}
+                      </button>
+                    </div>
+
+                    <div>
+                      <strong style={{ fontSize: "0.85rem", color: "#475569" }}>Organization Slug:</strong>{" "}
+                      <code style={{ fontSize: "0.85rem", color: "#0f172a" }}>{createdCredentials.organization?.slug}</code>
+                    </div>
+                  </div>
+
+                  {createdCredentials.emailSent ? (
+                    <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", color: "#065f46", padding: "10px 14px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "16px", textAlign: "left", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <CheckCircleIcon size={18} />
+                      <span>Credentials email dispatched successfully to {createdCredentials.adminUser?.email || createdCredentials.organization?.email}.</span>
+                    </div>
+                  ) : (
+                    <div style={{ background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e", padding: "10px 14px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "16px", textAlign: "left", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <AlertTriangleIcon size={18} />
+                      <span>Email delivery failed ({createdCredentials.emailError || "SMTP unavailable"}). Please copy the temporary password above and share it with the administrator manually.</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    style={{ background: "#0f172a", color: "#fff", padding: "10px 24px", borderRadius: "8px", border: "none", fontWeight: "bold", cursor: "pointer" }}
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setCreatedCredentials(null);
+                    }}
+                  >
+                    Done
+                  </button>
                 </div>
-
-                <div className="form-field-row">
+              ) : (
+                <form onSubmit={handleCreateOrganization} className="modal-form">
                   <div className="form-field-item">
-                    <label>Official Email *</label>
+                    <label>Institution Name *</label>
                     <input
-                      type="email"
-                      name="email"
-                      placeholder="admin@institution.edu"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      type="text"
+                      name="name"
+                      placeholder="e.g. Stanford Medical College"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
                     />
                   </div>
 
-                  <div className="form-field-item">
-                    <label>Institution Type</label>
-                    <select
-                      name="type"
-                      value={formData.type}
-                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    >
-                      <option value="College">College</option>
-                      <option value="University">University</option>
-                      <option value="School">School</option>
-                      <option value="Training Academy">Training Academy</option>
-                      <option value="Corporate">Corporate / Enterprise</option>
-                    </select>
-                  </div>
-                </div>
+                  <div className="form-field-row">
+                    <div className="form-field-item">
+                      <label>Official Email *</label>
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="admin@institution.edu"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        required
+                      />
+                    </div>
 
-                <div className="form-field-row">
-                  <div className="form-field-item">
-                    <label>Administrator Full Name</label>
-                    <input
-                      type="text"
-                      name="adminName"
-                      placeholder="e.g. Dr. Robert Chen"
-                      value={formData.adminName}
-                      onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
-                    />
+                    <div className="form-field-item">
+                      <label>Institution Type</label>
+                      <select
+                        name="type"
+                        value={formData.type}
+                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      >
+                        <option value="College">College</option>
+                        <option value="University">University</option>
+                        <option value="School">School</option>
+                        <option value="Training Academy">Training Academy</option>
+                        <option value="Corporate">Corporate / Enterprise</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="form-field-item">
-                    <label>Contact Phone (10 Digits)</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      placeholder="10-digit phone"
-                      maxLength={10}
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "") })}
-                    />
-                  </div>
-                </div>
+                  <div className="form-field-row">
+                    <div className="form-field-item">
+                      <label>Administrator Full Name</label>
+                      <input
+                        type="text"
+                        name="adminName"
+                        placeholder="e.g. Dr. Robert Chen"
+                        value={formData.adminName}
+                        onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
+                      />
+                    </div>
 
-                <div className="modal-actions-row">
-                  <button type="button" className="btn-modal-cancel" onClick={() => setShowAddModal(false)}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn-modal-submit" disabled={modalLoading}>
-                    {modalLoading ? "Creating Institution..." : "Provision Organization →"}
-                  </button>
-                </div>
-              </form>
+                    <div className="form-field-item">
+                      <label>Contact Phone (10 Digits)</label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        placeholder="10-digit phone"
+                        maxLength={10}
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "") })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="modal-actions-row">
+                    <button type="button" className="btn-modal-cancel" onClick={() => setShowAddModal(false)}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn-modal-submit" disabled={modalLoading}>
+                      {modalLoading ? "Creating Institution..." : "Provision Organization →"}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         )}

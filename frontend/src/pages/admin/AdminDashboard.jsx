@@ -8,7 +8,9 @@ import {
   GraduationCapIcon,
   UsersIcon,
   FileTextIcon,
-  AwardIcon
+  AwardIcon,
+  AlertTriangleIcon,
+  HourglassIcon
 } from "../../components/common/Icons.jsx";
 import "./AdminDashboard.css";
 
@@ -101,7 +103,7 @@ const AdminDashboard = () => {
                 className="btn-pending-faculty"
                 onClick={() => navigate("/admin/teacher-requests")}
               >
-                <span>📋</span>
+                <FileTextIcon size={16} />
                 <strong>{stats.pendingTeacherRequests} Faculty Request{stats.pendingTeacherRequests > 1 ? "s" : ""}</strong>
               </button>
             )}
@@ -114,7 +116,12 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {error && <div className="admin-alert error">⚠️ {error}</div>}
+        {error && (
+          <div className="admin-alert error">
+            <AlertTriangleIcon size={16} />
+            <span>{error}</span>
+          </div>
+        )}
 
         {/* KPI Grid (4 Columns) - Clickable & Animated */}
         <div className="admin-stats-grid">
@@ -157,7 +164,7 @@ const AdminDashboard = () => {
             <div className="admin-stat-meta">
               <span className="meta-green">● {stats.activeTeachers} Active</span>
               {stats.pendingTeacherRequests > 0 && (
-                <span className="meta-amber">⏳ {stats.pendingTeacherRequests} Pending</span>
+                <span className="meta-amber"><HourglassIcon size={13} /> {stats.pendingTeacherRequests} Pending</span>
               )}
             </div>
           </div>
@@ -334,7 +341,7 @@ const AdminDashboard = () => {
                       <td>{t.passingPercentage}% ({t.passingMarks || 0} pts)</td>
                       <td>
                         <span className={`status-pill ${t.status}`}>
-                          {t.status === "published" ? "✓ Published" : "Draft"}
+                          {t.status === "published" ? "Published" : "Draft"}
                         </span>
                       </td>
                       <td>

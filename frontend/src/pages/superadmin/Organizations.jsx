@@ -21,6 +21,18 @@ const Organizations = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
+  const [createdCredentials, setCreatedCredentials] = useState(null);
+  const [copiedField, setCopiedField] = useState("");
+
+  const copyToClipboard = async (text, fieldName) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(""), 2500);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
 
   // Form State
   const [formData, setFormData] = useState({
@@ -44,6 +56,7 @@ const Organizations = () => {
   useEffect(() => {
     fetchOrganizations();
     if (searchParams.get("action") === "add") {
+      setCreatedCredentials(null);
       setShowAddModal(true);
     }
   }, [searchParams]);
@@ -74,8 +87,12 @@ const Organizations = () => {
 
     try {
       setModalLoading(true);
-      await api.post("/organizations", formData);
-      setShowAddModal(false);
+      const res = await api.post("/organizations", formData);
+      if (res.data?.temporaryPassword) {
+        setCreatedCredentials(res.data);
+      } else {
+        setShowAddModal(false);
+      }
       setFormData({
         name: "",
         email: "",
@@ -196,7 +213,11 @@ const Organizations = () => {
 
           <button
             className="add-organization-button"
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              setCreatedCredentials(null);
+              setModalError("");
+              setShowAddModal(true);
+            }}
           >
             + Add Organization
           </button>
@@ -604,10 +625,13 @@ const Organizations = () => {
                 }}
               >
                 <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a" }}>
-                  🏢 Register New Organization
+                  {createdCredentials ? "Organization Provisioned" : "Register New Organization"}
                 </h3>
                 <button
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setCreatedCredentials(null);
+                  }}
                   style={{ background: "none", border: "none", fontSize: "1.3rem", cursor: "pointer", color: "#64748b" }}
                 >
                   ✕
@@ -620,115 +644,197 @@ const Organizations = () => {
                 </div>
               )}
 
-              <form onSubmit={handleCreateOrg}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                  <div>
-                    <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>Organization / College Name *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      placeholder="e.g. Stanford Academy"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
-                    />
+              {createdCredentials ? (
+                <div style={{ textAlign: "center", padding: "8px 0" }}>
+                  <div style={{ fontSize: "2rem", marginBottom: "6px" }}>✓</div>
+                  <h4 style={{ margin: "0 0 6px 0", fontSize: "1.2rem", color: "#0f172a" }}>Organization Registered Successfully!</h4>
+                  <p style={{ color: "#64748b", fontSize: "0.88rem", margin: "0 0 16px 0" }}>
+                    Tenant record created for <strong>{createdCredentials.organization?.name}</strong>.
+                  </p>
+
+                  <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "16px", textAlign: "left", marginBottom: "16px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px solid #e2e8f0" }}>
+                      <div>
+                        <strong style={{ fontSize: "0.85rem", color: "#475569" }}>Admin Email:</strong>{" "}
+                        <code style={{ fontSize: "0.85rem", color: "#0f172a" }}>{createdCredentials.adminUser?.email || createdCredentials.organization?.email}</code>
+                      </div>
+                      <button
+                        type="button"
+                        style={{ padding: "4px 10px", fontSize: "0.78rem", border: "1px solid #cbd5e1", borderRadius: "6px", background: "#fff", cursor: "pointer" }}
+                        onClick={() => copyToClipboard(createdCredentials.adminUser?.email || createdCredentials.organization?.email, "orgEmail")}
+                      >
+                        {copiedField === "orgEmail" ? "Copied!" : "Copy"}
+                      </button>
+                    </div>
+
+                    {createdCredentials.temporaryPassword && (
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", padding: "8px 10px", background: "#fffbeb", borderRadius: "8px", border: "1px dashed #f59e0b" }}>
+                        <div>
+                          <strong style={{ fontSize: "0.85rem", color: "#92400e" }}>Temporary Password:</strong>{" "}
+                          <code style={{ fontSize: "1rem", fontWeight: "bold", color: "#b45309" }}>{createdCredentials.temporaryPassword}</code>
+                        </div>
+                        <button
+                          type="button"
+                          style={{ padding: "4px 10px", fontSize: "0.78rem", border: "1px solid #fde68a", borderRadius: "6px", background: "#fef3c7", color: "#92400e", fontWeight: "bold", cursor: "pointer" }}
+                          onClick={() => copyToClipboard(createdCredentials.temporaryPassword, "orgPassword")}
+                        >
+                          {copiedField === "orgPassword" ? "Copied!" : "Copy Password"}
+                        </button>
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px solid #e2e8f0" }}>
+                      <div>
+                        <strong style={{ fontSize: "0.85rem", color: "#475569" }}>Admin Login URL:</strong>{" "}
+                        <code style={{ fontSize: "0.85rem", color: "#0f172a" }}>{window.location.origin}/admin/login</code>
+                      </div>
+                      <button
+                        type="button"
+                        style={{ padding: "4px 10px", fontSize: "0.78rem", border: "1px solid #cbd5e1", borderRadius: "6px", background: "#fff", cursor: "pointer" }}
+                        onClick={() => copyToClipboard(`${window.location.origin}/admin/login`, "orgLoginUrl")}
+                      >
+                        {copiedField === "orgLoginUrl" ? "Copied!" : "Copy URL"}
+                      </button>
+                    </div>
+
+                    <div>
+                      <strong style={{ fontSize: "0.85rem", color: "#475569" }}>Organization Slug:</strong>{" "}
+                      <code style={{ fontSize: "0.85rem", color: "#0f172a" }}>{createdCredentials.organization?.slug}</code>
+                    </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  {createdCredentials.emailSent ? (
+                    <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", color: "#065f46", padding: "10px 14px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "16px", textAlign: "left" }}>
+                      ✓ Credentials email dispatched successfully to {createdCredentials.adminUser?.email || createdCredentials.organization?.email}.
+                    </div>
+                  ) : (
+                    <div style={{ background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e", padding: "10px 14px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "16px", textAlign: "left" }}>
+                      ⚠️ Email delivery failed ({createdCredentials.emailError || "SMTP unavailable"}). Please copy the temporary password above and share it with the administrator manually.
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    style={{ background: "#0f172a", color: "#fff", padding: "10px 24px", borderRadius: "8px", border: "none", fontWeight: "bold", cursor: "pointer" }}
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setCreatedCredentials(null);
+                    }}
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleCreateOrg}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                     <div>
-                      <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>Official Email *</label>
+                      <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>Organization / College Name *</label>
                       <input
-                        type="email"
-                        name="email"
-                        placeholder="admin@institution.edu"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        type="text"
+                        name="name"
+                        placeholder="e.g. Stanford Academy"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         required
                         style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
                       />
                     </div>
 
-                    <div>
-                      <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>Institution Type</label>
-                      <select
-                        name="type"
-                        value={formData.type}
-                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff" }}
-                      >
-                        <option value="College">College</option>
-                        <option value="University">University</option>
-                        <option value="School">School</option>
-                        <option value="Coaching">Coaching / Tutoring</option>
-                        <option value="Corporate">Corporate Training</option>
-                      </select>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div>
+                        <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>Official Email *</label>
+                        <input
+                          type="email"
+                          name="email"
+                          placeholder="admin@institution.edu"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          required
+                          style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>Institution Type</label>
+                        <select
+                          name="type"
+                          value={formData.type}
+                          onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                          style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff" }}
+                        >
+                          <option value="College">College</option>
+                          <option value="University">University</option>
+                          <option value="School">School</option>
+                          <option value="Coaching">Coaching / Tutoring</option>
+                          <option value="Corporate">Corporate Training</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div>
+                        <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>Admin Contact Name</label>
+                        <input
+                          type="text"
+                          name="adminName"
+                          placeholder="e.g. Dr. Arthur Smith"
+                          value={formData.adminName}
+                          onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
+                          style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>Phone Number</label>
+                        <input
+                          type="tel"
+                          name="phone"
+                          placeholder="10-digit number"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div>
+                        <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>City / Location</label>
+                        <input
+                          type="text"
+                          name="city"
+                          placeholder="e.g. Bengaluru, Karnataka"
+                          value={formData.city}
+                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                          style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>Subscription Plan</label>
+                        <select
+                          name="subscriptionPlan"
+                          value={formData.subscriptionPlan}
+                          onChange={(e) => setFormData({ ...formData, subscriptionPlan: e.target.value })}
+                          style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff" }}
+                        >
+                          <option value="free">Free Tier</option>
+                          <option value="starter">Starter Plan</option>
+                          <option value="pro">Pro Plan</option>
+                          <option value="enterprise">Enterprise Plan</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    <div>
-                      <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>Admin Contact Name</label>
-                      <input
-                        type="text"
-                        name="adminName"
-                        placeholder="e.g. Dr. Arthur Smith"
-                        value={formData.adminName}
-                        onChange={(e) => setFormData({ ...formData, adminName: e.target.value })}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>Phone Number</label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        placeholder="10-digit number"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
-                      />
-                    </div>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "24px" }}>
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
+                    <button type="submit" className="btn btn-primary" disabled={modalLoading}>
+                      {modalLoading ? "Creating..." : "Create Organization"}
+                    </button>
                   </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    <div>
-                      <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>City / Location</label>
-                      <input
-                        type="text"
-                        name="city"
-                        placeholder="e.g. Bengaluru, Karnataka"
-                        value={formData.city}
-                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "6px" }}>Subscription Plan</label>
-                      <select
-                        name="subscriptionPlan"
-                        value={formData.subscriptionPlan}
-                        onChange={(e) => setFormData({ ...formData, subscriptionPlan: e.target.value })}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#fff" }}
-                      >
-                        <option value="free">Free Tier</option>
-                        <option value="starter">Starter Plan</option>
-                        <option value="pro">Pro Plan</option>
-                        <option value="enterprise">Enterprise Plan</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "24px" }}>
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={modalLoading}>
-                    {modalLoading ? "Creating..." : "Create Organization"}
-                  </button>
-                </div>
-              </form>
+                </form>
+              )}
             </div>
           </div>
         )}

@@ -1,4 +1,5 @@
 // Import navigation
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 // Import authentication
@@ -11,6 +12,11 @@ import Sidebar from "../components/Sidebar.jsx";
 import "./DashboardLayout.css";
 
 const DashboardLayout = ({ children, title }) => {
+  // Synchronize browser tab title
+  useEffect(() => {
+    document.title = title ? `${title} | AssessIQ` : "AssessIQ — Institutional Portal";
+  }, [title]);
+
   // Get authentication information
   const { user, logout } = useAuth();
 

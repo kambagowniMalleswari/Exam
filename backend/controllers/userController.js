@@ -258,7 +258,7 @@ export const createUser = async (req, res) => {
     });
 
     // Send account credentials and temporary password email to the new user and alert to admin
-    const adminNotificationEmail = req.user?.email || process.env.EMAIL_USER || "kambagownikmalleswari@gmail.com";
+    const adminNotificationEmail = req.user?.email || process.env.SUPER_ADMIN_EMAIL || process.env.EMAIL_USER || "";
     await Promise.allSettled([
       sendAccountCredentialsEmail({
         to: user.email,

@@ -2,6 +2,16 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api.js";
+import { BrandCrest } from "../components/common/BrandLogo.jsx";
+import {
+  ShieldIcon,
+  ClockIcon,
+  AwardIcon,
+  BarChartIcon,
+  GlobeIcon,
+  SparklesIcon,
+  CheckIcon
+} from "../components/common/Icons.jsx";
 import "./LandingPage.css";
 
 const LandingPage = () => {
@@ -10,6 +20,8 @@ const LandingPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = "AssessIQ — Institutional Online Test Management SaaS";
+
     const fetchPublicTests = async () => {
       try {
         const res = await api.get("/tests/public");
@@ -29,7 +41,7 @@ const LandingPage = () => {
       <header className="landing-nav">
         <div className="landing-nav-container">
           <div className="landing-brand">
-            <div className="brand-icon">IQ</div>
+            <BrandCrest size={34} />
             <span className="brand-text">AssessIQ</span>
           </div>
 
@@ -54,7 +66,7 @@ const LandingPage = () => {
       <section className="landing-hero">
         <div className="hero-content">
           <div className="hero-badge">
-            <span className="sparkle">✨</span> Enterprise Institutional Assessment SaaS
+            <span className="sparkle"><SparklesIcon size={14} /></span> Enterprise Institutional Assessment SaaS
           </div>
           <h1>
             Empower Your Institution with <span className="gradient-text">Intelligent MCQ Assessments</span>
@@ -99,37 +111,49 @@ const LandingPage = () => {
 
         <div className="features-grid">
           <div className="feature-card">
-            <div className="feature-icon">🛡️</div>
+            <div className="feature-icon" style={{ color: "#2563eb" }}>
+              <ShieldIcon size={24} />
+            </div>
             <h3>True Multi-Tenant Architecture</h3>
             <p>Strict organization-level data boundaries. Student lists, question banks, and scores never leak across organizations.</p>
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon">⏱️</div>
+            <div className="feature-icon" style={{ color: "#d97706" }}>
+              <ClockIcon size={24} />
+            </div>
             <h3>Live Countdown & Auto-Submit</h3>
             <p>Strict client-server synchronized exam timers. Attempts automatically expire and evaluate if time runs out.</p>
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon">⚖️</div>
+            <div className="feature-icon" style={{ color: "#7c3aed" }}>
+              <AwardIcon size={24} />
+            </div>
             <h3>Configurable Scoring & Negative Marking</h3>
             <p>Custom marks per question, negative penalty deductions, and configurable passing percentage rules.</p>
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon">📊</div>
+            <div className="feature-icon" style={{ color: "#059669" }}>
+              <BarChartIcon size={24} />
+            </div>
             <h3>Actionable Performance Analytics</h3>
             <p>Subject performance breakdowns, class pass rates, and individual question difficulty metrics.</p>
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon">🌐</div>
+            <div className="feature-icon" style={{ color: "#0284c7" }}>
+              <GlobeIcon size={24} />
+            </div>
             <h3>Public & Private Test Delivery</h3>
             <p>Deliver private closed exams to enrolled institution students, or publish public certifications accessible to everyone.</p>
           </div>
 
           <div className="feature-card">
-            <div className="feature-icon">⚡</div>
+            <div className="feature-icon" style={{ color: "#eab308" }}>
+              <SparklesIcon size={24} />
+            </div>
             <h3>Zero Frontend Score Trust</h3>
             <p>All answer checking and scorecard calculation happens exclusively on the secure backend server.</p>
           </div>
@@ -152,7 +176,7 @@ const LandingPage = () => {
               <div key={test._id} className="public-test-card">
                 <div className="card-top">
                   <span className="subject-pill">{test.subject || "General"}</span>
-                  <span className="duration-pill">⏱️ {test.duration} min</span>
+                  <span className="duration-pill"><ClockIcon size={12} /> {test.duration} min</span>
                 </div>
                 <h3>{test.title}</h3>
                 <p>{test.description || "Comprehensive test of skills and fundamental concepts."}</p>
@@ -195,10 +219,10 @@ const LandingPage = () => {
               </div>
             </div>
             <ul className="plan-features">
-              <li>✓ Up to 5 Active Tests</li>
-              <li>✓ Up to 100 Students</li>
-              <li>✓ Automated Evaluation</li>
-              <li>✓ Standard Scorecards</li>
+              <li><CheckIcon size={14} /> Up to 5 Active Tests</li>
+              <li><CheckIcon size={14} /> Up to 100 Students</li>
+              <li><CheckIcon size={14} /> Automated Evaluation</li>
+              <li><CheckIcon size={14} /> Standard Scorecards</li>
             </ul>
             <Link to="/register" className="btn btn-secondary btn-block">Get Started Free</Link>
           </div>
@@ -215,11 +239,11 @@ const LandingPage = () => {
               </div>
             </div>
             <ul className="plan-features">
-              <li>✓ Up to 25 Active Tests</li>
-              <li>✓ Up to 500 Students</li>
-              <li>✓ Detailed Analytics</li>
-              <li>✓ Export Results to CSV</li>
-              <li>✓ Email Support</li>
+              <li><CheckIcon size={14} /> Up to 25 Active Tests</li>
+              <li><CheckIcon size={14} /> Up to 500 Students</li>
+              <li><CheckIcon size={14} /> Detailed Analytics</li>
+              <li><CheckIcon size={14} /> Export Results to CSV</li>
+              <li><CheckIcon size={14} /> Email Support</li>
             </ul>
             <Link to="/register" className="btn btn-secondary btn-block">Select Basic</Link>
           </div>
@@ -237,12 +261,12 @@ const LandingPage = () => {
               </div>
             </div>
             <ul className="plan-features">
-              <li>✓ Up to 100 Active Tests</li>
-              <li>✓ Up to 2,500 Students</li>
-              <li>✓ Advanced Analytics & Charts</li>
-              <li>✓ Centralized Question Bank</li>
-              <li>✓ Verified Digital Certificates</li>
-              <li>✓ Priority Support</li>
+              <li><CheckIcon size={14} /> Up to 100 Active Tests</li>
+              <li><CheckIcon size={14} /> Up to 2,500 Students</li>
+              <li><CheckIcon size={14} /> Advanced Analytics & Charts</li>
+              <li><CheckIcon size={14} /> Centralized Question Bank</li>
+              <li><CheckIcon size={14} /> Verified Digital Certificates</li>
+              <li><CheckIcon size={14} /> Priority Support</li>
             </ul>
             <Link to="/register" className="btn btn-primary btn-block">Select Pro SaaS</Link>
           </div>
@@ -259,11 +283,11 @@ const LandingPage = () => {
               </div>
             </div>
             <ul className="plan-features">
-              <li>✓ Unlimited Tests & Students</li>
-              <li>✓ Custom Organization Branding</li>
-              <li>✓ Dedicated Support Manager</li>
-              <li>✓ REST API & Webhooks</li>
-              <li>✓ SLA Guarantee</li>
+              <li><CheckIcon size={14} /> Unlimited Tests & Students</li>
+              <li><CheckIcon size={14} /> Custom Organization Branding</li>
+              <li><CheckIcon size={14} /> Dedicated Support Manager</li>
+              <li><CheckIcon size={14} /> REST API & Webhooks</li>
+              <li><CheckIcon size={14} /> SLA Guarantee</li>
             </ul>
             <Link to="/register" className="btn btn-secondary btn-block">Contact Sales</Link>
           </div>
@@ -273,8 +297,8 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="landing-footer">
         <div className="footer-content">
-          <div className="footer-brand">
-            <div className="brand-icon">IQ</div>
+          <div className="footer-brand" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <BrandCrest size={28} />
             <span>AssessIQ Platform</span>
           </div>
           <p>© 2026 AssessIQ Multi-Tenant SaaS Portal. All rights reserved.</p>
