@@ -1,8 +1,8 @@
 // Centralized Axios API Service
 import axios from "axios";
 
-// Determine base API URL from Vite environment or default to local backend
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// Determine base API URL from Vite environment or default to proxied /api route
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
