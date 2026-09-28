@@ -42,24 +42,32 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
-    const trimmedInput = email.trim();
+    const cleanPassword = password.trim();
 
-    if (!trimmedInput || !password) {
+    if (!trimmedInput || !cleanPassword) {
       setError("Please fill in both email/username and password.");
       return;
     }
 
-    if (password.length < 6) {
+    if (cleanPassword.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
     }
 
     try {
       setLoading(true);
-      const res = await login(trimmedInput, password);
+      const res = await login(trimmedInput, cleanPassword);
       handleRoleRedirect(res.user?.role);
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid email or password.");
+      console.error("Login failure:", err);
+      const backendMsg = err.response?.data?.message;
+      if (backendMsg) {
+        setError(backendMsg);
+      } else if (err.message && !err.response) {
+        setError(`Connection failed: ${err.message}. Please check your connection.`);
+      } else {
+        setError("Invalid email or password. Please verify your credentials.");
+      }
     } finally {
       setLoading(false);
     }

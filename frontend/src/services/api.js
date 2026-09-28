@@ -1,8 +1,15 @@
 // Centralized Axios API Service
 import axios from "axios";
 
-// Determine base API URL from Vite environment or default to proxied /api route
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+// Determine base API URL from environment or production Render backend
+const getBaseApiUrl = () => {
+  if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== "/api") {
+    return import.meta.env.VITE_API_URL;
+  }
+  return "https://assess-iq-backend.onrender.com/api";
+};
+
+const API_BASE_URL = getBaseApiUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
