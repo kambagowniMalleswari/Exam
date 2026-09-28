@@ -42,6 +42,7 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
+    const trimmedInput = email.trim();
     const cleanPassword = password.trim();
 
     if (!trimmedInput || !cleanPassword) {

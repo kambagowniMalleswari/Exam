@@ -109,7 +109,15 @@ const Register = () => {
       await register(payload);
       navigate("/student/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      console.error("Registration error:", err);
+      const backendMsg = err.response?.data?.message;
+      if (backendMsg) {
+        setError(backendMsg);
+      } else if (err.message && !err.response) {
+        setError(`Connection failed: ${err.message}. Please check your connection.`);
+      } else {
+        setError("Registration failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
