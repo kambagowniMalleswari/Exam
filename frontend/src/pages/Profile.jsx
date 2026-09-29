@@ -99,6 +99,16 @@ const Profile = () => {
     e.preventDefault();
     setProfileAlert({ text: "", type: "" });
 
+    if (name && name.trim().length <= 3) {
+      setProfileAlert({ text: "Full name must be more than 3 characters (at least 4 characters).", type: "error" });
+      return;
+    }
+
+    if (phone && !/^\d{10}$/.test(phone.trim())) {
+      setProfileAlert({ text: "Phone number must be exactly 10 numeric digits.", type: "error" });
+      return;
+    }
+
     try {
       setSavingProfile(true);
       const res = await api.put("/auth/profile", {
@@ -137,6 +147,26 @@ const Profile = () => {
 
     if (!otpCode.trim() || !newPassword) {
       setSecurityAlert({ text: "Please enter both the OTP code and your new password.", type: "error" });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setSecurityAlert({ text: "Password must be at least 6 characters long.", type: "error" });
+      return;
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      setSecurityAlert({ text: "Password must contain at least 1 uppercase letter (A-Z).", type: "error" });
+      return;
+    }
+
+    if (!/[a-z]/.test(newPassword)) {
+      setSecurityAlert({ text: "Password must contain at least 1 lowercase letter (a-z).", type: "error" });
+      return;
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(newPassword)) {
+      setSecurityAlert({ text: "Password must contain at least 1 special character (!@#$%^&* etc.).", type: "error" });
       return;
     }
 

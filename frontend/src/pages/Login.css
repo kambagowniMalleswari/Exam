@@ -810,3 +810,49 @@
 .btn-modal-cancel:hover {
   background: #e2e8f0;
 }
+
+/* ==========================================================================
+   Universal Role Coverage Indicator
+   ========================================================================== */
+.auth-roles-preview-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 22px;
+  background: #f8fafc;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.role-preview-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #334155;
+  background: #ffffff;
+  padding: 8px 4px;
+  border-radius: 8px;
+  border: 1px solid #edf2f7;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.role-preview-item svg {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.role-preview-item:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+@media (max-width: 520px) {
+  .auth-roles-preview-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

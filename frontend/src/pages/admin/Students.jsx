@@ -2,6 +2,17 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  UsersIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  BarChartIcon,
+  SearchIcon,
+  TagIcon,
+  GraduationCapIcon,
+  EditIcon,
+  PlusIcon
+} from "../../components/common/Icons.jsx";
 import "./Students.css";
 
 const Students = () => {
@@ -78,8 +89,33 @@ const Students = () => {
       return;
     }
 
+    if (addForm.name.trim().length <= 3) {
+      setModalError("Name must be more than 3 characters (at least 4 characters).");
+      return;
+    }
+
+    if (addForm.phone.trim() && !/^\d{10}$/.test(addForm.phone.trim())) {
+      setModalError("Phone number must be exactly 10 numeric digits.");
+      return;
+    }
+
     if (addForm.password.length < 6) {
-      setModalError("Password must be at least 6 characters.");
+      setModalError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (!/[A-Z]/.test(addForm.password)) {
+      setModalError("Password must contain at least 1 uppercase letter (A-Z).");
+      return;
+    }
+
+    if (!/[a-z]/.test(addForm.password)) {
+      setModalError("Password must contain at least 1 lowercase letter (a-z).");
+      return;
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(addForm.password)) {
+      setModalError("Password must contain at least 1 special character (!@#$%^&* etc.).");
       return;
     }
 
@@ -116,6 +152,21 @@ const Students = () => {
     e.preventDefault();
     if (!selectedStudent) return;
     setModalError("");
+
+    if (!editForm.name.trim()) {
+      setModalError("Student name is required.");
+      return;
+    }
+
+    if (editForm.name.trim().length <= 3) {
+      setModalError("Name must be more than 3 characters (at least 4 characters).");
+      return;
+    }
+
+    if (editForm.phone.trim() && !/^\d{10}$/.test(editForm.phone.trim())) {
+      setModalError("Phone number must be exactly 10 numeric digits.");
+      return;
+    }
 
     try {
       setModalLoading(true);
@@ -242,7 +293,7 @@ const Students = () => {
         {/* Summary Cards */}
         <div className="students-summary-grid">
           <div className="student-summary-card">
-            <div className="student-summary-icon">👥</div>
+            <div className="student-summary-icon"><UsersIcon size={20} /></div>
             <div>
               <span>Total Students</span>
               <strong>{totalStudents}</strong>
@@ -250,7 +301,7 @@ const Students = () => {
           </div>
 
           <div className="student-summary-card">
-            <div className="student-summary-icon">✓</div>
+            <div className="student-summary-icon"><CheckCircleIcon size={20} /></div>
             <div>
               <span>Active Students</span>
               <strong>{activeStudents}</strong>
@@ -258,7 +309,7 @@ const Students = () => {
           </div>
 
           <div className="student-summary-card">
-            <div className="student-summary-icon">⏸</div>
+            <div className="student-summary-icon"><ClockIcon size={20} /></div>
             <div>
               <span>Inactive / Suspended</span>
               <strong>{inactiveStudents}</strong>
@@ -266,7 +317,7 @@ const Students = () => {
           </div>
 
           <div className="student-summary-card">
-            <div className="student-summary-icon">📊</div>
+            <div className="student-summary-icon"><BarChartIcon size={20} /></div>
             <div>
               <span>Enrolled in Organization</span>
               <strong>{totalStudents}</strong>
@@ -282,17 +333,12 @@ const Students = () => {
               <p>View students belonging to your organization.</p>
             </div>
 
-            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <div className="dashboard-filter-bar">
               <select
                 value={batchFilter}
                 onChange={(e) => setBatchFilter(e.target.value)}
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: "8px",
-                  border: "1px solid #cbd5e1",
-                  fontSize: "0.85rem",
-                  background: "#ffffff"
-                }}
+                className="dashboard-filter-select"
+                aria-label="Filter by batch"
               >
                 <option value="">All Batches</option>
                 {batches.map((b) => (
@@ -303,7 +349,7 @@ const Students = () => {
               </select>
 
               <div className="students-search-wrapper">
-                <span className="students-search-icon">⌕</span>
+                <SearchIcon size={16} className="students-search-icon" />
                 <input
                   type="text"
                   placeholder="Search by name, email or phone..."
@@ -369,9 +415,13 @@ const Students = () => {
                                 padding: "3px 8px",
                                 borderRadius: "6px",
                                 fontSize: "0.78rem",
-                                fontWeight: 700
+                                fontWeight: 700,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px"
                               }}>
-                                🏷️ {student.batchId?.batchNumber || student.batchNumber}
+                                <TagIcon size={12} />
+                                <span>{student.batchId?.batchNumber || student.batchNumber}</span>
                               </span>
                             ) : (
                               <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
@@ -471,8 +521,9 @@ const Students = () => {
                   marginBottom: "18px"
                 }}
               >
-                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a" }}>
-                  🎓 Student Profile
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <GraduationCapIcon size={20} />
+                  <span>Student Profile</span>
                 </h3>
                 <button
                   onClick={() => setShowViewModal(false)}
@@ -530,8 +581,9 @@ const Students = () => {
                   marginBottom: "18px"
                 }}
               >
-                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a" }}>
-                  ✏️ Edit Student
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <EditIcon size={18} />
+                  <span>Edit Student</span>
                 </h3>
                 <button
                   onClick={() => setShowEditModal(false)}
@@ -621,8 +673,9 @@ const Students = () => {
                   marginBottom: "18px"
                 }}
               >
-                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a" }}>
-                  🎓 Add New Student
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <PlusIcon size={18} />
+                  <span>Add New Student</span>
                 </h3>
                 <button
                   onClick={() => setShowAddModal(false)}

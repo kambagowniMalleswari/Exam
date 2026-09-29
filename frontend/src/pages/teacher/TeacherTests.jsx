@@ -11,7 +11,8 @@ import {
   UsersIcon,
   SearchIcon,
   FileTextIcon,
-  AlertTriangleIcon
+  AlertTriangleIcon,
+  CalendarIcon
 } from "../../components/common/Icons.jsx";
 import "./TeacherTests.css";
 
@@ -410,8 +411,9 @@ const TeacherTests = () => {
                   border: "1px solid #e2e8f0",
                   marginBottom: "0.85rem"
                 }}>
-                  <div style={{ fontWeight: 600, fontSize: "0.88rem", color: "#334155", marginBottom: "0.5rem" }}>
-                    📅 Schedule Window (Optional)
+                  <div style={{ fontWeight: 600, fontSize: "0.88rem", color: "#334155", marginBottom: "0.5rem", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <CalendarIcon size={16} />
+                    <span>Schedule Window (Optional)</span>
                   </div>
                   <div className="form-grid-2">
                     <div className="form-row">
@@ -441,8 +443,9 @@ const TeacherTests = () => {
                   border: "1px solid #bbf7d0",
                   marginBottom: "0.85rem"
                 }}>
-                  <div style={{ fontWeight: 700, fontSize: "0.88rem", color: "#166534", marginBottom: "0.4rem" }}>
-                    🎯 Student Cohort Targeting & Roll-Out
+                  <div style={{ fontWeight: 700, fontSize: "0.88rem", color: "#166534", marginBottom: "0.4rem", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <TargetIcon size={16} />
+                    <span>Student Cohort Targeting & Roll-Out</span>
                   </div>
                   <p style={{ fontSize: "0.78rem", color: "#475569", margin: "0 0 0.6rem 0" }}>
                     Roll out this assessment to all students or restrict access to selective batches and merit rankers.

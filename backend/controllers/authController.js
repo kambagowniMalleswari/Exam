@@ -24,11 +24,11 @@ export const register = async (req, res) => {
       organizationId
     } = req.body;
 
-    // 1. Validation: Name
-    if (!name || typeof name !== "string" || name.trim().length < 3) {
+    // 1. Validation: Name (> 3 characters)
+    if (!name || typeof name !== "string" || name.trim().length <= 3) {
       return res.status(400).json({
         success: false,
-        message: "Full name is required and must be at least 3 characters"
+        message: "Full name / username is required and must be more than 3 characters (at least 4 characters)"
       });
     }
 
@@ -50,7 +50,7 @@ export const register = async (req, res) => {
       });
     }
 
-    // 4. Validation: Password strength
+    // 4. Validation: Password strength (uppercase, lowercase, special character, min 6)
     if (!password || password.length < 6) {
       return res.status(400).json({
         success: false,
@@ -61,14 +61,21 @@ export const register = async (req, res) => {
     if (!/[A-Z]/.test(password)) {
       return res.status(400).json({
         success: false,
-        message: "Password must contain at least one uppercase letter"
+        message: "Password must contain at least one uppercase letter (A-Z)"
       });
     }
 
     if (!/[a-z]/.test(password)) {
       return res.status(400).json({
         success: false,
-        message: "Password must contain at least one lowercase letter"
+        message: "Password must contain at least one lowercase letter (a-z)"
+      });
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least one special character (!@#$%^&* etc.)"
       });
     }
 
@@ -481,7 +488,13 @@ export const updateProfile = async (req, res) => {
       });
     }
 
-    if (name && name.trim().length >= 3) {
+    if (name !== undefined) {
+      if (!name || name.trim().length <= 3) {
+        return res.status(400).json({
+          success: false,
+          message: "Name must be more than 3 characters (at least 4 characters)"
+        });
+      }
       user.name = name.trim();
     }
 
@@ -615,6 +628,27 @@ export const verifyResetPasswordOtp = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Password must be at least 6 characters long"
+      });
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least one uppercase letter (A-Z)"
+      });
+    }
+
+    if (!/[a-z]/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least one lowercase letter (a-z)"
+      });
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least one special character (!@#$%^&* etc.)"
       });
     }
 

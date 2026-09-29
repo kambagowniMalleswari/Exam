@@ -280,3 +280,81 @@ export const TrendingDownIcon = ({ size = 16, className = "" }) => (
   </svg>
 );
 
+export const BookOpenIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-book-open ${className}`}>
+    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+  </svg>
+);
+
+export const FilterIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-filter ${className}`}>
+    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+  </svg>
+);
+
+export const StarIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-star ${className}`}>
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+export const PlayIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-play ${className}`}>
+    <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" />
+  </svg>
+);
+
+export const LayersIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-layers ${className}`}>
+    <polygon points="12 2 2 7 12 12 22 7 12 2" />
+    <polyline points="2 17 12 22 22 17" />
+    <polyline points="2 12 12 17 22 12" />
+  </svg>
+);
+
+export const ZapIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-zap ${className}`}>
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+  </svg>
+);
+
+export const CompassIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-compass ${className}`}>
+    <circle cx="12" cy="12" r="10" />
+    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+  </svg>
+);
+
+export const CodeIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-code ${className}`}>
+    <polyline points="16 18 22 12 16 6" />
+    <polyline points="8 6 2 12 8 18" />
+  </svg>
+);
+
+
+export const CpuIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-cpu ${className}`}>
+    <rect x="4" y="4" width="16" height="16" rx="2" />
+    <rect x="9" y="9" width="6" height="6" />
+    <line x1="9" y1="1" x2="9" y2="4" />
+    <line x1="15" y1="1" x2="15" y2="4" />
+    <line x1="9" y1="20" x2="9" y2="23" />
+    <line x1="15" y1="20" x2="15" y2="23" />
+    <line x1="20" y1="9" x2="23" y2="9" />
+    <line x1="20" y1="14" x2="23" y2="14" />
+    <line x1="1" y1="9" x2="4" y2="9" />
+    <line x1="1" y1="14" x2="4" y2="14" />
+  </svg>
+);
+
+export const BadgeCheckIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-badge-check ${className}`}>
+    <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" />
+    <polyline points="9 12 11 14 15 10" />
+  </svg>
+);
+
+
+

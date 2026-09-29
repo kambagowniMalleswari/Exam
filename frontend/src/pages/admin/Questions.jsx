@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  FileTextIcon,
+  BookOpenIcon,
+  ClockIcon,
+  AwardIcon,
+  AlertTriangleIcon,
+  HelpCircleIcon,
+  SparklesIcon
+} from "../../components/common/Icons.jsx";
 import "./Questions.css";
 
 const Questions = () => {
@@ -147,10 +156,10 @@ const Questions = () => {
               <div>
                 <h2>{test.title}</h2>
                 <div className="aq-meta-tags">
-                  <span className="aq-tag">📝 {questions.length} Questions</span>
-                  {test.subject && <span className="aq-tag">📚 {test.subject}</span>}
-                  <span className="aq-tag">⏱️ {test.duration} min</span>
-                  <span className="aq-tag">🏆 {test.totalMarks} Marks</span>
+                  <span className="aq-tag" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><FileTextIcon size={14} /> {questions.length} Questions</span>
+                  {test.subject && <span className="aq-tag" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><BookOpenIcon size={14} /> {test.subject}</span>}
+                  <span className="aq-tag" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><ClockIcon size={14} /> {test.duration} min</span>
+                  <span className="aq-tag" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><AwardIcon size={14} /> {test.totalMarks} Marks</span>
                   <span className={`status-pill ${test.status}`}>{test.status}</span>
                 </div>
               </div>
@@ -171,14 +180,14 @@ const Questions = () => {
 
         {!loading && error && (
           <div className="aq-state">
-            <span>⚠️</span>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><AlertTriangleIcon size={28} /></span>
             <p>{error}</p>
           </div>
         )}
 
         {!loading && !error && questions.length === 0 && (
           <div className="aq-state">
-            <span>❓</span>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><HelpCircleIcon size={28} /></span>
             <h3>No questions in this test yet</h3>
             <p>Add questions to enable students to take this assessment.</p>
             <button className="btn-add-question" onClick={openCreate}>
@@ -225,8 +234,11 @@ const Questions = () => {
                 </div>
 
                 {q.explanation && (
-                  <div className="aq-explanation">
-                    <span className="exp-icon">💡 Explanation:</span> {q.explanation}
+                  <div className="aq-explanation" style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                    <span className="exp-icon" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                      <SparklesIcon size={14} /> Explanation:
+                    </span>
+                    <span>{q.explanation}</span>
                   </div>
                 )}
               </div>

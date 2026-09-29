@@ -2,7 +2,19 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { auth, googleProvider, signInWithPopup, isFirebaseConfigured } from "../config/firebase.js";
-import { BuildingIcon, ClockIcon, BarChartIcon, TagIcon, KeyIcon, MailIcon, CheckCircleIcon, AlertTriangleIcon } from "../components/common/Icons.jsx";
+import {
+  BuildingIcon,
+  ClockIcon,
+  BarChartIcon,
+  TagIcon,
+  GraduationCapIcon,
+  BookOpenIcon,
+  ShieldIcon,
+  LockIcon,
+  MailIcon,
+  CheckCircleIcon,
+  AlertTriangleIcon
+} from "../components/common/Icons.jsx";
 import { BrandCrest } from "../components/common/BrandLogo.jsx";
 import api from "../services/api.js";
 import { getDefaultDashboard, isRoleAuthorizedForPath, normalizeRole } from "../utils/roleUtils.js";
@@ -16,7 +28,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    document.title = "Student Sign In | AssessIQ";
+    document.title = "Universal Sign In | AssessIQ";
   }, []);
 
   const navigate = useNavigate();
@@ -29,6 +41,19 @@ const Login = () => {
       navigate("/superadmin/dashboard", { replace: true });
       return;
     }
+    if (normalized === "org_admin") {
+      navigate("/admin/dashboard", { replace: true });
+      return;
+    }
+    if (normalized === "teacher") {
+      navigate("/teacher/dashboard", { replace: true });
+      return;
+    }
+    if (normalized === "student") {
+      navigate("/student/dashboard", { replace: true });
+      return;
+    }
+
     const from = location.state?.from?.pathname;
     if (from && isRoleAuthorizedForPath(userRole, from)) {
       navigate(from, { replace: true });
@@ -159,6 +184,22 @@ const Login = () => {
       setForgotMsg({ text: "Please enter the 6-digit OTP and your new password.", type: "error" });
       return;
     }
+    if (forgotNewPass.length < 6) {
+      setForgotMsg({ text: "Password must be at least 6 characters long.", type: "error" });
+      return;
+    }
+    if (!/[A-Z]/.test(forgotNewPass)) {
+      setForgotMsg({ text: "Password must contain at least 1 uppercase letter (A-Z).", type: "error" });
+      return;
+    }
+    if (!/[a-z]/.test(forgotNewPass)) {
+      setForgotMsg({ text: "Password must contain at least 1 lowercase letter (a-z).", type: "error" });
+      return;
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(forgotNewPass)) {
+      setForgotMsg({ text: "Password must contain at least 1 special character (!@#$%^&* etc.).", type: "error" });
+      return;
+    }
     if (forgotNewPass !== forgotConfirmPass) {
       setForgotMsg({ text: "Passwords do not match.", type: "error" });
       return;
@@ -199,7 +240,7 @@ const Login = () => {
             </div>
             <div className="brand-text-stack">
               <span className="brand-name">AssessIQ</span>
-              <span className="brand-role-tag">Student Scholar Portal</span>
+              <span className="brand-role-tag">Unified Institutional Access</span>
             </div>
           </Link>
         </div>
@@ -208,12 +249,32 @@ const Login = () => {
           <div className="auth-title-block">
             <span className="auth-kicker-pill">
               <span className="kicker-dot"></span>
-              STUDENT EXAMINATION DESK
+              INSTITUTIONAL UNIFIED SIGN-IN
             </span>
-            <h1 className="auth-main-heading">Sign In to Your Desk</h1>
+            <h1 className="auth-main-heading">Sign In to Your Workspace</h1>
             <p className="auth-main-sub">
-              Enter your student credentials to access active exams, timed assessments, and grade transcripts.
+              Single secure login for Students, Faculty, Institution Administrators, and Super Administrators.
             </p>
+          </div>
+
+          {/* Quick Role Coverage Bar */}
+          <div className="auth-roles-preview-bar">
+            <div className="role-preview-item">
+              <GraduationCapIcon size={14} />
+              <span>Student</span>
+            </div>
+            <div className="role-preview-item">
+              <BookOpenIcon size={14} />
+              <span>Faculty</span>
+            </div>
+            <div className="role-preview-item">
+              <BuildingIcon size={14} />
+              <span>Org Admin</span>
+            </div>
+            <div className="role-preview-item">
+              <ShieldIcon size={14} />
+              <span>Super Admin</span>
+            </div>
           </div>
 
           {error && (
@@ -229,7 +290,7 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="auth-form-fields">
             <div className="field-group">
-              <label htmlFor="email" className="field-label">Student Email or Username</label>
+              <label htmlFor="email" className="field-label">Email or Username</label>
               <div className="field-input-box">
                 <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="2" y="4" width="20" height="16" rx="3"></rect>
@@ -239,7 +300,7 @@ const Login = () => {
                   id="email"
                   type="text"
                   className="field-input"
-                  placeholder="e.g. scholar@university.edu or username"
+                  placeholder="e.g. name@institution.edu or username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="username"
@@ -306,10 +367,10 @@ const Login = () => {
               {loading ? (
                 <span className="btn-loading-state">
                   <span className="btn-spinner"></span>
-                  <span>Verifying Credentials...</span>
+                  <span>Verifying Credentials & Workspace...</span>
                 </span>
               ) : (
-                "Sign In to Exam Desk →"
+                "Sign In to Workspace →"
               )}
             </button>
           </form>
@@ -330,7 +391,7 @@ const Login = () => {
               <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.94 0 12s.46 3.84 1.26 5.42l4.02-3.15z"/>
               <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
             </svg>
-            <span>Continue with Student Google ID</span>
+            <span>Continue with Google Single Sign-On</span>
           </button>
 
           <div className="auth-switch-row">
@@ -338,18 +399,18 @@ const Login = () => {
             <Link to="/register" className="auth-switch-link">Register student account →</Link>
           </div>
 
-          {/* Institutional Advisory Card */}
+          {/* Institutional Onboarding Card */}
           <div className="auth-advisory-card">
             <div className="advisory-icon-circle">
               <BuildingIcon size={22} />
             </div>
             <div className="advisory-body">
-              <strong>Faculty Educator or Institution Admin?</strong>
-              <p>This sign-in is tailored for student scholars. Faculty and Administrators should access their dedicated secure consoles below.</p>
+              <strong>Institution or Faculty Access?</strong>
+              <p>Sign in above using your assigned institutional credentials. New colleges, universities, or educators can apply for platform access below.</p>
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "8px" }}>
-                <Link to="/teacher/login" className="advisory-cta-link">Faculty Sign-In →</Link>
-                <Link to="/admin/login" className="advisory-cta-link">Admin Console →</Link>
-                <Link to="/join-us" className="advisory-cta-link">Join With Us →</Link>
+                <Link to="/join-us" className="advisory-cta-link">Institutional Onboarding →</Link>
+                <Link to="/join-us?track=teacher" className="advisory-cta-link">Faculty Application →</Link>
+                <Link to="/contact" className="advisory-cta-link">Contact Support →</Link>
               </div>
             </div>
           </div>

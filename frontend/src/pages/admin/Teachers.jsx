@@ -2,6 +2,17 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  UsersIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  FileTextIcon,
+  SearchIcon,
+  UserIcon,
+  EditIcon,
+  PlusIcon,
+  AlertTriangleIcon
+} from "../../components/common/Icons.jsx";
 import "./Teachers.css";
 
 const Teachers = () => {
@@ -72,8 +83,33 @@ const Teachers = () => {
       return;
     }
 
+    if (addForm.name.trim().length <= 3) {
+      setModalError("Name must be more than 3 characters (at least 4 characters).");
+      return;
+    }
+
+    if (addForm.phone.trim() && !/^\d{10}$/.test(addForm.phone.trim())) {
+      setModalError("Phone number must be exactly 10 numeric digits.");
+      return;
+    }
+
     if (addForm.password.length < 6) {
-      setModalError("Password must be at least 6 characters.");
+      setModalError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (!/[A-Z]/.test(addForm.password)) {
+      setModalError("Password must contain at least 1 uppercase letter (A-Z).");
+      return;
+    }
+
+    if (!/[a-z]/.test(addForm.password)) {
+      setModalError("Password must contain at least 1 lowercase letter (a-z).");
+      return;
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(addForm.password)) {
+      setModalError("Password must contain at least 1 special character (!@#$%^&* etc.).");
       return;
     }
 
@@ -110,6 +146,16 @@ const Teachers = () => {
     e.preventDefault();
     if (!selectedTeacher) return;
     setModalError("");
+
+    if (!editForm.name || editForm.name.trim().length <= 3) {
+      setModalError("Teacher name must be more than 3 characters (at least 4 characters).");
+      return;
+    }
+
+    if (editForm.phone && editForm.phone.trim() && !/^\d{10}$/.test(editForm.phone.trim())) {
+      setModalError("Phone number must be exactly 10 numeric digits.");
+      return;
+    }
 
     try {
       setModalLoading(true);
@@ -229,7 +275,7 @@ const Teachers = () => {
         {/* Summary Cards */}
         <div className="teachers-summary-grid">
           <div className="teacher-summary-card">
-            <div className="teacher-summary-icon">👨‍🏫</div>
+            <div className="teacher-summary-icon"><UsersIcon size={20} /></div>
             <div>
               <span>Total Teachers</span>
               <strong>{totalTeachers}</strong>
@@ -237,7 +283,7 @@ const Teachers = () => {
           </div>
 
           <div className="teacher-summary-card">
-            <div className="teacher-summary-icon">✓</div>
+            <div className="teacher-summary-icon"><CheckCircleIcon size={20} /></div>
             <div>
               <span>Active Teachers</span>
               <strong>{activeTeachers}</strong>
@@ -245,7 +291,7 @@ const Teachers = () => {
           </div>
 
           <div className="teacher-summary-card">
-            <div className="teacher-summary-icon">⏸</div>
+            <div className="teacher-summary-icon"><ClockIcon size={20} /></div>
             <div>
               <span>Inactive / Suspended</span>
               <strong>{inactiveTeachers}</strong>
@@ -253,7 +299,7 @@ const Teachers = () => {
           </div>
 
           <div className="teacher-summary-card">
-            <div className="teacher-summary-icon">📝</div>
+            <div className="teacher-summary-icon"><FileTextIcon size={20} /></div>
             <div>
               <span>Faculty in Database</span>
               <strong>{totalTeachers}</strong>
@@ -270,7 +316,7 @@ const Teachers = () => {
             </div>
 
             <div className="teachers-search-wrapper">
-              <span className="teachers-search-icon">⌕</span>
+              <SearchIcon size={16} className="teachers-search-icon" />
               <input
                 type="text"
                 placeholder="Search by name, email, phone or subject..."
@@ -432,8 +478,9 @@ const Teachers = () => {
                   marginBottom: "18px"
                 }}
               >
-                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a" }}>
-                  👨‍🏫 Teacher Profile
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <UserIcon size={20} />
+                  <span>Teacher Profile</span>
                 </h3>
                 <button
                   onClick={() => setShowViewModal(false)}
@@ -495,8 +542,9 @@ const Teachers = () => {
                   marginBottom: "18px"
                 }}
               >
-                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a" }}>
-                  ✏️ Edit Teacher
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <EditIcon size={18} />
+                  <span>Edit Teacher</span>
                 </h3>
                 <button
                   onClick={() => setShowEditModal(false)}
@@ -583,8 +631,9 @@ const Teachers = () => {
                   marginBottom: "18px"
                 }}
               >
-                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a" }}>
-                  👨‍🏫 Add New Teacher
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <PlusIcon size={18} />
+                  <span>Add New Teacher</span>
                 </h3>
                 <button
                   onClick={() => setShowAddModal(false)}

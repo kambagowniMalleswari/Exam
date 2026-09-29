@@ -57,11 +57,11 @@ import Profile from "./pages/Profile.jsx";
 function App() {
   return (
     <Routes>
-      {/* Public Institutional Routes */}
+      {/* Public Institutional Routes & Unified Sign-In */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/teacher/login" element={<TeacherLogin />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/teacher/login" element={<Navigate to="/login" replace />} />
+      <Route path="/admin/login" element={<Navigate to="/login" replace />} />
       <Route path="/register" element={<Register />} />
       <Route path="/join-us" element={<JoinWithUs />} />
       <Route path="/contact" element={<ContactUs />} />

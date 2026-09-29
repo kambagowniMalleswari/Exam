@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  FileTextIcon,
+  PrinterIcon,
+  RefreshIcon,
+  BarChartIcon,
+  CheckCircleIcon,
+  XIcon,
+  TargetIcon,
+  AwardIcon,
+  SearchIcon,
+  AlertTriangleIcon
+} from "../../components/common/Icons.jsx";
 import "./TeacherResults.css";
 
 const TeacherResults = () => {
@@ -180,18 +192,27 @@ const TeacherResults = () => {
               onClick={exportCSV}
               disabled={filteredResults.length === 0}
               title="Export results table to CSV spreadsheet"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
             >
-              📥 Export CSV
+              <FileTextIcon size={15} />
+              <span>Export CSV</span>
             </button>
             <button
               className="btn-print"
               onClick={handlePrint}
               title="Print report or save as PDF"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
             >
-              🖨️ Print Report
+              <PrinterIcon size={15} />
+              <span>Print Report</span>
             </button>
-            <button className="btn-refresh" onClick={fetchInitialData}>
-              🔄 Refresh
+            <button
+              className="btn-refresh"
+              onClick={fetchInitialData}
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+            >
+              <RefreshIcon size={15} />
+              <span>Refresh</span>
             </button>
           </div>
         </div>
@@ -199,35 +220,35 @@ const TeacherResults = () => {
         {/* Stats Row */}
         <div className="tr-stats-grid">
           <div className="tr-stat-card total">
-            <span className="stat-icon">📊</span>
+            <span className="stat-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><BarChartIcon size={20} /></span>
             <div className="stat-info">
               <span className="stat-value">{stats.total}</span>
               <span className="stat-label">Total Submissions</span>
             </div>
           </div>
           <div className="tr-stat-card passed">
-            <span className="stat-icon">✅</span>
+            <span className="stat-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><CheckCircleIcon size={20} /></span>
             <div className="stat-info">
               <span className="stat-value">{stats.passed}</span>
               <span className="stat-label">Passed</span>
             </div>
           </div>
           <div className="tr-stat-card failed">
-            <span className="stat-icon">❌</span>
+            <span className="stat-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><XIcon size={20} /></span>
             <div className="stat-info">
               <span className="stat-value">{stats.failed}</span>
               <span className="stat-label">Failed</span>
             </div>
           </div>
           <div className="tr-stat-card avg">
-            <span className="stat-icon">🎯</span>
+            <span className="stat-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><TargetIcon size={20} /></span>
             <div className="stat-info">
               <span className="stat-value">{stats.avgScore}%</span>
               <span className="stat-label">Average Score</span>
             </div>
           </div>
           <div className="tr-stat-card top">
-            <span className="stat-icon">🏆</span>
+            <span className="stat-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><AwardIcon size={20} /></span>
             <div className="stat-info">
               <span className="stat-value">{stats.topScore}%</span>
               <span className="stat-label">Top Score</span>
@@ -238,7 +259,7 @@ const TeacherResults = () => {
         {/* Filter Controls */}
         <div className="tr-controls">
           <div className="tr-search">
-            <span>🔍</span>
+            <span style={{ display: "inline-flex", alignItems: "center" }}><SearchIcon size={16} /></span>
             <input
               type="text"
               placeholder="Search by student name, email, or test..."
@@ -294,14 +315,14 @@ const TeacherResults = () => {
 
         {!loading && error && (
           <div className="tr-state">
-            <span>⚠️</span>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><AlertTriangleIcon size={32} /></span>
             <p>{error}</p>
           </div>
         )}
 
         {!loading && !error && filteredResults.length === 0 && (
           <div className="tr-state">
-            <span>📋</span>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><FileTextIcon size={32} /></span>
             <h3>No results found</h3>
             <p>{search ? "No submissions match your search query." : "No student has completed any tests yet."}</p>
           </div>

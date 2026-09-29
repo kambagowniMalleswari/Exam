@@ -180,6 +180,51 @@ export const createUser = async (req, res) => {
       });
     }
 
+    if (name.trim().length <= 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Name must be more than 3 characters (at least 4 characters)"
+      });
+    }
+
+    if (phone) {
+      const cleanPhone = phone.toString().trim();
+      if (!/^\d{10}$/.test(cleanPhone)) {
+        return res.status(400).json({
+          success: false,
+          message: "Phone number must be exactly 10 numeric digits"
+        });
+      }
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long"
+      });
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least one uppercase letter (A-Z)"
+      });
+    }
+
+    if (!/[a-z]/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least one lowercase letter (a-z)"
+      });
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least one special character (!@#$%^&* etc.)"
+      });
+    }
+
     if (!["student", "teacher"].includes(role)) {
       return res.status(400).json({
         success: false,
@@ -328,7 +373,15 @@ export const updateUser = async (req, res) => {
 
     const { name, email, phone, password, role, status, subject, batchId } = req.body;
 
-    if (name) user.name = name.trim();
+    if (name) {
+      if (name.trim().length <= 3) {
+        return res.status(400).json({
+          success: false,
+          message: "Name must be more than 3 characters (at least 4 characters)"
+        });
+      }
+      user.name = name.trim();
+    }
     if (email) {
       const cleanEmail = email.toLowerCase().trim();
       if (cleanEmail !== user.email) {
@@ -343,7 +396,16 @@ export const updateUser = async (req, res) => {
         user.email = cleanEmail;
       }
     }
-    if (phone !== undefined) user.phone = phone;
+    if (phone !== undefined) {
+      const cleanPhone = phone ? phone.toString().trim() : "";
+      if (cleanPhone && !/^\d{10}$/.test(cleanPhone)) {
+        return res.status(400).json({
+          success: false,
+          message: "Phone number must be exactly 10 numeric digits"
+        });
+      }
+      user.phone = cleanPhone;
+    }
     if (subject !== undefined) user.subject = subject;
     if (role && ["student", "teacher"].includes(role)) user.role = role;
     if (status && ["active", "suspended", "pending"].includes(status)) {
@@ -364,7 +426,31 @@ export const updateUser = async (req, res) => {
       }
     }
 
-    if (password && password.length >= 6) {
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must be at least 6 characters long"
+        });
+      }
+      if (!/[A-Z]/.test(password)) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must contain at least one uppercase letter (A-Z)"
+        });
+      }
+      if (!/[a-z]/.test(password)) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must contain at least one lowercase letter (a-z)"
+        });
+      }
+      if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(password)) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must contain at least one special character (!@#$%^&* etc.)"
+        });
+      }
       user.password = await bcrypt.hash(password, 10);
     }
 

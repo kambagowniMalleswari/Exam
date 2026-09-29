@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  BuildingIcon,
+  EditIcon,
+  CheckCircleIcon,
+  AlertTriangleIcon,
+  MailIcon,
+  UsersIcon,
+  PlusIcon,
+  SearchIcon
+} from "../../components/common/Icons.jsx";
 import "./Organizations.css";
 
 const Organizations = () => {
@@ -85,6 +95,21 @@ const Organizations = () => {
       return;
     }
 
+    if (formData.name.trim().length <= 3) {
+      setModalError("Organization name must be more than 3 characters (at least 4 characters).");
+      return;
+    }
+
+    if (formData.adminName && formData.adminName.trim().length <= 3) {
+      setModalError("Administrator name must be more than 3 characters (at least 4 characters).");
+      return;
+    }
+
+    if (formData.phone && formData.phone.trim() && !/^\d{10}$/.test(formData.phone.trim())) {
+      setModalError("Phone number must be exactly 10 numeric digits.");
+      return;
+    }
+
     try {
       setModalLoading(true);
       const res = await api.post("/organizations", formData);
@@ -120,6 +145,16 @@ const Organizations = () => {
     e.preventDefault();
     if (!selectedOrg) return;
     setModalError("");
+
+    if (editFormData.name && editFormData.name.trim().length <= 3) {
+      setModalError("Organization name must be more than 3 characters (at least 4 characters).");
+      return;
+    }
+
+    if (editFormData.phone && editFormData.phone.trim() && !/^\d{10}$/.test(editFormData.phone.trim())) {
+      setModalError("Phone number must be exactly 10 numeric digits.");
+      return;
+    }
 
     try {
       setModalLoading(true);
@@ -284,15 +319,28 @@ const Organizations = () => {
               <p>View, manage and monitor registered organizations.</p>
             </div>
 
-            {/* Search */}
-            <div className="organization-search">
-              <span>⌕</span>
-              <input
-                type="text"
-                placeholder="Search by name, email or city..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+            <div className="dashboard-filter-bar">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="dashboard-filter-select"
+                aria-label="Filter organizations by status"
+              >
+                <option value="all">All Statuses ({totalCount})</option>
+                <option value="active">Active Only ({activeCount})</option>
+                <option value="inactive">Inactive Only ({inactiveCount})</option>
+              </select>
+
+              {/* Search */}
+              <div className="organization-search">
+                <SearchIcon size={16} />
+                <input
+                  type="text"
+                  placeholder="Search by name, email or city..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
@@ -454,8 +502,9 @@ const Organizations = () => {
                   marginBottom: "18px"
                 }}
               >
-                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a" }}>
-                  🏢 {selectedOrg.name}
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <BuildingIcon size={20} />
+                  <span>{selectedOrg.name}</span>
                 </h3>
                 <button
                   onClick={() => setShowViewModal(false)}
@@ -532,8 +581,9 @@ const Organizations = () => {
                   marginBottom: "18px"
                 }}
               >
-                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a" }}>
-                  ✏️ Edit Organization Details
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <EditIcon size={18} />
+                  <span>Edit Organization Details</span>
                 </h3>
                 <button
                   onClick={() => setShowEditModal(false)}

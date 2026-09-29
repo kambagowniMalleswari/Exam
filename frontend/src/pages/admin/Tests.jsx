@@ -8,7 +8,11 @@ import {
   ClockIcon,
   UsersIcon,
   SearchIcon,
-  AlertTriangleIcon
+  AlertTriangleIcon,
+  GlobeIcon,
+  LockIcon,
+  CalendarIcon,
+  TargetIcon
 } from "../../components/common/Icons.jsx";
 import "./Tests.css";
 
@@ -364,10 +368,10 @@ const Tests = () => {
                         <tr key={test._id}>
                           <td>
                             <div className="test-profile">
-                              <div className="test-icon">📝</div>
+                              <div className="test-icon"><FileTextIcon size={16} /></div>
                               <div>
                                 <strong>{title}</strong>
-                                <span>{test.type === "public" ? "🌐 Public" : "🔒 Private"}</span>
+                                <span>{test.type === "public" ? <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><GlobeIcon size={12} /> Public</span> : <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><LockIcon size={12} /> Private</span>}</span>
                               </div>
                             </div>
                           </td>
@@ -554,8 +558,9 @@ const Tests = () => {
                   border: "1px solid #e2e8f0",
                   marginBottom: "0.85rem"
                 }}>
-                  <div style={{ fontWeight: 600, fontSize: "0.88rem", color: "#334155", marginBottom: "0.5rem" }}>
-                    📅 Schedule Window (Optional)
+                  <div style={{ fontWeight: 600, fontSize: "0.88rem", color: "#334155", marginBottom: "0.5rem", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <CalendarIcon size={16} />
+                    <span>Schedule Window (Optional)</span>
                   </div>
                   <div className="atm-row">
                     <div className="atm-group half">
@@ -603,8 +608,9 @@ const Tests = () => {
                   border: "1px solid #bbf7d0",
                   marginBottom: "0.85rem"
                 }}>
-                  <div style={{ fontWeight: 700, fontSize: "0.88rem", color: "#166534", marginBottom: "0.4rem" }}>
-                    🎯 Student Cohort Targeting & Roll-Out
+                  <div style={{ fontWeight: 700, fontSize: "0.88rem", color: "#166534", marginBottom: "0.4rem", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                    <TargetIcon size={16} />
+                    <span>Student Cohort Targeting & Roll-Out</span>
                   </div>
                   <p style={{ fontSize: "0.78rem", color: "#475569", margin: "0 0 0.6rem 0" }}>
                     Roll out this assessment to all students or restrict access to selective batches and merit rankers.

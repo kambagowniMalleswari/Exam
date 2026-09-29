@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  FileTextIcon,
+  BookOpenIcon,
+  ClockIcon,
+  AwardIcon,
+  AlertTriangleIcon,
+  HelpCircleIcon,
+  SparklesIcon
+} from "../../components/common/Icons.jsx";
 import "./TeacherQuestions.css";
 
 const TeacherQuestions = () => {
@@ -109,10 +118,10 @@ const TeacherQuestions = () => {
               <div>
                 <h2>{test.title}</h2>
                 <div className="qp-meta">
-                  <span>📝 {questions.length} questions</span>
-                  {test.subject && <span>📚 {test.subject}</span>}
-                  <span>⏱️ {test.duration} min</span>
-                  <span>🏆 {test.totalMarks} marks</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><FileTextIcon size={14} /> {questions.length} questions</span>
+                  {test.subject && <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><BookOpenIcon size={14} /> {test.subject}</span>}
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><ClockIcon size={14} /> {test.duration} min</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><AwardIcon size={14} /> {test.totalMarks} marks</span>
                   <span className={`status-chip ${test.status}`}>{test.status}</span>
                 </div>
               </div>
@@ -122,11 +131,11 @@ const TeacherQuestions = () => {
         </div>
 
         {loading && <div className="q-state"><div className="spinner"></div><p>Loading questions...</p></div>}
-        {!loading && error && <div className="q-state"><span>⚠️</span><p>{error}</p></div>}
+        {!loading && error && <div className="q-state"><span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><AlertTriangleIcon size={28} /></span><p>{error}</p></div>}
 
         {!loading && !error && questions.length === 0 && (
           <div className="q-state">
-            <span>❓</span>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><HelpCircleIcon size={28} /></span>
             <h3>No questions yet</h3>
             <p>Add your first question to this test.</p>
             <button className="btn-add-q" onClick={openCreate}>+ Add First Question</button>
@@ -161,7 +170,10 @@ const TeacherQuestions = () => {
                   })}
                 </div>
                 {q.explanation && (
-                  <div className="q-explanation">💡 {q.explanation}</div>
+                  <div className="q-explanation" style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                    <SparklesIcon size={14} style={{ marginTop: "2px", flexShrink: 0 }} />
+                    <span>{q.explanation}</span>
+                  </div>
                 )}
               </div>
             ))}

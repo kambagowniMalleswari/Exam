@@ -45,11 +45,12 @@ const Register = () => {
     const trimmedPhone = phone.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^\d{10}$/;
+    const specialCharRegex = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/;
 
     if (!trimmedName) {
-      errs.name = "Full name is required.";
-    } else if (trimmedName.length < 3) {
-      errs.name = "Name must be at least 3 characters long.";
+      errs.name = "Full name / Username is required.";
+    } else if (trimmedName.length <= 3) {
+      errs.name = "Full name / Username must be more than 3 characters (at least 4 characters).";
     }
 
     if (!trimmedEmail) {
@@ -67,11 +68,13 @@ const Register = () => {
     if (!password) {
       errs.password = "Password is required.";
     } else if (password.length < 6) {
-      errs.password = "Password must be at least 6 characters.";
+      errs.password = "Password must be at least 6 characters long.";
     } else if (!/[A-Z]/.test(password)) {
-      errs.password = "Password must contain at least 1 uppercase letter.";
+      errs.password = "Password must contain at least 1 uppercase letter (A-Z).";
     } else if (!/[a-z]/.test(password)) {
-      errs.password = "Password must contain at least 1 lowercase letter.";
+      errs.password = "Password must contain at least 1 lowercase letter (a-z).";
+    } else if (!specialCharRegex.test(password)) {
+      errs.password = "Password must contain at least 1 special character (!@#$%^&* etc.).";
     }
 
     if (!confirmPassword) {
@@ -281,7 +284,7 @@ const Register = () => {
                     id="reg-password"
                     type={showPassword ? "text" : "password"}
                     className="field-input"
-                    placeholder="Min 6 chars (A-Z, a-z)"
+                    placeholder="Min 6 chars (A-Z, a-z, special char)"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required

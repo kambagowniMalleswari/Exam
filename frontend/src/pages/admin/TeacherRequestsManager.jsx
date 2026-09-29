@@ -2,6 +2,13 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  AlertTriangleIcon,
+  CheckCircleIcon,
+  FileTextIcon,
+  ClockIcon,
+  XIcon
+} from "../../components/common/Icons.jsx";
 import "./TeacherRequestsManager.css";
 
 const TeacherRequestsManager = () => {
@@ -122,8 +129,8 @@ const TeacherRequestsManager = () => {
           </div>
         </div>
 
-        {error && <div className="trm-alert error">⚠️ {error}</div>}
-        {successMsg && <div className="trm-alert success">✓ {successMsg}</div>}
+        {error && <div className="trm-alert error" style={{ display: "flex", alignItems: "center", gap: "6px" }}><AlertTriangleIcon size={16} /><span>{error}</span></div>}
+        {successMsg && <div className="trm-alert success" style={{ display: "flex", alignItems: "center", gap: "6px" }}><CheckCircleIcon size={16} /><span>{successMsg}</span></div>}
 
         {/* Applications Table Card */}
         <div className="trm-card">
@@ -134,7 +141,7 @@ const TeacherRequestsManager = () => {
             </div>
           ) : applications.length === 0 ? (
             <div className="trm-empty">
-              <span className="trm-empty-icon">📂</span>
+              <span className="trm-empty-icon" style={{ display: "inline-flex", justifyContent: "center" }}><FileTextIcon size={36} /></span>
               <h3>No Teacher Applications Found</h3>
               <p>When prospective educators submit requests, they will appear here for review.</p>
             </div>
@@ -174,9 +181,9 @@ const TeacherRequestsManager = () => {
                       <td>{app.experienceYears} Years</td>
                       <td>
                         <span className={`status-pill ${app.status}`}>
-                          {app.status === "pending" && "⏳ Pending"}
-                          {app.status === "approved" && "✓ Approved"}
-                          {app.status === "rejected" && "✕ Rejected"}
+                          {app.status === "pending" && "Pending"}
+                          {app.status === "approved" && "Approved"}
+                          {app.status === "rejected" && "Rejected"}
                         </span>
                       </td>
                       <td>

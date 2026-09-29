@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  AwardIcon,
+  BookOpenIcon,
+  ClockIcon,
+  TargetIcon,
+  CalendarIcon,
+  BarChartIcon,
+  SparklesIcon,
+  AlertTriangleIcon
+} from "../../components/common/Icons.jsx";
 import "./AttemptResult.css";
 
 const AttemptResult = () => {
@@ -104,8 +114,8 @@ const AttemptResult = () => {
 
         {/* Pass/Fail Hero */}
         <div className={`result-hero ${passed ? "passed" : "failed"}`}>
-          <div className="result-badge-large">
-            {passed ? "🏆" : "📚"}
+          <div className="result-badge-large" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {passed ? <AwardIcon size={44} /> : <BookOpenIcon size={44} />}
           </div>
           <div className="result-verdict">
             <span className={`verdict-badge ${passed ? "pass" : "fail"}`}>
@@ -161,8 +171,8 @@ const AttemptResult = () => {
                 </div>
               </div>
               {timeTaken !== undefined && timeTaken !== null && (
-                <div className="time-taken">
-                  ⏱️ Time Taken: <strong>{formatTime(timeTaken)}</strong>
+                <div className="time-taken" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                  <ClockIcon size={14} /> Time Taken: <strong>{formatTime(timeTaken)}</strong>
                 </div>
               )}
             </div>
@@ -171,14 +181,14 @@ const AttemptResult = () => {
           {/* Additional Stats */}
           <div className="result-meta-grid">
             <div className="meta-card">
-              <span className="meta-icon">🎯</span>
+              <span className="meta-icon" style={{ display: "inline-flex", alignItems: "center" }}><TargetIcon size={18} /></span>
               <div>
                 <span>Passing Score</span>
                 <strong>{passingScore}%</strong>
               </div>
             </div>
             <div className="meta-card">
-              <span className="meta-icon">📅</span>
+              <span className="meta-icon" style={{ display: "inline-flex", alignItems: "center" }}><CalendarIcon size={18} /></span>
               <div>
                 <span>Completed</span>
                 <strong>
@@ -189,7 +199,7 @@ const AttemptResult = () => {
               </div>
             </div>
             <div className="meta-card">
-              <span className="meta-icon">📊</span>
+              <span className="meta-icon" style={{ display: "inline-flex", alignItems: "center" }}><BarChartIcon size={18} /></span>
               <div>
                 <span>Accuracy</span>
                 <strong>
@@ -285,8 +295,9 @@ const AttemptResult = () => {
                           </div>
                         </div>
                         {item.explanation && (
-                          <p className="review-explanation">
-                            💡 <strong>Explanation:</strong> {item.explanation}
+                          <p className="review-explanation" style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                            <SparklesIcon size={14} style={{ marginTop: "2px", flexShrink: 0 }} />
+                            <span><strong>Explanation:</strong> {item.explanation}</span>
                           </p>
                         )}
                       </div>

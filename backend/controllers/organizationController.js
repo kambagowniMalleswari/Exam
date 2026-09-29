@@ -32,6 +32,30 @@ export const createOrganization = async (req, res) => {
       });
     }
 
+    if (name.trim().length <= 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Organization name must be more than 3 characters (at least 4 characters)"
+      });
+    }
+
+    if (adminName && adminName.trim().length <= 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Administrator name must be more than 3 characters (at least 4 characters)"
+      });
+    }
+
+    if (phone) {
+      const cleanPhone = phone.toString().trim();
+      if (!/^\d{10}$/.test(cleanPhone)) {
+        return res.status(400).json({
+          success: false,
+          message: "Phone number must be exactly 10 numeric digits"
+        });
+      }
+    }
+
     const generatedSlug = (slug || name)
       .toLowerCase()
       .trim()

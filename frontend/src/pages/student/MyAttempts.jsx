@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  FileTextIcon,
+  RefreshIcon,
+  CheckCircleIcon,
+  XIcon,
+  BarChartIcon,
+  AlertTriangleIcon,
+  TargetIcon
+} from "../../components/common/Icons.jsx";
 import "./MyAttempts.css";
 
 const MyAttempts = () => {
@@ -155,15 +164,19 @@ const MyAttempts = () => {
               onClick={exportCSV}
               disabled={filtered.length === 0}
               title="Download exam attempts as CSV"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
             >
-              📥 Export CSV
+              <FileTextIcon size={14} />
+              <span>Export CSV</span>
             </button>
             <button
               className="btn-refresh-attempts"
               onClick={fetchAttempts}
               title="Refresh attempts"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
             >
-              🔄 Refresh
+              <RefreshIcon size={14} />
+              <span>Refresh</span>
             </button>
           </div>
         </div>
@@ -171,22 +184,22 @@ const MyAttempts = () => {
         {/* Stats */}
         <div className="attempts-stats">
           <div className="attempt-stat total">
-            <span className="as-icon">📝</span>
+            <span className="as-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><FileTextIcon size={18} /></span>
             <strong>{stats.total}</strong>
             <span>Total Attempts</span>
           </div>
           <div className="attempt-stat passed">
-            <span className="as-icon">✅</span>
+            <span className="as-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><CheckCircleIcon size={18} /></span>
             <strong>{stats.passed}</strong>
             <span>Passed</span>
           </div>
           <div className="attempt-stat failed">
-            <span className="as-icon">❌</span>
+            <span className="as-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><XIcon size={18} /></span>
             <strong>{stats.failed}</strong>
             <span>Failed</span>
           </div>
           <div className="attempt-stat avg">
-            <span className="as-icon">📊</span>
+            <span className="as-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><BarChartIcon size={18} /></span>
             <strong>{stats.avgScore}%</strong>
             <span>Avg Score</span>
           </div>
@@ -215,18 +228,19 @@ const MyAttempts = () => {
 
         {!loading && error && (
           <div className="attempts-state">
-            <span>⚠️</span>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><AlertTriangleIcon size={28} /></span>
             <p>{error}</p>
           </div>
         )}
 
         {!loading && !error && filtered.length === 0 && (
           <div className="attempts-state">
-            <span>📋</span>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><FileTextIcon size={28} /></span>
             <h3>No attempts found</h3>
             <p>{filter === "all" ? "You haven't taken any tests yet." : `No ${filter} attempts.`}</p>
-            <button className="btn-go-tests" onClick={() => navigate("/student/available-tests")}>
-              🎯 Browse Available Tests
+            <button className="btn-go-tests" onClick={() => navigate("/student/available-tests")} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <TargetIcon size={15} />
+              <span>Browse Available Tests</span>
             </button>
           </div>
         )}

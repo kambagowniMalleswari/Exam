@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  RefreshIcon,
+  SparklesIcon,
+  AlertTriangleIcon,
+  FileTextIcon,
+  UsersIcon,
+  CheckCircleIcon
+} from "../../components/common/Icons.jsx";
 import "./AdminSubscription.css";
 
 const AdminSubscription = () => {
@@ -63,15 +71,17 @@ const AdminSubscription = () => {
             <h2>Subscription & Plan Management</h2>
             <p>View resource consumption, manage organization billing tier, and scale your exam capacity.</p>
           </div>
-          <button className="btn-refresh" onClick={fetchSubscription}>
-            🔄 Refresh Status
+          <button className="btn-refresh" onClick={fetchSubscription} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <RefreshIcon size={14} />
+            <span>Refresh Status</span>
           </button>
         </div>
 
         {/* Feedback message */}
         {successMsg && (
-          <div className="sub-alert success">
-            <span>🎉 {successMsg}</span>
+          <div className="sub-alert success" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <SparklesIcon size={16} />
+            <span>{successMsg}</span>
             <button onClick={() => setSuccessMsg("")}>✕</button>
           </div>
         )}
@@ -85,7 +95,7 @@ const AdminSubscription = () => {
 
         {!loading && error && (
           <div className="as-state">
-            <span>⚠️</span>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><AlertTriangleIcon size={28} /></span>
             <p>{error}</p>
           </div>
         )}
@@ -190,11 +200,11 @@ const AdminSubscription = () => {
 
                       <div className="pc-limits">
                         <div className="limit-row">
-                          <span>📝 Max Tests</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><FileTextIcon size={14} /> Max Tests</span>
                           <strong>{plan.maxTests >= 99999 ? "Unlimited" : plan.maxTests}</strong>
                         </div>
                         <div className="limit-row">
-                          <span>👥 Max Students</span>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><UsersIcon size={14} /> Max Students</span>
                           <strong>{plan.maxStudents >= 99999 ? "Unlimited" : plan.maxStudents}</strong>
                         </div>
                       </div>

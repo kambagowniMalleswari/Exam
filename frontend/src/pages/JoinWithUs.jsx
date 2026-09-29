@@ -88,6 +88,11 @@ const JoinWithUs = () => {
       return;
     }
 
+    if (orgForm.name.trim().length <= 3 || orgForm.adminName.trim().length <= 3) {
+      setOrgError("Organization Name and Administrator Name must be more than 3 characters (at least 4 characters).");
+      return;
+    }
+
     if (!/^\d{10}$/.test(orgForm.phone.trim())) {
       setOrgError("Phone number must be exactly 10 digits.");
       return;
@@ -118,6 +123,11 @@ const JoinWithUs = () => {
 
     if (!teacherForm.name.trim() || !teacherForm.email.trim() || !teacherForm.phone.trim()) {
       setTeacherError("Full Name, Email, and 10-digit Phone are required.");
+      return;
+    }
+
+    if (teacherForm.name.trim().length <= 3) {
+      setTeacherError("Full Name must be more than 3 characters (at least 4 characters).");
       return;
     }
 

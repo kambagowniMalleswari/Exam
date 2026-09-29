@@ -55,8 +55,8 @@ const TeacherRequest = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^\d{10}$/;
 
-    if (!formData.name.trim() || formData.name.trim().length < 3) {
-      errs.name = "Full name is required (minimum 3 characters).";
+    if (!formData.name.trim() || formData.name.trim().length <= 3) {
+      errs.name = "Full name is required and must be more than 3 characters (at least 4 characters).";
     }
 
     if (!formData.email.trim() || !emailRegex.test(formData.email.trim())) {

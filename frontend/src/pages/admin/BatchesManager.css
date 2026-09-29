@@ -107,7 +107,8 @@
 }
 
 .batch-search-bar input:focus {
-  border-color: #d4af37;
+  border-color: var(--primary, #0284c7);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
 }
 
 /* Batches Grid */

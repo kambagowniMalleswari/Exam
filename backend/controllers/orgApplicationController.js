@@ -30,6 +30,13 @@ export const applyOrganization = async (req, res) => {
       });
     }
 
+    if (name.trim().length <= 3 || adminName.trim().length <= 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Organization name and administrator name must be more than 3 characters."
+      });
+    }
+
     // Phone validation: exactly 10 digits
     const cleanPhone = phone.toString().trim();
     if (!/^\d{10}$/.test(cleanPhone)) {
