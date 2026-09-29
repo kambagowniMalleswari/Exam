@@ -9,6 +9,7 @@ import { BrowserRouter } from "react-router-dom";
 
 // Import authentication provider
 import { AuthProvider } from "./context/AuthContext.jsx";
+import ErrorBoundary from "./components/common/ErrorBoundary.jsx";
 
 // Import main application
 import App from "./App.jsx";
@@ -19,10 +20,12 @@ import "./index.css";
 // Render application
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </StrictMode>
 );

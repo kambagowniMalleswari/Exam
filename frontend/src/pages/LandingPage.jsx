@@ -5,6 +5,7 @@ import { BrandCrest } from "../components/common/BrandLogo.jsx";
 import {
   ShieldIcon,
   ClockIcon,
+  HelpCircleIcon,
   AwardIcon,
   BarChartIcon,
   GlobeIcon,
@@ -23,14 +24,14 @@ import {
 } from "../components/common/Icons.jsx";
 import "./LandingPage.css";
 
-// Rich curated LMS tracks for the Udemy-style portal
+// Rich curated LMS tracks
 const LMS_CATEGORIES = [
-  { id: "software", name: "Software Development", icon: <CodeIcon size={20} />, count: "180+ Tests", color: "#0284c7" },
-  { id: "ai", name: "Data Science & AI", icon: <CpuIcon size={20} />, count: "120+ Tests", color: "#8b5cf6" },
-  { id: "cloud", name: "Cloud & DevOps", icon: <GlobeIcon size={20} />, count: "95+ Tests", color: "#06b6d4" },
-  { id: "aptitude", name: "Aptitude & Reasoning", icon: <SparklesIcon size={20} />, count: "240+ Tests", color: "#f59e0b" },
-  { id: "academics", name: "University Academics", icon: <GraduationCapIcon size={20} />, count: "310+ Tests", color: "#10b981" },
-  { id: "cyber", name: "Cybersecurity & Security", icon: <ShieldIcon size={20} />, count: "75+ Tests", color: "#ef4444" }
+  { id: "software", name: "Software Development", count: "180+ Tests", color: "#0284c7" },
+  { id: "ai", name: "Data Science & AI", count: "120+ Tests", color: "#8b5cf6" },
+  { id: "cloud", name: "Cloud & DevOps", count: "95+ Tests", color: "#06b6d4" },
+  { id: "aptitude", name: "Aptitude & Reasoning", count: "240+ Tests", color: "#f59e0b" },
+  { id: "academics", name: "University Academics", count: "310+ Tests", color: "#10b981" },
+  { id: "cyber", name: "Cybersecurity & Security", count: "75+ Tests", color: "#ef4444" }
 ];
 
 const CURATED_FEATURED_TESTS = [
@@ -126,6 +127,25 @@ const CURATED_FEATURED_TESTS = [
   }
 ];
 
+const renderCategoryIcon = (id) => {
+  switch (id) {
+    case "software":
+      return <CodeIcon size={20} />;
+    case "ai":
+      return <CpuIcon size={20} />;
+    case "cloud":
+      return <GlobeIcon size={20} />;
+    case "aptitude":
+      return <SparklesIcon size={20} />;
+    case "academics":
+      return <GraduationCapIcon size={20} />;
+    case "cyber":
+      return <ShieldIcon size={20} />;
+    default:
+      return <BookOpenIcon size={20} />;
+  }
+};
+
 const LandingPage = () => {
   const [publicTests, setPublicTests] = useState([]);
   const [loadingTests, setLoadingTests] = useState(true);
@@ -134,47 +154,65 @@ const LandingPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "AssessIQ — Leading LMS & Multi-Tenant Assessment Portal";
+    // Set official clean title without "Leading LMS" prefix
+    document.title = "AssessIQ — Multi-Tenant Assessment Portal";
 
+    let isMounted = true;
     const fetchPublicTests = async () => {
       try {
         const res = await api.get("/tests/public");
-        setPublicTests(res.data?.tests || []);
+        if (isMounted) {
+          const list = Array.isArray(res.data?.tests)
+            ? res.data.tests
+            : Array.isArray(res.data)
+            ? res.data
+            : [];
+          setPublicTests(list);
+        }
       } catch (err) {
-        console.warn("Could not fetch public tests:", err.message);
+        console.warn("Notice: public tests fetch fallback:", err.message);
+        if (isMounted) setPublicTests([]);
       } finally {
-        setLoadingTests(false);
+        if (isMounted) setLoadingTests(false);
       }
     };
+
     fetchPublicTests();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Combine backend public tests with curated LMS tests
-  const combinedTests = [
-    ...publicTests.map((t) => ({
-      ...t,
-      instructor: t.createdBy?.name ? `Prof. ${t.createdBy.name}` : "AssessIQ Certified Faculty",
-      rating: 4.8,
-      ratingCount: 650 + Math.floor((t.duration || 30) * 12),
-      difficulty: t.duration > 45 ? "Advanced" : "Intermediate",
-      badge: "Institutional",
-      category: (t.subject || "software").toLowerCase()
-    })),
-    ...CURATED_FEATURED_TESTS
-  ];
+  // Safe combination of backend tests and curated tests
+  const backendList = Array.isArray(publicTests)
+    ? publicTests.map((t) => {
+        const durationNum = Number(t?.duration) || 30;
+        return {
+          ...t,
+          instructor: t?.createdBy?.name ? `Prof. ${t.createdBy.name}` : "AssessIQ Certified Faculty",
+          rating: 4.8,
+          ratingCount: 650 + Math.floor(durationNum * 12),
+          difficulty: durationNum > 45 ? "Advanced" : "Intermediate",
+          badge: "Institutional",
+          category: typeof t?.subject === "string" ? t.subject.toLowerCase() : "software"
+        };
+      })
+    : [];
 
-  // Filter based on search query and category tab
+  const combinedTests = [...backendList, ...CURATED_FEATURED_TESTS];
+
+  // Defensive filtering
   const filteredTests = combinedTests.filter((test) => {
-    const matchesSearch =
-      !searchQuery.trim() ||
-      test.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      test.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      test.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!test) return false;
+    const q = (searchQuery || "").toLowerCase().trim();
+    const title = typeof test.title === "string" ? test.title.toLowerCase() : "";
+    const subj = typeof test.subject === "string" ? test.subject.toLowerCase() : "";
+    const desc = typeof test.description === "string" ? test.description.toLowerCase() : "";
+    const cat = typeof test.category === "string" ? test.category.toLowerCase() : "";
 
+    const matchesSearch = !q || title.includes(q) || subj.includes(q) || desc.includes(q);
     const matchesCategory =
-      selectedCategory === "all" ||
-      (test.category && test.category.includes(selectedCategory)) ||
-      (test.subject && test.subject.toLowerCase().includes(selectedCategory));
+      selectedCategory === "all" || cat.includes(selectedCategory) || subj.includes(selectedCategory);
 
     return matchesSearch && matchesCategory;
   });
@@ -194,7 +232,7 @@ const LandingPage = () => {
         <div className="announcement-content">
           <span className="announcement-tag">NEW</span>
           <span>
-            🎓 Institutional Onboarding is now live! Host campus exams, assign batches, and automate grading seamlessly.
+            Institutional Onboarding is now live! Host campus exams, assign batches, and automate grading seamlessly.
           </span>
           <Link to="/join-us" className="announcement-link">
             Learn More →
@@ -210,7 +248,7 @@ const LandingPage = () => {
             <BrandCrest size={34} />
             <div className="brand-text-group">
               <span className="brand-title">AssessIQ</span>
-              <span className="brand-subtitle">LMS & Assessment Portal</span>
+              <span className="brand-subtitle">Assessment Portal</span>
             </div>
           </Link>
 
@@ -261,7 +299,7 @@ const LandingPage = () => {
           <div className="hero-text-column">
             <div className="hero-trust-pill">
               <SparklesIcon size={14} />
-              <span>Next-Gen Learning Management & MCQ Evaluation</span>
+              <span>Next-Gen Multi-Tenant Assessment & MCQ Evaluation</span>
             </div>
 
             <h1 className="hero-billboard-heading">
@@ -409,7 +447,7 @@ const LandingPage = () => {
                 }}
               >
                 <div className="category-icon-wrapper" style={{ color: cat.color, background: `${cat.color}15` }}>
-                  {cat.icon}
+                  {renderCategoryIcon(cat.id)}
                 </div>
                 <h3>{cat.name}</h3>
                 <span className="category-count">{cat.count}</span>
@@ -419,7 +457,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Udemy-Style Featured Assessment Cards Section */}
+      {/* Featured Assessment Cards Section */}
       <section id="lms-courses-section" className="lms-courses-section">
         <div className="section-container">
           <div className="section-heading-row">
@@ -545,12 +583,12 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Interactive Platform Highlights (LMS Feature Pillars) */}
+      {/* Feature Pillars */}
       <section className="lms-features-section">
         <div className="section-container">
           <div className="features-intro">
-            <span className="section-kicker">WHY ASSESSIQ LMS</span>
-            <h2>Engineered for High-Stakes Institutional Learning</h2>
+            <span className="section-kicker">WHY ASSESSIQ</span>
+            <h2>Engineered for High-Stakes Institutional Assessment</h2>
             <p>From university midterms to industry hiring certifications, we guarantee security, speed, and deep analytical clarity.</p>
           </div>
 
@@ -590,7 +628,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Social Proof / Student & Educator Reviews */}
+      {/* Reviews Section */}
       <section className="lms-reviews-section">
         <div className="section-container">
           <div className="section-heading-row" style={{ justifyContent: "center", textAlign: "center" }}>
@@ -658,7 +696,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Udemy-Style "Teach on AssessIQ" & "Institutional Portal" Callout Banner */}
+      {/* Instructor & Institutional Banner */}
       <section className="lms-instructor-banner">
         <div className="section-container">
           <div className="instructor-banner-card">
@@ -685,7 +723,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Rich LMS Footer */}
+      {/* Rich Footer */}
       <footer className="lms-footer">
         <div className="footer-top-container">
           <div className="footer-brand-col">
@@ -694,7 +732,7 @@ const LandingPage = () => {
               <span className="footer-brand-title">AssessIQ</span>
             </div>
             <p className="footer-desc">
-              The premier institutional multi-tenant assessment and learning management SaaS platform.
+              The premier institutional multi-tenant assessment and examination SaaS platform.
               Dedicated to delivering secure, intelligent, and scalable evaluation tools.
             </p>
             <div className="footer-badge-row">
@@ -737,7 +775,7 @@ const LandingPage = () => {
 
         <div className="footer-bottom-bar">
           <div className="footer-bottom-container">
-            <span>© 2026 AssessIQ Learning & Assessment Technologies Inc. All rights reserved.</span>
+            <span>© 2026 AssessIQ Assessment Technologies Inc. All rights reserved.</span>
             <div className="footer-bottom-links">
               <span>English (US)</span>
               <span>•</span>
