@@ -9,7 +9,9 @@ import {
   GlobeIcon,
   GraduationCapIcon,
   SearchIcon,
-  AlertTriangleIcon
+  AlertTriangleIcon,
+  BookOpenIcon,
+  CheckCircleIcon
 } from "../components/common/Icons.jsx";
 import "./PublicTests.css";
 
@@ -60,143 +62,218 @@ const PublicTests = () => {
     <div className="public-tests-page">
       {/* Navbar */}
       <nav className="public-nav">
-        <Link to="/" className="public-nav-brand" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <BrandCrest size={28} />
+        <Link to="/" className="public-nav-brand">
+          <BrandCrest size={32} />
           <span className="brand-name">AssessIQ</span>
         </Link>
         <div className="public-nav-actions">
+          <Link to="/join-us" className="btn-link-partner">Join With Us</Link>
           <Link to="/login" className="btn-outline">Sign In</Link>
           <Link to="/register" className="btn-primary">Get Started</Link>
         </div>
       </nav>
 
-      {/* Hero */}
+      {/* Hero Section */}
       <section className="public-tests-hero">
         <div className="hero-content">
-          <span className="hero-badge"><GlobeIcon size={14} /> Public Test Catalog</span>
+          <div className="hero-badge">
+            <GlobeIcon size={14} />
+            <span>Public Assessment Catalog</span>
+          </div>
           <h1>Explore Free MCQ Tests</h1>
-          <p>Browse hundreds of publicly available tests from verified creators and institutions. No account required to preview.</p>
-          <div className="public-search-bar">
-            <span className="search-icon"><SearchIcon size={16} /></span>
-            <input
-              type="text"
-              placeholder="Search by title, subject, or topic..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              id="public-search"
-            />
+          <p>
+            Browse hundreds of publicly available tests from verified creators and accredited institutions.
+            Sharpen your knowledge or preview exam structures with instant access.
+          </p>
+
+          {/* Integrated Search Bar */}
+          <div className="public-search-wrapper">
+            <div className="public-search-bar">
+              <span className="search-icon-box">
+                <SearchIcon size={18} />
+              </span>
+              <input
+                type="text"
+                placeholder="Search by title, subject, or topic..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                id="public-search"
+              />
+              {search && (
+                <button
+                  type="button"
+                  className="clear-search-btn"
+                  onClick={() => setSearch("")}
+                  title="Clear search"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="hero-stats">
-          <div className="hero-stat">
-            <strong>{tests.length}</strong>
-            <span>Public Tests</span>
-          </div>
-          <div className="hero-stat">
-            <strong>{subjects.length}</strong>
-            <span>Subjects</span>
-          </div>
-          <div className="hero-stat">
-            <strong>Free</strong>
-            <span>To Explore</span>
+
+          {/* Styled Hero Stats Bar */}
+          <div className="hero-stats-row">
+            <div className="hero-stat-pill">
+              <span className="stat-pill-num">{tests.length}</span>
+              <span className="stat-pill-label">Public Tests</span>
+            </div>
+            <div className="hero-stat-sep"></div>
+            <div className="hero-stat-pill">
+              <span className="stat-pill-num">{subjects.length}</span>
+              <span className="stat-pill-label">Subjects</span>
+            </div>
+            <div className="hero-stat-sep"></div>
+            <div className="hero-stat-pill">
+              <span className="stat-pill-badge">Free</span>
+              <span className="stat-pill-label">Instant Preview</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Filters */}
-      <section className="public-tests-body">
-        <div className="filter-bar">
-          <span className="filter-label">Filter by Subject:</span>
-          <div className="filter-chips">
-            <button
-              className={`filter-chip ${subjectFilter === "all" ? "active" : ""}`}
-              onClick={() => setSubjectFilter("all")}
-            >
-              All
-            </button>
-            {subjects.map((s) => (
+      {/* Main Content Body */}
+      <main className="public-tests-container">
+        {/* Filter Section */}
+        <div className="public-filter-section">
+          <div className="filter-chips-wrap">
+            <span className="filter-title">Filter by Subject:</span>
+            <div className="filter-chips">
               <button
-                key={s}
-                className={`filter-chip ${subjectFilter === s ? "active" : ""}`}
-                onClick={() => setSubjectFilter(s)}
+                type="button"
+                className={`filter-chip ${subjectFilter === "all" ? "active" : ""}`}
+                onClick={() => setSubjectFilter("all")}
               >
-                {s}
+                All
               </button>
-            ))}
+              {subjects.map((s) => (
+                <button
+                  type="button"
+                  key={s}
+                  className={`filter-chip ${subjectFilter === s ? "active" : ""}`}
+                  onClick={() => setSubjectFilter(s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
-          <span className="filter-count">{filtered.length} tests found</span>
+          <span className="filter-count-badge">
+            <strong>{filtered.length}</strong> {filtered.length === 1 ? "test" : "tests"} found
+          </span>
         </div>
 
+        {/* Loading State */}
         {loading && (
           <div className="public-tests-loading">
             <div className="spinner"></div>
-            <p>Loading public tests...</p>
+            <p>Loading catalog tests...</p>
           </div>
         )}
 
+        {/* Error State */}
         {!loading && error && (
           <div className="public-tests-error">
-            <AlertTriangleIcon size={18} />
+            <AlertTriangleIcon size={20} />
             <p>{error}</p>
           </div>
         )}
 
+        {/* Empty State */}
         {!loading && !error && filtered.length === 0 && (
           <div className="public-tests-empty">
-            <SearchIcon size={28} />
-            <p>{search ? `No tests found for "${search}"` : "No public tests available yet."}</p>
+            <SearchIcon size={32} />
+            <h3>No matching tests found</h3>
+            <p>{search ? `No tests matching "${search}". Try searching for another topic.` : "No public tests are published yet."}</p>
+            {search && (
+              <button type="button" className="btn-reset-search" onClick={() => setSearch("")}>
+                Reset Search
+              </button>
+            )}
           </div>
         )}
 
-        {!loading && !error && (
+        {/* Tests Grid */}
+        {!loading && !error && filtered.length > 0 && (
           <div className="public-tests-grid">
             {filtered.map((test) => (
               <div className="public-test-card" key={test._id}>
-                <div className="test-card-header">
-                  <span className={`test-difficulty ${getDifficultyColor(test.totalMarks)}`}>
-                    {getDifficultyColor(test.totalMarks) === "easy"
-                      ? "Beginner"
-                      : getDifficultyColor(test.totalMarks) === "medium"
-                      ? "Intermediate"
-                      : "Advanced"}
-                  </span>
-                  <span className="test-type-badge" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                    <GlobeIcon size={12} /> Public
-                  </span>
-                </div>
-                <div className="test-card-body">
-                  <h3>{test.title}</h3>
-                  {test.subject && (
-                    <span className="test-subject-chip" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                      <GraduationCapIcon size={12} /> {test.subject}
-                    </span>
+                {/* Test Cover Image / Banner */}
+                <div className="test-card-cover">
+                  {test.image ? (
+                    <img
+                      src={test.image}
+                      alt={test.title}
+                      className="test-cover-img"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <div className="test-cover-fallback">
+                      <BookOpenIcon size={28} />
+                      <span className="fallback-subject">{test.subject || "MCQ Assessment"}</span>
+                    </div>
                   )}
-                  <p className="test-description">
+
+                  {/* Overlaid Badges */}
+                  <div className="card-cover-badges">
+                    <span className={`test-difficulty-badge ${getDifficultyColor(test.totalMarks)}`}>
+                      {getDifficultyColor(test.totalMarks) === "easy"
+                        ? "Beginner"
+                        : getDifficultyColor(test.totalMarks) === "medium"
+                        ? "Intermediate"
+                        : "Advanced"}
+                    </span>
+                    <span className="test-public-badge">
+                      <GlobeIcon size={11} /> Public
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card Content */}
+                <div className="test-card-content">
+                  {test.subject && (
+                    <div className="test-subject-wrap">
+                      <span className="subject-chip">
+                        <GraduationCapIcon size={12} /> {test.subject}
+                      </span>
+                    </div>
+                  )}
+                  <h3 className="test-card-title">{test.title}</h3>
+                  <p className="test-card-desc">
                     {test.instructions
-                      ? test.instructions.slice(0, 100) + (test.instructions.length > 100 ? "..." : "")
-                      : "Take this test to assess your knowledge and skills."}
+                      ? test.instructions.slice(0, 110) + (test.instructions.length > 110 ? "..." : "")
+                      : "Assess your knowledge with this verified multiple choice evaluation."}
                   </p>
-                  <div className="test-meta">
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+
+                  <div className="test-meta-strip">
+                    <span className="test-meta-item" title="Duration">
                       <ClockIcon size={13} /> {test.duration} min
                     </span>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                      <HelpCircleIcon size={13} /> {Array.isArray(test.questions) ? test.questions.length : test.questionCount || 0} questions
+                    <span className="test-meta-item" title="Question count">
+                      <HelpCircleIcon size={13} /> {Array.isArray(test.questions) ? test.questions.length : test.questionCount || 0} Qs
                     </span>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                    <span className="test-meta-item" title="Total marks">
                       <AwardIcon size={13} /> {test.totalMarks || 0} marks
                     </span>
                   </div>
                 </div>
+
+                {/* Card Footer */}
                 <div className="test-card-footer">
                   <div className="test-creator-info">
                     <div className="creator-avatar">
-                      {test.createdBy?.name?.charAt(0) || "C"}
+                      {test.createdBy?.name?.charAt(0)?.toUpperCase() || "A"}
                     </div>
-                    <span>{test.createdBy?.name || "Anonymous"}</span>
+                    <div className="creator-meta">
+                      <span className="creator-name">{test.createdBy?.name || "Verified Author"}</span>
+                      <span className="creator-badge"><CheckCircleIcon size={10} /> Verified</span>
+                    </div>
                   </div>
                   <button
-                    className="btn-take-test"
+                    type="button"
+                    className="card-action-btn"
                     onClick={() => navigate("/register")}
                   >
                     Take Test →
@@ -206,15 +283,17 @@ const PublicTests = () => {
             ))}
           </div>
         )}
-      </section>
+      </main>
 
-      {/* CTA Banner */}
+      {/* CTA Footer Banner */}
       <section className="public-cta">
-        <h2>Ready to take tests?</h2>
-        <p>Create a free account to start taking tests, track your progress, and compete with others.</p>
-        <div className="cta-actions">
-          <Link to="/register" className="btn-primary-lg">Create Free Account</Link>
-          <Link to="/login" className="btn-ghost">Already have an account?</Link>
+        <div className="public-cta-inner">
+          <h2>Ready to take timed examinations?</h2>
+          <p>Create a free student or educator account to access analytics, merit rankings, and certificates.</p>
+          <div className="cta-actions">
+            <Link to="/register" className="btn-primary-lg">Create Free Account</Link>
+            <Link to="/login" className="btn-ghost-lg">Already registered? Sign In</Link>
+          </div>
         </div>
       </section>
     </div>

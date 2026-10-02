@@ -3,6 +3,17 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import api from "../services/api.js";
 import { BrandCrest } from "../components/common/BrandLogo.jsx";
+import {
+  BuildingIcon,
+  GraduationCapIcon,
+  ShieldIcon,
+  LockIcon,
+  CheckCircleIcon,
+  AlertTriangleIcon,
+  AwardIcon,
+  LayersIcon,
+  CheckIcon
+} from "../components/common/Icons.jsx";
 import "./JoinWithUs.css";
 
 const JoinWithUs = () => {
@@ -165,11 +176,11 @@ const JoinWithUs = () => {
 
   return (
     <div className="join-us-page">
-      {/* Institutional Top Navbar */}
+      {/* Modern Institutional Top Navbar */}
       <header className="join-nav">
         <div className="join-nav-container">
           <Link to="/" className="join-brand">
-            <BrandCrest size={34} />
+            <BrandCrest size={32} />
             <div className="brand-titles">
               <span className="brand-name">AssessIQ</span>
               <span className="brand-subtitle">Partnership Desk</span>
@@ -188,7 +199,7 @@ const JoinWithUs = () => {
       <section className="join-hero">
         <div className="join-hero-content">
           <div className="join-tag">
-            <span className="crest-mini">🏛️</span>
+            <BuildingIcon size={14} />
             <span>ACADEMIC ALLIANCES & FACULTY ONBOARDING</span>
           </div>
           <h1>Join With Us</h1>
@@ -213,16 +224,21 @@ const JoinWithUs = () => {
             </div>
           </div>
 
-          {/* Dual Track Switcher Tabs */}
+          {/* Dual Track Switcher Cards */}
           <div className="track-switcher">
             <button
               type="button"
               className={`track-tab ${activeTrack === "organization" ? "active" : ""}`}
               onClick={() => handleTrackSwitch("organization")}
             >
-              <span className="tab-icon">🏢</span>
+              <div className="tab-icon-wrap icon-org">
+                <BuildingIcon size={24} />
+              </div>
               <div className="tab-info">
-                <strong>Institution Onboarding</strong>
+                <div className="tab-title-line">
+                  <strong>Institution Onboarding</strong>
+                  {activeTrack === "organization" && <span className="active-chip">Active Track</span>}
+                </div>
                 <span>Universities, Colleges, Schools & L&D</span>
               </div>
             </button>
@@ -232,9 +248,14 @@ const JoinWithUs = () => {
               className={`track-tab ${activeTrack === "teacher" ? "active" : ""}`}
               onClick={() => handleTrackSwitch("teacher")}
             >
-              <span className="tab-icon">👨‍🏫</span>
+              <div className="tab-icon-wrap icon-teacher">
+                <GraduationCapIcon size={24} />
+              </div>
               <div className="tab-info">
-                <strong>Faculty & Teacher Application</strong>
+                <div className="tab-title-line">
+                  <strong>Faculty & Teacher Application</strong>
+                  {activeTrack === "teacher" && <span className="active-chip">Active Track</span>}
+                </div>
                 <span>Professors, Lecturers & Educators</span>
               </div>
             </button>
@@ -251,8 +272,12 @@ const JoinWithUs = () => {
           <div className="application-card fade-in">
             <div className="card-top-header">
               <div className="header-badge-wrap">
-                <span className="badge-pill pill-gold">Super Admin Review</span>
-                <span className="badge-pill pill-blue">Tenant Isolation</span>
+                <span className="badge-pill pill-superadmin">
+                  <ShieldIcon size={13} /> Super Admin Review
+                </span>
+                <span className="badge-pill pill-isolation">
+                  <LockIcon size={13} /> Tenant Isolation
+                </span>
               </div>
               <h2>Institutional Portal Registration Request</h2>
               <p>
@@ -263,19 +288,21 @@ const JoinWithUs = () => {
 
             {orgSuccess ? (
               <div className="application-success-box">
-                <div className="success-crest">🎉</div>
+                <div className="success-icon-wrap">
+                  <CheckCircleIcon size={44} />
+                </div>
                 <h3>Institutional Request Submitted Successfully!</h3>
                 <p>
                   Thank you, <strong>{orgForm.adminName}</strong>. Your onboarding application for <strong>{orgForm.name}</strong> has been forwarded to the Platform Super Admin team.
                 </p>
                 <div className="success-checklist">
-                  <div className="check-item">✓ Verification of institutional credentials</div>
-                  <div className="check-item">✓ Dedicated tenant slug and schema provisioning</div>
-                  <div className="check-item">✓ Organization Administrator login credentials delivered by email</div>
+                  <div className="check-item"><CheckIcon size={16} /> Verification of institutional credentials</div>
+                  <div className="check-item"><CheckIcon size={16} /> Dedicated tenant slug and schema provisioning</div>
+                  <div className="check-item"><CheckIcon size={16} /> Organization Administrator login credentials delivered by email</div>
                 </div>
                 <button
                   type="button"
-                  className="btn-academic-gold"
+                  className="btn-saas-primary"
                   onClick={() => {
                     setOrgSuccess(false);
                     setOrgForm({
@@ -301,13 +328,14 @@ const JoinWithUs = () => {
               <form onSubmit={handleOrgSubmit} className="academic-form">
                 {orgError && (
                   <div className="form-alert alert-danger">
-                    <span>⚠️ {orgError}</span>
+                    <AlertTriangleIcon size={16} />
+                    <span>{orgError}</span>
                   </div>
                 )}
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label>Organization / Institution Name *</label>
+                    <label>Organization / Institution Name <span className="req">*</span></label>
                     <input
                       type="text"
                       className="academic-input"
@@ -319,7 +347,7 @@ const JoinWithUs = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Institution Type *</label>
+                    <label>Institution Type <span className="req">*</span></label>
                     <select
                       className="academic-input"
                       value={orgForm.type}
@@ -336,7 +364,7 @@ const JoinWithUs = () => {
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label>Designated Administrator Full Name *</label>
+                    <label>Designated Administrator Full Name <span className="req">*</span></label>
                     <input
                       type="text"
                       className="academic-input"
@@ -348,7 +376,7 @@ const JoinWithUs = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Official Institutional Email *</label>
+                    <label>Official Institutional Email <span className="req">*</span></label>
                     <input
                       type="email"
                       className="academic-input"
@@ -363,7 +391,7 @@ const JoinWithUs = () => {
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label>10-Digit Mobile / Contact Number *</label>
+                    <label>10-Digit Mobile / Contact Number <span className="req">*</span></label>
                     <input
                       type="tel"
                       className="academic-input"
@@ -389,7 +417,7 @@ const JoinWithUs = () => {
 
                 <div className="form-grid-3">
                   <div className="form-group">
-                    <label>City *</label>
+                    <label>City <span className="req">*</span></label>
                     <input
                       type="text"
                       className="academic-input"
@@ -434,8 +462,14 @@ const JoinWithUs = () => {
                   />
                 </div>
 
-                <button type="submit" className="btn-academic-gold btn-full" disabled={orgLoading}>
-                  {orgLoading ? "Submitting Request..." : "Submit Institutional Application →"}
+                <button type="submit" className="btn-saas-primary btn-full" disabled={orgLoading}>
+                  {orgLoading ? (
+                    <span className="btn-loading-content">
+                      <span className="mini-spinner"></span> Submitting Application...
+                    </span>
+                  ) : (
+                    "Submit Institutional Application →"
+                  )}
                 </button>
               </form>
             )}
@@ -449,31 +483,37 @@ const JoinWithUs = () => {
           <div className="application-card fade-in">
             <div className="card-top-header">
               <div className="header-badge-wrap">
-                <span className="badge-pill pill-gold">Faculty Portal</span>
-                <span className="badge-pill pill-emerald">Assessment Authoring</span>
+                <span className="badge-pill pill-faculty">
+                  <GraduationCapIcon size={13} /> Faculty Accreditation
+                </span>
+                <span className="badge-pill pill-authoring">
+                  <AwardIcon size={13} /> Assessment Authoring
+                </span>
               </div>
               <h2>Faculty & Educator Partnership Application</h2>
               <p>
-                Apply to become a verified educator on AssessIQ. Faculty members can author timed examinations,
-                curate question banks, manage student cohorts/batches, and track performance telemetry.
+                Apply to become an accredited assessment author on AssessIQ. Faculty members curate question banks,
+                schedule proctored evaluations, manage candidate cohorts, and inspect performance telemetry.
               </p>
             </div>
 
             {teacherSuccess ? (
               <div className="application-success-box">
-                <div className="success-crest">🎓</div>
+                <div className="success-icon-wrap">
+                  <CheckCircleIcon size={44} />
+                </div>
                 <h3>Faculty Application Submitted Successfully!</h3>
                 <p>
-                  Thank you, <strong>{teacherForm.name}</strong>. Your application to teach <strong>{teacherForm.subject}</strong> has been recorded.
+                  Thank you, <strong>{teacherForm.name}</strong>. Your application to author assessments for <strong>{teacherForm.subject}</strong> has been received.
                 </p>
                 <div className="success-checklist">
-                  <div className="check-item">✓ Application queued for administrator verification</div>
-                  <div className="check-item">✓ Educational qualifications and credentials verification</div>
-                  <div className="check-item">✓ Teacher account activation notice sent via email upon approval</div>
+                  <div className="check-item"><CheckIcon size={16} /> Application queued for institutional administrator verification</div>
+                  <div className="check-item"><CheckIcon size={16} /> Educational qualifications and teaching credentials review</div>
+                  <div className="check-item"><CheckIcon size={16} /> Faculty authoring console access dispatched via email upon approval</div>
                 </div>
                 <button
                   type="button"
-                  className="btn-academic-gold"
+                  className="btn-saas-primary"
                   onClick={() => {
                     setTeacherSuccess(false);
                     setTeacherForm({
@@ -497,13 +537,14 @@ const JoinWithUs = () => {
               <form onSubmit={handleTeacherSubmit} className="academic-form">
                 {teacherError && (
                   <div className="form-alert alert-danger">
-                    <span>⚠️ {teacherError}</span>
+                    <AlertTriangleIcon size={16} />
+                    <span>{teacherError}</span>
                   </div>
                 )}
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label>Full Name *</label>
+                    <label>Full Name <span className="req">*</span></label>
                     <input
                       type="text"
                       className="academic-input"
@@ -515,7 +556,7 @@ const JoinWithUs = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Academic / Professional Email *</label>
+                    <label>Academic / Professional Email <span className="req">*</span></label>
                     <input
                       type="email"
                       className="academic-input"
@@ -529,7 +570,7 @@ const JoinWithUs = () => {
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label>10-Digit Phone Number *</label>
+                    <label>10-Digit Phone Number <span className="req">*</span></label>
                     <input
                       type="tel"
                       className="academic-input"
@@ -542,7 +583,7 @@ const JoinWithUs = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Target Institution / Organization *</label>
+                    <label>Target Institution / Organization <span className="req">*</span></label>
                     <select
                       className="academic-input"
                       value={teacherForm.organizationId}
@@ -561,7 +602,7 @@ const JoinWithUs = () => {
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label>Primary Subject / Specialization *</label>
+                    <label>Primary Subject / Specialization <span className="req">*</span></label>
                     <input
                       type="text"
                       className="academic-input"
@@ -573,7 +614,7 @@ const JoinWithUs = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Highest Qualification *</label>
+                    <label>Highest Qualification <span className="req">*</span></label>
                     <input
                       type="text"
                       className="academic-input"
@@ -587,7 +628,7 @@ const JoinWithUs = () => {
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label>Years of Teaching Experience *</label>
+                    <label>Years of Teaching Experience <span className="req">*</span></label>
                     <input
                       type="number"
                       min={0}
@@ -622,8 +663,14 @@ const JoinWithUs = () => {
                   />
                 </div>
 
-                <button type="submit" className="btn-academic-gold btn-full" disabled={teacherLoading}>
-                  {teacherLoading ? "Submitting Application..." : "Submit Faculty Application →"}
+                <button type="submit" className="btn-saas-primary btn-full" disabled={teacherLoading}>
+                  {teacherLoading ? (
+                    <span className="btn-loading-content">
+                      <span className="mini-spinner"></span> Submitting Application...
+                    </span>
+                  ) : (
+                    "Submit Faculty Application →"
+                  )}
                 </button>
               </form>
             )}
@@ -633,19 +680,25 @@ const JoinWithUs = () => {
         {/* Institutional Pillars */}
         <div className="join-pillars-grid">
           <div className="pillar-item">
-            <div className="pillar-icon">🔒</div>
+            <div className="pillar-icon">
+              <ShieldIcon size={24} />
+            </div>
             <h4>Strict Tenant Isolation</h4>
             <p>Organizations and question banks operate under complete data privacy with dedicated namespaces.</p>
           </div>
 
           <div className="pillar-item">
-            <div className="pillar-icon">🏷️</div>
+            <div className="pillar-icon">
+              <LayersIcon size={24} />
+            </div>
             <h4>Selective Batch Rollouts</h4>
             <p>Group candidates into cohorts, batch numbers, and merit lists to roll out customized test sessions.</p>
           </div>
 
           <div className="pillar-item">
-            <div className="pillar-icon">📜</div>
+            <div className="pillar-icon">
+              <AwardIcon size={24} />
+            </div>
             <h4>Certified Transcripts</h4>
             <p>Automated grading with question-level diagnostic breakdown and pass-threshold verification.</p>
           </div>
