@@ -107,6 +107,8 @@ const LandingPage = () => {
       })
     : [];
 
+  const combinedTests = displayTests;
+
   // Defensive filtering
   const filteredTests = displayTests.filter((test) => {
     if (!test) return false;
@@ -395,7 +397,7 @@ const LandingPage = () => {
                 className={`filter-pill ${selectedCategory === "all" ? "active" : ""}`}
                 onClick={() => setSelectedCategory("all")}
               >
-                All Courses ({combinedTests.length})
+                All Courses ({displayTests.length})
               </button>
               <button
                 className={`filter-pill ${selectedCategory === "software" ? "active" : ""}`}
