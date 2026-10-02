@@ -19,6 +19,12 @@ const testSchema = new mongoose.Schema(
       default: ""
     },
 
+    // Test cover / thumbnail image (URL or base64)
+    image: {
+      type: String,
+      default: ""
+    },
+
     // Subject or category of the test
     subject: {
       type: String,

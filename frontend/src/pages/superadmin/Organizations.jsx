@@ -10,7 +10,9 @@ import {
   MailIcon,
   UsersIcon,
   PlusIcon,
-  SearchIcon
+  SearchIcon,
+  TrashIcon,
+  EyeIcon
 } from "../../components/common/Icons.jsx";
 import "./Organizations.css";
 
@@ -29,6 +31,8 @@ const Organizations = () => {
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [deleteOrgTarget, setDeleteOrgTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
   const [createdCredentials, setCreatedCredentials] = useState(null);
@@ -183,19 +187,20 @@ const Organizations = () => {
     }
   };
 
-  const handleDeleteOrg = async (org) => {
-    const confirm = window.confirm(
-      `Are you sure you want to permanently delete "${org.name}"? This action cannot be undone.`
-    );
-    if (!confirm) return;
+  const confirmDeleteOrg = async () => {
+    if (!deleteOrgTarget) return;
 
     try {
-      await api.delete(`/organizations/${org._id}`);
-      setFeedback(`"${org.name}" deleted successfully.`);
+      setDeleteLoading(true);
+      await api.delete(`/organizations/${deleteOrgTarget._id}`);
+      setFeedback(`"${deleteOrgTarget.name}" deleted successfully.`);
       setTimeout(() => setFeedback(""), 4000);
+      setDeleteOrgTarget(null);
       await fetchOrganizations();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to delete organization.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -435,34 +440,39 @@ const Organizations = () => {
                           <div className="organization-actions">
                             <button
                               type="button"
+                              className="btn-action-pill view"
                               onClick={() => openViewModal(organization)}
+                              title="View Details"
                             >
-                              View
+                              <EyeIcon size={13} /> View
                             </button>
 
                             <button
                               type="button"
+                              className="btn-action-pill edit"
                               onClick={() => openEditModal(organization)}
+                              title="Edit Organization"
                             >
-                              Edit
+                              <EditIcon size={13} /> Edit
                             </button>
 
                             <button
                               type="button"
-                              style={{
-                                color: isActive ? "#b91c1c" : "#15803d"
-                              }}
+                              className={`btn-action-pill ${isActive ? "deactivate" : "activate"}`}
                               onClick={() => handleToggleStatus(organization)}
+                              title={isActive ? "Deactivate Organization" : "Activate Organization"}
                             >
+                              <CheckCircleIcon size={13} />
                               {isActive ? "Deactivate" : "Activate"}
                             </button>
 
                             <button
                               type="button"
-                              style={{ color: "#ef4444" }}
-                              onClick={() => handleDeleteOrg(organization)}
+                              className="btn-action-pill delete"
+                              onClick={() => setDeleteOrgTarget(organization)}
+                              title="Delete Organization"
                             >
-                              Delete
+                              <TrashIcon size={13} /> Delete
                             </button>
                           </div>
                         </td>
@@ -885,6 +895,40 @@ const Organizations = () => {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Custom Modern Delete Confirmation Modal */}
+        {deleteOrgTarget && (
+          <div className="modal-backdrop" onClick={() => !deleteLoading && setDeleteOrgTarget(null)}>
+            <div className="custom-confirm-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="confirm-icon-danger">
+                <AlertTriangleIcon size={32} />
+              </div>
+              <h3>Permanently Delete Organization?</h3>
+              <p>
+                Are you sure you want to delete <strong>"{deleteOrgTarget.name}"</strong>?
+                This action is irreversible and will remove all tenant configurations.
+              </p>
+              <div className="confirm-actions">
+                <button
+                  type="button"
+                  className="btn-modal-cancel"
+                  disabled={deleteLoading}
+                  onClick={() => setDeleteOrgTarget(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-modal-danger"
+                  disabled={deleteLoading}
+                  onClick={confirmDeleteOrg}
+                >
+                  {deleteLoading ? "Deleting..." : "Yes, Delete Organization"}
+                </button>
+              </div>
             </div>
           </div>
         )}

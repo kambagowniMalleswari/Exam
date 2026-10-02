@@ -8,9 +8,18 @@ import {
   AwardIcon,
   FileTextIcon,
   SearchIcon,
-  AlertTriangleIcon
+  AlertTriangleIcon,
+  EditIcon,
+  CheckCircleIcon
 } from "../../components/common/Icons.jsx";
 import "./SuperAdminSubscriptions.css";
+
+const PLAN_PRESETS = {
+  free: { maxTests: 5, maxStudents: 100, price: 0 },
+  basic: { maxTests: 25, maxStudents: 500, price: 29 },
+  pro: { maxTests: 100, maxStudents: 2500, price: 79 },
+  enterprise: { maxTests: 99999, maxStudents: 99999, price: 199 }
+};
 
 const SuperAdminSubscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -18,6 +27,19 @@ const SuperAdminSubscriptions = () => {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState("all");
+  const [feedback, setFeedback] = useState("");
+
+  // Edit Subscription Modal State
+  const [editingSub, setEditingSub] = useState(null);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState("");
+  const [editForm, setEditForm] = useState({
+    plan: "free",
+    price: 0,
+    maxTests: 5,
+    maxStudents: 100,
+    status: "active"
+  });
 
   useEffect(() => {
     fetchSubscriptions();
@@ -32,6 +54,48 @@ const SuperAdminSubscriptions = () => {
       setError(err.response?.data?.message || "Failed to load platform subscriptions.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenEdit = (sub) => {
+    setEditingSub(sub);
+    setModalError("");
+    setEditForm({
+      plan: sub.plan || "free",
+      price: sub.price ?? (PLAN_PRESETS[sub.plan]?.price || 0),
+      maxTests: sub.maxTests ?? 5,
+      maxStudents: sub.maxStudents ?? 100,
+      status: sub.status || "active"
+    });
+  };
+
+  const handlePlanPresetSelect = (tier) => {
+    const preset = PLAN_PRESETS[tier] || PLAN_PRESETS.free;
+    setEditForm((prev) => ({
+      ...prev,
+      plan: tier,
+      price: preset.price,
+      maxTests: preset.maxTests,
+      maxStudents: preset.maxStudents
+    }));
+  };
+
+  const handleSaveSubscription = async (e) => {
+    e.preventDefault();
+    if (!editingSub) return;
+
+    try {
+      setModalLoading(true);
+      setModalError("");
+      await api.put(`/subscriptions/${editingSub._id}`, editForm);
+      setFeedback(`Subscription for ${editingSub.organizationId?.name || "tenant"} updated successfully!`);
+      setTimeout(() => setFeedback(""), 4000);
+      setEditingSub(null);
+      await fetchSubscriptions();
+    } catch (err) {
+      setModalError(err.response?.data?.message || "Failed to update subscription.");
+    } finally {
+      setModalLoading(false);
     }
   };
 
@@ -125,6 +189,14 @@ const SuperAdminSubscriptions = () => {
           </div>
         </div>
 
+        {/* Feedback Alert */}
+        {feedback && (
+          <div className="sa-feedback-alert">
+            <CheckCircleIcon size={18} />
+            <span>{feedback}</span>
+          </div>
+        )}
+
         {/* Controls */}
         <div className="sa-controls">
           <div className="sa-search">
@@ -188,6 +260,7 @@ const SuperAdminSubscriptions = () => {
                   <th>Students Limit</th>
                   <th>Status</th>
                   <th>Subscribed On</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -230,10 +303,142 @@ const SuperAdminSubscriptions = () => {
                       </span>
                     </td>
                     <td className="date-cell">{formatDate(sub.startDate || sub.createdAt)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="sa-action-btn-pill"
+                        onClick={() => handleOpenEdit(sub)}
+                        title="Manage Tier & Quotas"
+                      >
+                        <EditIcon size={12} /> Manage Tier
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Edit Subscription Modal */}
+        {editingSub && (
+          <div className="sa-modal-overlay" onClick={() => !modalLoading && setEditingSub(null)}>
+            <div className="sa-modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="sa-modal-header">
+                <div>
+                  <h3>Manage Tenant Subscription</h3>
+                  <p>Update subscription tier, price, and operational quotas for <strong>{editingSub.organizationId?.name}</strong>.</p>
+                </div>
+                <button
+                  type="button"
+                  className="sa-modal-close"
+                  onClick={() => setEditingSub(null)}
+                >
+                  ×
+                </button>
+              </div>
+
+              {modalError && (
+                <div className="sa-modal-alert error">
+                  <AlertTriangleIcon size={16} />
+                  <span>{modalError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveSubscription} className="sa-modal-form">
+                {/* Tier Presets Selection */}
+                <div className="form-group-block">
+                  <label className="sa-form-label">Subscription Tier</label>
+                  <div className="tier-preset-grid">
+                    {["free", "basic", "pro", "enterprise"].map((tier) => (
+                      <button
+                        key={tier}
+                        type="button"
+                        className={`tier-preset-btn ${editForm.plan === tier ? "selected" : ""}`}
+                        onClick={() => handlePlanPresetSelect(tier)}
+                      >
+                        <span className="preset-name">{tier.toUpperCase()}</span>
+                        <span className="preset-price">
+                          ${PLAN_PRESETS[tier].price}/mo
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="form-row-dual">
+                  <div className="form-field">
+                    <label className="sa-form-label">Monthly Price ($)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editForm.price}
+                      onChange={(e) => setEditForm({ ...editForm, price: Number(e.target.value) })}
+                      className="sa-input"
+                      required
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label className="sa-form-label">Status</label>
+                    <select
+                      value={editForm.status}
+                      onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                      className="sa-input sa-select"
+                    >
+                      <option value="active">Active</option>
+                      <option value="trial">Trial</option>
+                      <option value="expired">Expired</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-row-dual">
+                  <div className="form-field">
+                    <label className="sa-form-label">Max Tests Quota</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={editForm.maxTests}
+                      onChange={(e) => setEditForm({ ...editForm, maxTests: Number(e.target.value) })}
+                      className="sa-input"
+                      required
+                    />
+                    <small className="field-hint">Use 99999 for unlimited tests</small>
+                  </div>
+                  <div className="form-field">
+                    <label className="sa-form-label">Max Students Limit</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={editForm.maxStudents}
+                      onChange={(e) => setEditForm({ ...editForm, maxStudents: Number(e.target.value) })}
+                      className="sa-input"
+                      required
+                    />
+                    <small className="field-hint">Use 99999 for unlimited students</small>
+                  </div>
+                </div>
+
+                <div className="sa-modal-footer">
+                  <button
+                    type="button"
+                    className="sa-btn-cancel"
+                    disabled={modalLoading}
+                    onClick={() => setEditingSub(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="sa-btn-save"
+                    disabled={modalLoading}
+                  >
+                    {modalLoading ? "Saving Changes..." : "Save Subscription Changes"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </div>

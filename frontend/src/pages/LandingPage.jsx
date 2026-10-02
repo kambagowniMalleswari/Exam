@@ -24,107 +24,14 @@ import {
 } from "../components/common/Icons.jsx";
 import "./LandingPage.css";
 
-// Rich curated LMS tracks
-const LMS_CATEGORIES = [
-  { id: "software", name: "Software Development", count: "180+ Tests", color: "#0284c7" },
-  { id: "ai", name: "Data Science & AI", count: "120+ Tests", color: "#8b5cf6" },
-  { id: "cloud", name: "Cloud & DevOps", count: "95+ Tests", color: "#06b6d4" },
-  { id: "aptitude", name: "Aptitude & Reasoning", count: "240+ Tests", color: "#f59e0b" },
-  { id: "academics", name: "University Academics", count: "310+ Tests", color: "#10b981" },
-  { id: "cyber", name: "Cybersecurity & Security", count: "75+ Tests", color: "#ef4444" }
-];
-
-const CURATED_FEATURED_TESTS = [
-  {
-    _id: "curated-1",
-    title: "Full-Stack React & Node.js Architecture Certification",
-    subject: "Software Development",
-    category: "software",
-    instructor: "Dr. Arvind Rao • Senior Full-Stack Architect",
-    rating: 4.9,
-    ratingCount: 2840,
-    duration: 45,
-    questionCount: 35,
-    difficulty: "Intermediate",
-    badge: "Bestseller",
-    description: "Validate deep concepts in React 18, state management, asynchronous REST APIs, and event loops.",
-    isCurated: true
-  },
-  {
-    _id: "curated-2",
-    title: "Python Data Structures & Algorithm Optimization",
-    subject: "Data Science & AI",
-    category: "ai",
-    instructor: "Prof. Sarah Jenkins • MIT Algorithms Faculty",
-    rating: 4.8,
-    ratingCount: 3410,
-    duration: 60,
-    questionCount: 40,
-    difficulty: "Advanced",
-    badge: "High Rated",
-    description: "Rigorous timed assessment on binary trees, graph algorithms, dynamic programming, and complexity.",
-    isCurated: true
-  },
-  {
-    _id: "curated-3",
-    title: "AWS Cloud Practitioner & DevOps Essentials Exam",
-    subject: "Cloud & DevOps",
-    category: "cloud",
-    instructor: "Mark Vance • AWS Certified Solutions Architect",
-    rating: 4.9,
-    ratingCount: 1950,
-    duration: 50,
-    questionCount: 50,
-    difficulty: "Intermediate",
-    badge: "Popular",
-    description: "Covers VPC architectures, IAM security policies, S3 lifecycle, EC2 autoscaling, and CI/CD pipelines.",
-    isCurated: true
-  },
-  {
-    _id: "curated-4",
-    title: "Quantitative Aptitude & Logical Reasoning Master Test",
-    subject: "Aptitude & Reasoning",
-    category: "aptitude",
-    instructor: "K. R. Murthy • Placement & Competitive Trainer",
-    rating: 4.7,
-    ratingCount: 5120,
-    duration: 40,
-    questionCount: 45,
-    difficulty: "All Levels",
-    badge: "Essential",
-    description: "Standardized numerical ability, permutation & combination, logical deductions, and data sufficiency.",
-    isCurated: true
-  },
-  {
-    _id: "curated-5",
-    title: "Machine Learning & Deep Neural Network Foundations",
-    subject: "Data Science & AI",
-    category: "ai",
-    instructor: "Dr. Elena Rostova • Stanford AI Lab",
-    rating: 4.9,
-    ratingCount: 1670,
-    duration: 55,
-    questionCount: 35,
-    difficulty: "Advanced",
-    badge: "Trending",
-    description: "Supervised & unsupervised learning, gradient descent mathematics, transformer basics, and model evaluation.",
-    isCurated: true
-  },
-  {
-    _id: "curated-6",
-    title: "Database Management Systems (DBMS & SQL Injection)",
-    subject: "Software Development",
-    category: "software",
-    instructor: "Vikram Nair • Principal Database Engineer",
-    rating: 4.8,
-    ratingCount: 2280,
-    duration: 35,
-    questionCount: 30,
-    difficulty: "Beginner to Intermediate",
-    badge: "Top Pick",
-    description: "ACID properties, normalization, indexing strategies, complex joins, transactions, and security checks.",
-    isCurated: true
-  }
+// Clean curated assessment categories
+const ASSESSMENT_TRACKS = [
+  { id: "software", name: "Software Development", color: "#0284c7" },
+  { id: "ai", name: "Data Science & AI", color: "#8b5cf6" },
+  { id: "cloud", name: "Cloud & DevOps", color: "#06b6d4" },
+  { id: "aptitude", name: "Aptitude & Reasoning", color: "#f59e0b" },
+  { id: "academics", name: "University Academics", color: "#10b981" },
+  { id: "cyber", name: "Cybersecurity", color: "#ef4444" }
 ];
 
 const renderCategoryIcon = (id) => {
@@ -154,7 +61,6 @@ const LandingPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set official clean title without "Leading LMS" prefix
     document.title = "AssessIQ — Multi-Tenant Assessment Portal";
 
     let isMounted = true;
@@ -170,7 +76,7 @@ const LandingPage = () => {
           setPublicTests(list);
         }
       } catch (err) {
-        console.warn("Notice: public tests fetch fallback:", err.message);
+        console.warn("Notice: public tests fetch:", err.message);
         if (isMounted) setPublicTests([]);
       } finally {
         if (isMounted) setLoadingTests(false);
@@ -183,26 +89,26 @@ const LandingPage = () => {
     };
   }, []);
 
-  // Safe combination of backend tests and curated tests
-  const backendList = Array.isArray(publicTests)
+  // Real backend tests mapped cleanly
+  const displayTests = Array.isArray(publicTests)
     ? publicTests.map((t) => {
         const durationNum = Number(t?.duration) || 30;
         return {
-          ...t,
-          instructor: t?.createdBy?.name ? `Prof. ${t.createdBy.name}` : "AssessIQ Certified Faculty",
-          rating: 4.8,
-          ratingCount: 650 + Math.floor(durationNum * 12),
-          difficulty: durationNum > 45 ? "Advanced" : "Intermediate",
-          badge: "Institutional",
+          _id: t._id,
+          title: t.title || t.name || "Assessment",
+          subject: t.subject || "General",
+          duration: durationNum,
+          questionCount: Array.isArray(t.questions) ? t.questions.length : (t.questionCount || 0),
+          image: t.image || "",
+          description: t.description || "Timed institutional MCQ evaluation with instant scorecard.",
+          organizationName: t.organizationId?.name || "AssessIQ Academic Platform",
           category: typeof t?.subject === "string" ? t.subject.toLowerCase() : "software"
         };
       })
     : [];
 
-  const combinedTests = [...backendList, ...CURATED_FEATURED_TESTS];
-
   // Defensive filtering
-  const filteredTests = combinedTests.filter((test) => {
+  const filteredTests = displayTests.filter((test) => {
     if (!test) return false;
     const q = (searchQuery || "").toLowerCase().trim();
     const title = typeof test.title === "string" ? test.title.toLowerCase() : "";
@@ -312,6 +218,16 @@ const LandingPage = () => {
               server-synchronized anti-cheat sessions, and instant percentile scorecards.
             </p>
 
+            {/* Hero CTA Buttons */}
+            <div className="hero-cta-buttons">
+              <a href="#lms-courses-section" className="btn-hero-explore">
+                <SparklesIcon size={16} /> Explore Free Public Tests
+              </a>
+              <Link to="/join-us" className="btn-hero-partner">
+                <BuildingIcon size={16} /> Onboard Institution →
+              </Link>
+            </div>
+
             {/* In-Hero Search and Category Quick Chips */}
             <form className="hero-search-box" onSubmit={handleSearchSubmit}>
               <SearchIcon size={20} className="hero-search-icon" />
@@ -348,31 +264,37 @@ const LandingPage = () => {
           {/* Right Hero Interactive Preview Card */}
           <div className="hero-preview-column">
             <div className="hero-live-card">
-              <div className="live-card-badge">
-                <span className="live-dot"></span> LIVE TEST SESSION
+              <div className="live-card-badge" style={{ background: "#ecfdf5", color: "#059669", border: "1px solid #a7f3d0" }}>
+                <span className="live-dot" style={{ background: "#10b981" }}></span> PLATFORM HIGHLIGHTS
               </div>
               <div className="live-card-body">
-                <h3>Advanced React & Node Architecture Assessment</h3>
-                <div className="live-timer-mock">
-                  <ClockIcon size={16} />
-                  <span>Time Remaining: <strong>24:38</strong></span>
-                </div>
-                <div className="progress-bar-mock">
-                  <div className="progress-fill" style={{ width: "68%" }}></div>
-                </div>
-                <div className="live-stats-row">
-                  <span>Questions Answered: <strong>24 / 35</strong></span>
-                  <span className="accuracy-pill">94% Accuracy</span>
+                <h3>Enterprise Multi-Tenant Assessment Engine</h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", margin: "14px 0" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", color: "#334155" }}>
+                    <span style={{ fontSize: "16px" }}>⏱️</span>
+                    <span>Server-Synchronized Non-Tamper Timers</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", color: "#334155" }}>
+                    <span style={{ fontSize: "16px" }}>🛡️</span>
+                    <span>Active Tab Anti-Cheat & Proctored Submission</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", color: "#334155" }}>
+                    <span style={{ fontSize: "16px" }}>📊</span>
+                    <span>Instant Automated Grading & PDF Scorecards</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.85rem", color: "#334155" }}>
+                    <span style={{ fontSize: "16px" }}>🏫</span>
+                    <span>Hermetic Institution & Batch Cohort Isolation</span>
+                  </div>
                 </div>
               </div>
-              <div className="live-card-footer">
-                <div className="student-avatars-mock">
-                  <span className="avatar">A</span>
-                  <span className="avatar">S</span>
-                  <span className="avatar">R</span>
-                  <span className="avatar-more">+420</span>
+              <div className="live-card-footer" style={{ borderTop: "1px solid #f1f5f9", paddingTop: "14px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                  <span style={{ fontSize: "0.82rem", color: "#64748b" }}>Ready to evaluate your skills?</span>
+                  <Link to="/register" style={{ fontSize: "0.82rem", fontWeight: 700, color: "#0284c7", textDecoration: "none" }}>
+                    Create Student Account →
+                  </Link>
                 </div>
-                <span className="live-enrolled-text">Active participants right now</span>
               </div>
             </div>
 
@@ -386,10 +308,10 @@ const LandingPage = () => {
             </div>
 
             <div className="floating-metric-card bottom">
-              <div className="metric-icon"><UsersIcon size={22} /></div>
+              <div className="metric-icon"><BuildingIcon size={22} /></div>
               <div>
-                <strong>150+ Campuses</strong>
-                <span>Schools & Universities on AssessIQ</span>
+                <strong>Multi-Tenant Ready</strong>
+                <span>Isolated Campus Portals</span>
               </div>
             </div>
           </div>
@@ -436,7 +358,7 @@ const LandingPage = () => {
           </div>
 
           <div className="categories-grid">
-            {LMS_CATEGORIES.map((cat) => (
+            {ASSESSMENT_TRACKS.map((cat) => (
               <div
                 key={cat.id}
                 className={`category-card ${selectedCategory === cat.id ? "active-category" : ""}`}
@@ -450,7 +372,7 @@ const LandingPage = () => {
                   {renderCategoryIcon(cat.id)}
                 </div>
                 <h3>{cat.name}</h3>
-                <span className="category-count">{cat.count}</span>
+                <span className="category-count" style={{ fontSize: "0.78rem", color: "#64748b" }}>Click to filter</span>
               </div>
             ))}
           </div>
@@ -514,35 +436,34 @@ const LandingPage = () => {
                 <div key={test._id} className="course-card">
                   {/* Card Thumbnail / Header */}
                   <div className="course-thumbnail">
-                    <div className="thumbnail-backdrop">
-                      <BookOpenIcon size={32} />
-                    </div>
-                    {test.badge && <span className="course-badge">{test.badge}</span>}
-                    <span className="difficulty-pill">{test.difficulty || "Intermediate"}</span>
+                    {test.image ? (
+                      <img
+                        src={test.image}
+                        alt={test.title}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="thumbnail-backdrop">
+                        <BookOpenIcon size={32} />
+                      </div>
+                    )}
+                    <span className="difficulty-pill">{test.subject}</span>
                   </div>
 
                   {/* Card Details */}
                   <div className="course-content">
                     <span className="course-subject">{test.subject || "General MCQ"}</span>
                     <h3 className="course-title" title={test.title}>{test.title}</h3>
-                    <p className="course-instructor">{test.instructor || "AssessIQ Expert Faculty"}</p>
-
-                    {/* Star Ratings */}
-                    <div className="course-rating-row">
-                      <span className="rating-score">{test.rating || "4.8"}</span>
-                      <div className="rating-stars">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <span key={star} className="star-icon-gold"><StarIcon size={13} /></span>
-                        ))}
-                      </div>
-                      <span className="rating-count">({(test.ratingCount || 1200).toLocaleString()})</span>
-                    </div>
+                    <p className="course-instructor">{test.organizationName || "AssessIQ Academic Platform"}</p>
 
                     {/* Exam Meta: Time, Questions, Auto-Evaluation */}
                     <div className="course-meta-tags">
                       <span className="meta-tag"><ClockIcon size={12} /> {test.duration || 30} mins</span>
-                      <span className="meta-tag"><HelpCircleIcon size={12} /> {test.questionCount || 25} Qs</span>
-                      <span className="meta-tag"><BadgeCheckIcon size={12} /> Certificate</span>
+                      <span className="meta-tag"><HelpCircleIcon size={12} /> {test.questionCount || 0} Qs</span>
+                      <span className="meta-tag"><BadgeCheckIcon size={12} /> Auto-Evaluated</span>
                     </div>
 
                     <p className="course-snippet">
@@ -552,31 +473,42 @@ const LandingPage = () => {
                     {/* Card Footer Action */}
                     <div className="course-card-footer">
                       <div className="course-pricing">
-                        <span className="price-tag">Free Practice</span>
+                        <span className="price-tag">Free Assessment</span>
                         <span className="price-sub">Instant Access</span>
                       </div>
                       <button
                         className="btn-start-course"
                         onClick={() => navigate("/login")}
                       >
-                        Start Test <PlayIcon size={12} />
+                        Take Test <PlayIcon size={12} />
                       </button>
                     </div>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="courses-empty">
-                <p>No tests found matching "{searchQuery}". Try a different keyword or category.</p>
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setSelectedCategory("all");
-                  }}
-                >
-                  Clear Filters
-                </button>
+              <div className="courses-empty" style={{ textAlign: "center", padding: "3rem 1.5rem" }}>
+                <p style={{ fontSize: "1.05rem", color: "#475569", marginBottom: "1rem" }}>
+                  {searchQuery
+                    ? `No public tests found matching "${searchQuery}".`
+                    : "No public tests currently available in this category. Sign in to your institutional workspace to access tests assigned to your batch."}
+                </p>
+                <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                  {searchQuery && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSelectedCategory("all");
+                      }}
+                    >
+                      Clear Search Filters
+                    </button>
+                  )}
+                  <Link to="/login" className="btn btn-primary btn-sm">
+                    Sign In to Your Portal
+                  </Link>
+                </div>
               </div>
             )}
           </div>

@@ -253,28 +253,8 @@ const Login = () => {
             </span>
             <h1 className="auth-main-heading">Sign In to Your Workspace</h1>
             <p className="auth-main-sub">
-              Single secure login for Students, Faculty, Institution Administrators, and Super Administrators.
+              Access your institutional assessment portal and exam workspaces.
             </p>
-          </div>
-
-          {/* Quick Role Coverage Bar */}
-          <div className="auth-roles-preview-bar">
-            <div className="role-preview-item">
-              <GraduationCapIcon size={14} />
-              <span>Student</span>
-            </div>
-            <div className="role-preview-item">
-              <BookOpenIcon size={14} />
-              <span>Faculty</span>
-            </div>
-            <div className="role-preview-item">
-              <BuildingIcon size={14} />
-              <span>Org Admin</span>
-            </div>
-            <div className="role-preview-item">
-              <ShieldIcon size={14} />
-              <span>Super Admin</span>
-            </div>
           </div>
 
           {error && (

@@ -453,6 +453,7 @@
   letter-spacing: 0.04em;
 }
 
+.date-col,
 .submitted-date {
   color: #64748b;
   font-size: 0.84rem;

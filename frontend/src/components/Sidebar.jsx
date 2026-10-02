@@ -162,8 +162,12 @@ const Sidebar = () => {
           role="button"
           tabIndex={0}
         >
-          <div className="user-avatar">
-            {user.name?.charAt(0).toUpperCase() || "U"}
+          <div className="user-avatar" style={{ overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user?.name || "User"} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+            ) : (
+              user?.name?.charAt(0).toUpperCase() || "U"
+            )}
           </div>
           <div className="user-details">
             <span className="user-name">{user.name}</span>

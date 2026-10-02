@@ -339,6 +339,26 @@ export const approveOrganizationApplication = async (req, res) => {
         `
       }, 1000);
       console.log(`[Org Approval] Email dispatch response for ${targetEmail}:`, emailDispatch);
+
+      // Also notify Super Admin if configured
+      const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL || "").toLowerCase().trim();
+      if (superAdminEmail && superAdminEmail !== targetEmail) {
+        sendEmailQuickOrBackground({
+          to: superAdminEmail,
+          subject: `[Super Admin Notification] Institutional Portal Approved: ${organization.name}`,
+          text: `Dear Super Admin,\n\nThe institutional application for "${organization.name}" has been approved.\n\nInstitutional Admin:\n- Name: ${application.adminName}\n- Email: ${targetEmail}\n- Temporary Password: ${tempPassword}\n- Portal Login: ${portalLoginUrl}\n\nAssessIQ Platform Operations`,
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #cbd5e1; border-radius: 8px;">
+              <h3 style="color: #0f172a; margin-top: 0;">Institutional Portal Approved & Provisioned</h3>
+              <p>Organization: <strong>${organization.name}</strong></p>
+              <p>Admin Name: <strong>${application.adminName}</strong></p>
+              <p>Admin Email: <code>${targetEmail}</code></p>
+              <p>Temporary Password: <code>${tempPassword}</code></p>
+              <p>Portal Login: <a href="${portalLoginUrl}">${portalLoginUrl}</a></p>
+            </div>
+          `
+        }, 1000).catch((err) => console.warn("[Super Admin Copy] Failed:", err.message));
+      }
     } catch (emailErr) {
       console.error("[Org Approval] Email dispatch error:", emailErr);
       emailDispatch = { success: false, error: emailErr.message };

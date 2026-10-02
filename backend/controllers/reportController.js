@@ -374,10 +374,16 @@ export const getTeacherDashboardStats = async (req, res) => {
       ? Number(((passedCount / results.length) * 100).toFixed(1))
       : 0;
 
+    const totalStudents = await User.countDocuments({
+      role: "student",
+      ...(req.user.organizationId ? { organizationId: req.user.organizationId } : {})
+    });
+
     res.status(200).json({
       success: true,
       report: {
         totalTests: myTests.length,
+        totalStudents,
         draftTests,
         publishedTests,
         scheduledTests,

@@ -199,11 +199,11 @@ const AdminResults = () => {
             />
           </div>
 
-          <div className="ar-filter-group">
+          <div className="ar-filters">
             <select
               value={selectedTest}
               onChange={(e) => handleTestFilter(e.target.value)}
-              className="ar-select"
+              className="ar-test-select"
             >
               <option value="all">All Tests ({tests.length})</option>
               {tests.map((t) => (
@@ -213,7 +213,7 @@ const AdminResults = () => {
               ))}
             </select>
 
-            <div className="ar-status-pills">
+            <div className="pill-group">
               <button
                 className={`pill-btn ${statusFilter === "all" ? "active" : ""}`}
                 onClick={() => setStatusFilter("all")}
@@ -280,35 +280,48 @@ const AdminResults = () => {
                       <td>
                         <div className="student-profile">
                           <div className="avatar">
-                            {r.studentId?.name ? r.studentId.name.charAt(0).toUpperCase() : "S"}
+                            {r.studentId?.avatar ? (
+                              <img
+                                src={r.studentId.avatar}
+                                alt="Student"
+                                style={{ width: "100%", height: "100%", borderRadius: "10px", objectFit: "cover" }}
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                }}
+                              />
+                            ) : (
+                              r.studentId?.name ? r.studentId.name.charAt(0).toUpperCase() : "S"
+                            )}
                           </div>
-                          <div>
-                            <div className="name">{r.studentId?.name || "Student"}</div>
-                            <div className="email">{r.studentId?.email || "—"}</div>
+                          <div className="student-meta">
+                            <div className="student-name">{r.studentId?.name || "Student"}</div>
+                            <div className="student-email">{r.studentId?.email || "—"}</div>
                           </div>
                         </div>
                       </td>
                       <td>
-                        <div className="test-name">{r.testId?.title || "Assessment"}</div>
-                        <div className="test-subject">{r.testId?.subject || "General"}</div>
+                        <div className="test-title">{r.testId?.title || "Assessment"}</div>
+                        <div className="test-subject-tag">{r.testId?.subject || "General"}</div>
                       </td>
                       <td>
-                        <span className="bold-score">{r.score ?? r.obtainedMarks ?? 0}</span>
-                        <span className="dim-score"> / {r.totalMarks ?? r.testId?.totalMarks ?? 100}</span>
+                        <div className="score-display">
+                          <span className="score-earned">{r.score ?? r.obtainedMarks ?? 0}</span>
+                          <span className="score-max"> / {r.totalMarks ?? r.testId?.totalMarks ?? 100}</span>
+                        </div>
                       </td>
                       <td>
-                        <div className="progress-cell">
-                          <span className="perc-text">{r.percentage ?? 0}%</span>
-                          <div className="progress-track">
+                        <div className="percentage-bar-wrapper">
+                          <span className="percentage-number">{r.percentage ?? 0}%</span>
+                          <div className="percentage-track">
                             <div
-                              className={`progress-fill ${isPassed ? "pass" : "fail"}`}
+                              className={`percentage-fill ${isPassed ? "high" : ""}`}
                               style={{ width: `${Math.min(r.percentage || 0, 100)}%` }}
                             ></div>
                           </div>
                         </div>
                       </td>
                       <td>
-                        <span className={`result-badge ${isPassed ? "pass" : "fail"}`}>
+                        <span className={isPassed ? "badge-pass" : "badge-fail"}>
                           {isPassed ? "Passed" : "Failed"}
                         </span>
                       </td>

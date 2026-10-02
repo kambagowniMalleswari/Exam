@@ -12,9 +12,23 @@ import {
   SearchIcon,
   FileTextIcon,
   AlertTriangleIcon,
-  CalendarIcon
+  CalendarIcon,
+  PlusIcon,
+  EditIcon,
+  TrashIcon,
+  EyeIcon,
+  CheckCircleIcon
 } from "../../components/common/Icons.jsx";
 import "./TeacherTests.css";
+
+const COVER_PRESETS = [
+  { label: "💻 Programming", url: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&auto=format&fit=crop&q=80" },
+  { label: "📐 Mathematics", url: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&auto=format&fit=crop&q=80" },
+  { label: "🌐 Web Dev", url: "https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=400&auto=format&fit=crop&q=80" },
+  { label: "📊 Data & AI", url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&auto=format&fit=crop&q=80" },
+  { label: "🧠 Aptitude", url: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&auto=format&fit=crop&q=80" },
+  { label: "🛡️ Cyber Security", url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&auto=format&fit=crop&q=80" },
+];
 
 const TeacherTests = () => {
   const navigate = useNavigate();
@@ -23,12 +37,15 @@ const TeacherTests = () => {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [deleteTestTarget, setDeleteTestTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editTest, setEditTest] = useState(null);
   const [modalError, setModalError] = useState("");
   const [form, setForm] = useState({
     title: "",
     description: "",
+    image: "",
     subject: "",
     duration: 30,
     passingPercentage: 40,
@@ -75,6 +92,7 @@ const TeacherTests = () => {
     setForm({
       title: "",
       description: "",
+      image: "",
       subject: "",
       duration: 30,
       passingPercentage: 40,
@@ -116,6 +134,7 @@ const TeacherTests = () => {
     setForm({
       title: test.title || "",
       description: test.description || "",
+      image: test.image || "",
       subject: test.subject || "",
       duration: test.duration || 30,
       passingPercentage: test.passingPercentage ?? (test.passingMarks || 40),
@@ -185,6 +204,7 @@ const TeacherTests = () => {
       const payload = {
         title: form.title.trim(),
         description: form.description ? form.description.trim() : "",
+        image: form.image ? form.image.trim() : "",
         subject: form.subject ? form.subject.trim() : "General",
         duration: Number(form.duration),
         passingPercentage: passPct,
@@ -217,12 +237,22 @@ const TeacherTests = () => {
     } finally { setSubmitting(false); }
   };
 
-  const handleDelete = async (testId) => {
-    if (!window.confirm("Delete this test?")) return;
+  const handleDelete = (test) => {
+    setDeleteTestTarget(test);
+  };
+
+  const confirmDeleteTest = async () => {
+    if (!deleteTestTarget) return;
     try {
-      await api.delete(`/tests/${testId}`);
+      setDeleteLoading(true);
+      await api.delete(`/tests/${deleteTestTarget._id}`);
+      setDeleteTestTarget(null);
       fetchTests();
-    } catch { alert("Failed to delete test."); }
+    } catch {
+      alert("Failed to delete test.");
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handlePublish = async (test) => {
@@ -246,7 +276,15 @@ const TeacherTests = () => {
             <h2>My Tests</h2>
             <p>Create and manage tests for your students.</p>
           </div>
-          <button className="btn-create-test" onClick={openCreate}>+ Create Test</button>
+          <div className="tt-header-actions">
+            <div className="tt-illustration-badge" title="Smart Assessments">
+              <span className="badge-icon">📝</span>
+              <span>Interactive Assessments</span>
+            </div>
+            <button className="btn-create-test" onClick={openCreate}>
+              <PlusIcon size={16} /> Create Test
+            </button>
+          </div>
         </div>
 
         <div className="tt-search-row">
@@ -276,6 +314,17 @@ const TeacherTests = () => {
           <div className="tests-cards-grid">
             {filtered.map((test) => (
               <div className="test-manage-card" key={test._id}>
+                {test.image && (
+                  <div className="tmc-cover-banner">
+                    <img
+                      src={test.image}
+                      alt={test.title}
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
                 <div className="tmc-top">
                   <div>
                     <span className={`status-chip ${test.status}`}>{test.status}</span>
@@ -310,16 +359,21 @@ const TeacherTests = () => {
                 </div>
                 <div className="tmc-actions">
                   <button className="tmc-btn questions" onClick={() => navigate(`/teacher/tests/${test._id}/questions`)}>
-                    Questions
+                    <EyeIcon size={13} /> Questions
                   </button>
-                  <button className="tmc-btn edit" onClick={() => openEdit(test)}>Edit</button>
+                  <button className="tmc-btn edit" onClick={() => openEdit(test)}>
+                    <EditIcon size={13} /> Edit
+                  </button>
                   <button
                     className={`tmc-btn publish ${test.status === "published" ? "unpublish" : ""}`}
                     onClick={() => handlePublish(test)}
                   >
+                    <CheckCircleIcon size={13} />
                     {test.status === "published" ? "Unpublish" : "Publish"}
                   </button>
-                  <button className="tmc-btn delete" onClick={() => handleDelete(test._id)}>✕</button>
+                  <button className="tmc-btn delete" onClick={() => handleDelete(test)} title="Delete Test">
+                    <TrashIcon size={13} />
+                  </button>
                 </div>
               </div>
             ))}
@@ -364,6 +418,73 @@ const TeacherTests = () => {
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     placeholder="Brief description of the test..."
                   />
+                </div>
+
+                {/* Cover Image Selector */}
+                <div className="form-row" style={{ background: "#f8fafc", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <label style={{ fontWeight: 600, color: "#334155", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>Assessment Cover Image (Optional)</span>
+                    {form.image && (
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, image: "" })}
+                        style={{
+                          background: "#fee2e2",
+                          border: "none",
+                          color: "#991b1b",
+                          padding: "2px 8px",
+                          borderRadius: "4px",
+                          fontSize: "11px",
+                          cursor: "pointer",
+                          fontWeight: 600
+                        }}
+                      >
+                        Remove Image
+                      </button>
+                    )}
+                  </label>
+                  <input
+                    type="url"
+                    value={form.image}
+                    onChange={(e) => setForm({ ...form, image: e.target.value })}
+                    placeholder="https://images.unsplash.com/... or paste image URL"
+                    style={{ marginTop: "6px", marginBottom: "8px" }}
+                  />
+                  {form.image && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                      <img
+                        src={form.image}
+                        alt="Test Cover Preview"
+                        style={{ width: "80px", height: "48px", objectFit: "cover", borderRadius: "6px", border: "1px solid #cbd5e1" }}
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                      <span style={{ fontSize: "11px", color: "#64748b" }}>Cover Preview</span>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
+                    <span style={{ fontSize: "11px", color: "#64748b" }}>Presets:</span>
+                    {COVER_PRESETS.map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => setForm({ ...form, image: preset.url })}
+                        style={{
+                          padding: "3px 8px",
+                          background: form.image === preset.url ? "#e0e7ff" : "#ffffff",
+                          border: form.image === preset.url ? "1px solid #6366f1" : "1px solid #cbd5e1",
+                          borderRadius: "6px",
+                          fontSize: "11px",
+                          color: form.image === preset.url ? "#4338ca" : "#475569",
+                          cursor: "pointer",
+                          fontWeight: form.image === preset.url ? 700 : 500
+                        }}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="form-row">
                   <label>Subject</label>
@@ -572,6 +693,38 @@ const TeacherTests = () => {
           </div>
         )}
 
+        {/* Custom Confirmation Modal */}
+        {deleteTestTarget && (
+          <div className="custom-confirm-modal-overlay" onClick={() => !deleteLoading && setDeleteTestTarget(null)}>
+            <div className="custom-confirm-modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="confirm-icon-bubble danger">
+                <TrashIcon size={24} />
+              </div>
+              <h3>Delete Assessment?</h3>
+              <p>
+                Are you sure you want to permanently delete <strong>"{deleteTestTarget.title}"</strong>? All associated question sets and candidate attempt records will be removed.
+              </p>
+              <div className="confirm-modal-actions">
+                <button
+                  type="button"
+                  className="btn-modal-cancel"
+                  onClick={() => setDeleteTestTarget(null)}
+                  disabled={deleteLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-modal-danger"
+                  onClick={confirmDeleteTest}
+                  disabled={deleteLoading}
+                >
+                  {deleteLoading ? "Deleting..." : "Yes, Delete Assessment"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

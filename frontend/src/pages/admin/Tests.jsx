@@ -12,9 +12,22 @@ import {
   GlobeIcon,
   LockIcon,
   CalendarIcon,
-  TargetIcon
+  TargetIcon,
+  EditIcon,
+  TrashIcon,
+  EyeIcon,
+  PlusIcon
 } from "../../components/common/Icons.jsx";
 import "./Tests.css";
+
+const COVER_PRESETS = [
+  { label: "💻 Programming", url: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&auto=format&fit=crop&q=80" },
+  { label: "📐 Mathematics", url: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&auto=format&fit=crop&q=80" },
+  { label: "🌐 Web Dev", url: "https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=400&auto=format&fit=crop&q=80" },
+  { label: "📊 Data & AI", url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&auto=format&fit=crop&q=80" },
+  { label: "🧠 Aptitude", url: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&auto=format&fit=crop&q=80" },
+  { label: "🛡️ Cyber Security", url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&auto=format&fit=crop&q=80" },
+];
 
 const Tests = () => {
   const navigate = useNavigate();
@@ -23,6 +36,8 @@ const Tests = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [deleteTestTarget, setDeleteTestTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editTest, setEditTest] = useState(null);
   const [modalError, setModalError] = useState("");
@@ -80,6 +95,7 @@ const Tests = () => {
     setForm({
       title: "",
       description: "",
+      image: "",
       subject: "",
       duration: 30,
       passingPercentage: 40,
@@ -121,6 +137,7 @@ const Tests = () => {
     setForm({
       title: test.title || test.name || "",
       description: test.description || "",
+      image: test.image || "",
       subject: test.subject || "",
       duration: test.duration || 30,
       passingPercentage: test.passingPercentage ?? (test.passingMarks || 40),
@@ -190,6 +207,7 @@ const Tests = () => {
       const payload = {
         title: form.title.trim(),
         description: form.description ? form.description.trim() : "",
+        image: form.image ? form.image.trim() : "",
         subject: form.subject ? form.subject.trim() : "General",
         duration: Number(form.duration),
         passingPercentage: passPct,
@@ -224,13 +242,21 @@ const Tests = () => {
     }
   };
 
-  const handleDelete = async (testId) => {
-    if (!window.confirm("Are you sure you want to permanently delete this test?")) return;
+  const handleDelete = (test) => {
+    setDeleteTestTarget(test);
+  };
+
+  const confirmDeleteTest = async () => {
+    if (!deleteTestTarget) return;
     try {
-      await api.delete(`/tests/${testId}`);
+      setDeleteLoading(true);
+      await api.delete(`/tests/${deleteTestTarget._id}`);
+      setDeleteTestTarget(null);
       fetchTests();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to delete test.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -278,9 +304,15 @@ const Tests = () => {
             <h2>Tests Management</h2>
             <p>Create, manage and monitor assessments for your organisation.</p>
           </div>
-          <button type="button" className="tests-create-button" onClick={openCreate}>
-            + Create Test
-          </button>
+          <div className="create-test-header-wrap">
+            <div className="create-test-illustration-badge" title="Smart Assessments">
+              <span className="badge-icon">📝</span>
+              <span>Interactive Assessments</span>
+            </div>
+            <button type="button" className="tests-create-button" onClick={openCreate}>
+              <PlusIcon size={16} /> Create Test
+            </button>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -368,10 +400,33 @@ const Tests = () => {
                         <tr key={test._id}>
                           <td>
                             <div className="test-profile">
-                              <div className="test-icon"><FileTextIcon size={16} /></div>
+                              <div className="test-icon">
+                                {test.image ? (
+                                  <img
+                                    src={test.image}
+                                    alt={title}
+                                    className="test-thumb-img"
+                                    onError={(e) => {
+                                      e.target.style.display = "none";
+                                    }}
+                                  />
+                                ) : (
+                                  <FileTextIcon size={16} />
+                                )}
+                              </div>
                               <div>
                                 <strong>{title}</strong>
-                                <span>{test.type === "public" ? <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><GlobeIcon size={12} /> Public</span> : <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}><LockIcon size={12} /> Private</span>}</span>
+                                <span>
+                                  {test.type === "public" ? (
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                      <GlobeIcon size={12} /> Public
+                                    </span>
+                                  ) : (
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                      <LockIcon size={12} /> Private
+                                    </span>
+                                  )}
+                                </span>
                               </div>
                             </div>
                           </td>
@@ -397,29 +452,34 @@ const Tests = () => {
                                 type="button"
                                 className="test-action view"
                                 onClick={() => navigate(`/admin/tests/${test._id}/questions`)}
+                                title="Manage Questions"
                               >
-                                Questions
+                                <EyeIcon size={13} /> Questions
                               </button>
                               <button
                                 type="button"
                                 className="test-action edit"
                                 onClick={() => openEdit(test)}
+                                title="Edit Assessment Settings"
                               >
-                                Edit
+                                <EditIcon size={13} /> Edit
                               </button>
                               <button
                                 type="button"
-                                className="test-action publish"
+                                className={`test-action ${status === "published" ? "unpublish" : "publish"}`}
                                 onClick={() => handlePublish(test)}
+                                title={status === "published" ? "Unpublish Test" : "Publish Test"}
                               >
+                                <CheckCircleIcon size={13} />
                                 {status === "published" ? "Unpublish" : "Publish"}
                               </button>
                               <button
                                 type="button"
                                 className="test-action delete"
-                                onClick={() => handleDelete(test._id)}
+                                onClick={() => handleDelete(test)}
+                                title="Delete Assessment"
                               >
-                                Delete
+                                <TrashIcon size={13} /> Delete
                               </button>
                             </div>
                           </td>
@@ -481,6 +541,73 @@ const Tests = () => {
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     placeholder="Brief description of the test content and objectives..."
                   />
+                </div>
+
+                {/* Cover Image Selector with Quick Presets */}
+                <div className="atm-group" style={{ background: "#f8fafc", padding: "12px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <label style={{ fontWeight: 600, color: "#334155", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>Assessment Cover Image (Optional)</span>
+                    {form.image && (
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, image: "" })}
+                        style={{
+                          background: "#fee2e2",
+                          border: "none",
+                          color: "#991b1b",
+                          padding: "2px 8px",
+                          borderRadius: "4px",
+                          fontSize: "11px",
+                          cursor: "pointer",
+                          fontWeight: 600
+                        }}
+                      >
+                        Remove Image
+                      </button>
+                    )}
+                  </label>
+                  <input
+                    type="url"
+                    value={form.image}
+                    onChange={(e) => setForm({ ...form, image: e.target.value })}
+                    placeholder="https://images.unsplash.com/... or paste image URL"
+                    style={{ marginTop: "6px", marginBottom: "8px" }}
+                  />
+                  {form.image && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                      <img
+                        src={form.image}
+                        alt="Test Cover Preview"
+                        style={{ width: "80px", height: "48px", objectFit: "cover", borderRadius: "6px", border: "1px solid #cbd5e1" }}
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                      <span style={{ fontSize: "11px", color: "#64748b" }}>Cover Preview</span>
+                    </div>
+                  )}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", alignItems: "center" }}>
+                    <span style={{ fontSize: "11px", color: "#64748b" }}>Presets:</span>
+                    {COVER_PRESETS.map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => setForm({ ...form, image: preset.url })}
+                        style={{
+                          padding: "3px 8px",
+                          background: form.image === preset.url ? "#e0e7ff" : "#ffffff",
+                          border: form.image === preset.url ? "1px solid #6366f1" : "1px solid #cbd5e1",
+                          borderRadius: "6px",
+                          fontSize: "11px",
+                          color: form.image === preset.url ? "#4338ca" : "#475569",
+                          cursor: "pointer",
+                          fontWeight: form.image === preset.url ? 700 : 500
+                        }}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="atm-row">
@@ -760,6 +887,39 @@ const Tests = () => {
                     {submitting ? "Saving..." : editTest ? "Update Test" : "Create Test"}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Confirmation Modal */}
+        {deleteTestTarget && (
+          <div className="custom-confirm-modal-overlay" onClick={() => !deleteLoading && setDeleteTestTarget(null)}>
+            <div className="custom-confirm-modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="confirm-icon-bubble danger">
+                <TrashIcon size={24} />
+              </div>
+              <h3>Delete Assessment?</h3>
+              <p>
+                Are you sure you want to permanently delete <strong>"{deleteTestTarget.title || deleteTestTarget.name}"</strong>? All associated question sets and candidate attempt records will be removed.
+              </p>
+              <div className="confirm-modal-actions">
+                <button
+                  type="button"
+                  className="btn-modal-cancel"
+                  onClick={() => setDeleteTestTarget(null)}
+                  disabled={deleteLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-modal-danger"
+                  onClick={confirmDeleteTest}
+                  disabled={deleteLoading}
+                >
+                  {deleteLoading ? "Deleting..." : "Yes, Delete Assessment"}
+                </button>
               </div>
             </div>
           </div>

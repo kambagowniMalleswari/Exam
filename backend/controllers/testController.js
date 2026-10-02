@@ -10,6 +10,7 @@ export const createTest = async (req, res) => {
     const {
       title,
       description,
+      image = "",
       subject,
       duration,
       totalMarks,
@@ -97,6 +98,7 @@ export const createTest = async (req, res) => {
     const test = await Test.create({
       title: title.trim(),
       description: description ? description.trim() : "",
+      image: image ? image.trim() : "",
       subject: subject ? subject.trim() : "General",
       duration: durationNum,
       totalMarks: Number(totalMarks) || 0,
@@ -437,6 +439,7 @@ export const updateTest = async (req, res) => {
     if (startDate !== undefined) test.startDate = finalStart;
     if (endDate !== undefined) test.endDate = finalEnd;
     if (description !== undefined) test.description = description.trim();
+    if (req.body.image !== undefined) test.image = req.body.image ? req.body.image.trim() : "";
     if (subject !== undefined) test.subject = subject.trim();
     if (totalMarks !== undefined) test.totalMarks = Number(totalMarks);
     if (passingMarks !== undefined) test.passingMarks = Number(passingMarks);

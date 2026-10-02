@@ -125,7 +125,10 @@ export const AuthProvider = ({ children }) => {
   const isSuperAdmin = role === "super_admin" || role === "superadmin";
   const isOrgAdmin = role === "org_admin" || role === "admin";
   const isTeacher = role === "teacher";
-  const isStudent = role === "student";
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  };
 
   return (
     <AuthContext.Provider
@@ -136,6 +139,7 @@ export const AuthProvider = ({ children }) => {
         register,
         loginWithGoogle,
         logout,
+        updateUser,
         isSuperAdmin,
         isOrgAdmin,
         isAdmin: isOrgAdmin,

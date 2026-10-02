@@ -152,3 +152,48 @@ export const getAllSubscriptions = async (req, res) => {
     });
   }
 };
+
+// Update subscription tier, quotas, and status (Super Admin)
+export const updateSubscriptionBySuperAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { plan, status, maxTests, maxStudents, price } = req.body;
+
+    const subscription = await Subscription.findById(id);
+    if (!subscription) {
+      return res.status(404).json({ success: false, message: "Subscription not found" });
+    }
+
+    if (plan) {
+      subscription.plan = plan;
+      if (PLAN_LIMITS[plan]) {
+        subscription.features = PLAN_LIMITS[plan].features;
+      }
+    }
+    if (status) subscription.status = status;
+    if (maxTests !== undefined) subscription.maxTests = Number(maxTests);
+    if (maxStudents !== undefined) subscription.maxStudents = Number(maxStudents);
+    if (price !== undefined) subscription.price = Number(price);
+
+    await subscription.save();
+
+    if (subscription.organizationId) {
+      await Organization.findByIdAndUpdate(subscription.organizationId, {
+        ...(plan && { subscriptionPlan: plan }),
+        ...(status && { subscriptionStatus: status })
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Subscription updated successfully",
+      subscription
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update subscription",
+      error: error.message
+    });
+  }
+};

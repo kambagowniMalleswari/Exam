@@ -22,7 +22,7 @@ import {
 import "./Profile.css";
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState(user?.role === "teacher" ? "students" : "overview");
   const [loading, setLoading] = useState(false);
@@ -32,6 +32,8 @@ const Profile = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [subject, setSubject] = useState("");
+  const [avatar, setAvatar] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileAlert, setProfileAlert] = useState({ text: "", type: "" });
 
@@ -75,6 +77,8 @@ const Profile = () => {
         setName(u.name || "");
         setPhone(u.phone || "");
         setSubject(u.subject || "");
+        setAvatar(u.avatar || "");
+        setAvatarPreview(u.avatar || "");
       }
     } catch (err) {
       console.error("Failed to load profile details:", err);
@@ -93,6 +97,23 @@ const Profile = () => {
     } finally {
       setStudentsLoading(false);
     }
+  };
+
+  const handleAvatarFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileAlert({ text: "Profile image must be smaller than 2MB.", type: "error" });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatar(reader.result);
+      setAvatarPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleUpdateProfile = async (e) => {
@@ -114,9 +135,14 @@ const Profile = () => {
       const res = await api.put("/auth/profile", {
         name,
         phone,
-        subject
+        subject,
+        avatar
       });
-      setProfileData(res.data?.user || { ...profileData, name, phone, subject });
+      const updated = res.data?.user || { ...profileData, name, phone, subject, avatar };
+      setProfileData(updated);
+      if (updateUser) {
+        updateUser(updated);
+      }
       setProfileAlert({ text: "Profile updated successfully!", type: "success" });
       setTimeout(() => setProfileAlert({ text: "", type: "" }), 4000);
     } catch (err) {
@@ -221,10 +247,18 @@ const Profile = () => {
     <DashboardLayout title="Account & Faculty Profile">
       <div className="profile-page">
         {/* Profile Hero Card */}
-        <div className="profile-hero-card">
+        <div className={`profile-hero-card ${isSuperAdmin ? "superadmin-hero-card" : ""}`}>
           <div className="profile-avatar-box">
-            <div className="profile-avatar-circle">
-              {profileData?.name?.charAt(0).toUpperCase() || user?.name?.charAt(0).toUpperCase() || "U"}
+            <div className="profile-avatar-circle" style={{ overflow: "hidden" }}>
+              {(avatarPreview || profileData?.avatar || user?.avatar) ? (
+                <img
+                  src={avatarPreview || profileData?.avatar || user?.avatar}
+                  alt={profileData?.name || user?.name || "Avatar"}
+                  className="profile-avatar-image"
+                />
+              ) : (
+                profileData?.name?.charAt(0).toUpperCase() || user?.name?.charAt(0).toUpperCase() || "U"
+              )}
             </div>
             <span className="profile-avatar-badge">
               <CheckCircleIcon size={14} />
@@ -545,6 +579,46 @@ const Profile = () => {
                   />
                 </div>
               )}
+
+              {/* Profile Picture / Avatar Customizer */}
+              <div className="form-group-profile avatar-customizer-block">
+                <label>Profile Picture / Avatar</label>
+                <div className="avatar-edit-container">
+                  <div className="avatar-preview-box">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="Preview" className="avatar-preview-img" />
+                    ) : (
+                      <span className="avatar-preview-fallback">
+                        {name?.charAt(0).toUpperCase() || "U"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="avatar-controls">
+                    <label className="btn-upload-avatar">
+                      📁 Upload Custom Photo
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/webp"
+                        onChange={handleAvatarFileSelect}
+                        style={{ display: "none" }}
+                      />
+                    </label>
+                    {avatarPreview && (
+                      <button
+                        type="button"
+                        className="btn-clear-avatar"
+                        onClick={() => {
+                          setAvatar("");
+                          setAvatarPreview("");
+                        }}
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                    <span className="avatar-upload-hint">Upload JPG, PNG, or WEBP (Max 2MB)</span>
+                  </div>
+                </div>
+              </div>
 
               <button type="submit" className="btn-save-profile" disabled={savingProfile}>
                 {savingProfile ? "Saving Changes..." : "Save Profile Details →"}

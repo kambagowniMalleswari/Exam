@@ -8,7 +8,9 @@ import {
   AwardIcon,
   BarChartIcon,
   HelpCircleIcon,
-  TagIcon
+  TagIcon,
+  UsersIcon,
+  PlusIcon
 } from "../../components/common/Icons.jsx";
 import "./TeacherDashboard.css";
 
@@ -20,6 +22,7 @@ const TeacherDashboard = () => {
   const [error, setError] = useState("");
   const [metrics, setMetrics] = useState({
     totalTests: 0,
+    totalStudents: 0,
     draftTests: 0,
     publishedTests: 0,
     scheduledTests: 0,
@@ -64,12 +67,30 @@ const TeacherDashboard = () => {
             <h2>Welcome, {user?.name || "Teacher"}!</h2>
             <p>Author and schedule assessments, build question banks, and monitor student evaluations.</p>
           </div>
-          <button
-            className="btn-create-test-action"
-            onClick={() => navigate("/teacher/tests?action=create")}
-          >
-            + New Assessment
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              background: "linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)",
+              border: "1px solid #bbf7d0",
+              padding: "7px 14px",
+              borderRadius: "10px",
+              color: "#166534",
+              fontSize: "12px",
+              fontWeight: 600,
+              boxShadow: "0 1px 3px rgba(22, 101, 52, 0.08)"
+            }}>
+              <span style={{ fontSize: "15px" }}>📝</span>
+              <span>Test Authoring Studio</span>
+            </div>
+            <button
+              className="btn-create-test-action"
+              onClick={() => navigate("/teacher/tests?action=create")}
+            >
+              <PlusIcon size={16} /> New Assessment
+            </button>
+          </div>
         </div>
 
         {error && <div className="dash-alert error">Notice: {error}</div>}
@@ -98,15 +119,16 @@ const TeacherDashboard = () => {
             onClick={() => navigate("/teacher/batches")}
             role="button"
             tabIndex={0}
-            title="Click to manage student batches"
+            title="Click to manage student batches and view rosters"
+            style={{ cursor: "pointer" }}
           >
             <div className="kpi-icon" style={{ color: "#d97706" }}>
-              <TagIcon size={24} />
+              <UsersIcon size={24} />
             </div>
             <div className="kpi-body">
-              <strong>Cohorts</strong>
-              <span>Course Batches</span>
-              <small>Manage student limits & cohorts</small>
+              <strong>{loading ? "..." : (metrics.totalStudents || "Rosters")}</strong>
+              <span>Total Students & Batches</span>
+              <small>Click to view cohorts & student roster</small>
             </div>
           </div>
 

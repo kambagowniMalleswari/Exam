@@ -5,7 +5,8 @@ import express from "express";
 import {
   getCurrentSubscription,
   upgradeSubscription,
-  getAllSubscriptions
+  getAllSubscriptions,
+  updateSubscriptionBySuperAdmin
 } from "../controllers/subscriptionController.js";
 
 // Import middleware
@@ -39,6 +40,13 @@ router.get(
   "/",
   authorize("super_admin"),
   getAllSubscriptions
+);
+
+// Update subscription (Super Admin)
+router.put(
+  "/:id",
+  authorize("super_admin"),
+  updateSubscriptionBySuperAdmin
 );
 
 // Export router

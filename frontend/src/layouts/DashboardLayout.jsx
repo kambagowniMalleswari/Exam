@@ -71,10 +71,14 @@ const DashboardLayout = ({ children, title }) => {
             <div
               className="dashboard-avatar"
               onClick={() => navigate("/profile")}
-              style={{ cursor: "pointer" }}
+              style={{ cursor: "pointer", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}
               title="View your profile"
             >
-              {userInitial}
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user?.name || "User"} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                userInitial
+              )}
             </div>
 
             <button

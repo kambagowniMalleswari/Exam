@@ -475,10 +475,10 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
-// Update current logged-in user profile details (Name, Phone, Subject)
+// Update current logged-in user profile details (Name, Phone, Subject, Avatar)
 export const updateProfile = async (req, res) => {
   try {
-    const { name, phone, subject } = req.body;
+    const { name, phone, subject, avatar } = req.body;
     const user = await User.findById(req.user.id);
 
     if (!user) {
@@ -511,6 +511,10 @@ export const updateProfile = async (req, res) => {
 
     if (subject !== undefined && user.role === "teacher") {
       user.subject = subject.trim();
+    }
+
+    if (avatar !== undefined) {
+      user.avatar = avatar;
     }
 
     await user.save();
