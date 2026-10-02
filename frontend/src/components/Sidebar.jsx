@@ -18,7 +18,7 @@ import {
 import { BrandCrest } from "./common/BrandLogo.jsx";
 import "./Sidebar.css";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen = false, onClose }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -102,17 +102,30 @@ const Sidebar = () => {
     : user.organizationId?.name || (user.organizationId ? "Organization" : "");
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? "open" : ""}`}>
       {/* Brand Header */}
       <div className="sidebar-header">
-        <div className="sidebar-logo" onClick={() => navigate("/")} role="button" tabIndex={0}>
-          <div className="sidebar-logo-mark">
-            <BrandCrest size={28} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div className="sidebar-logo" onClick={() => navigate("/")} role="button" tabIndex={0}>
+            <div className="sidebar-logo-mark">
+              <BrandCrest size={28} />
+            </div>
+            <div className="sidebar-brand-text">
+              <span className="brand-name">AssessIQ</span>
+              <span className="brand-tag">Institutional SaaS</span>
+            </div>
           </div>
-          <div className="sidebar-brand-text">
-            <span className="brand-name">AssessIQ</span>
-            <span className="brand-tag">Institutional SaaS</span>
-          </div>
+
+          {onClose && (
+            <button
+              type="button"
+              className="sidebar-mobile-close"
+              onClick={onClose}
+              aria-label="Close menu"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         {user.role === "super_admin" ? (
@@ -138,6 +151,7 @@ const Sidebar = () => {
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={() => onClose && onClose()}
               className={({ isActive }) =>
                 isActive ? "sidebar-link active" : "sidebar-link"
               }

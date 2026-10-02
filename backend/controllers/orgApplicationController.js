@@ -337,7 +337,7 @@ export const approveOrganizationApplication = async (req, res) => {
             <p style="font-size: 13px; color: #64748b; margin: 0; text-align: center;">AssessIQ Enterprise Multi-Tenant Platform Operations</p>
           </div>
         `
-      }, 1000);
+      }, 3000);
       console.log(`[Org Approval] Email dispatch response for ${targetEmail}:`, emailDispatch);
 
       // Also notify Super Admin if configured

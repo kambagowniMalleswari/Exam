@@ -27,6 +27,10 @@ const TeacherRequestsManager = () => {
   // Detail modal
   const [viewingApp, setViewingApp] = useState(null);
 
+  // Approval credentials modal
+  const [provisionResult, setProvisionResult] = useState(null);
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
     fetchApplications();
   }, [filterStatus]);
@@ -57,6 +61,7 @@ const TeacherRequestsManager = () => {
       setProcessingId(appId);
       setSuccessMsg("");
       const res = await api.post(`/teacher-applications/${appId}/approve`);
+      setProvisionResult(res.data);
       setSuccessMsg(res.data?.message || "Teacher application approved successfully!");
       fetchApplications();
     } catch (err) {
@@ -356,6 +361,81 @@ const TeacherRequestsManager = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Approved Credentials Modal */}
+        {provisionResult && (
+          <div className="trm-modal-backdrop" onClick={() => setProvisionResult(null)}>
+            <div className="trm-modal-box" onClick={(e) => e.stopPropagation()}>
+              <div className="trm-modal-header">
+                <h3 style={{ display: "flex", alignItems: "center", gap: "8px", color: "#0f172a" }}>
+                  <span style={{ color: "#16a34a" }}>✓</span> Faculty Account Provisioned
+                </h3>
+                <button type="button" className="btn-modal-close" onClick={() => setProvisionResult(null)}>✕</button>
+              </div>
+              <div className="trm-modal-body">
+                <p style={{ color: "#334155", marginBottom: "16px" }}>
+                  {provisionResult.message}
+                </p>
+
+                {provisionResult.temporaryPassword ? (
+                  <div style={{ background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
+                    <div style={{ marginBottom: "8px" }}>
+                      <strong style={{ color: "#64748b", fontSize: "0.8rem", textTransform: "uppercase" }}>Teacher Name:</strong>
+                      <div style={{ fontWeight: 600, color: "#0f172a" }}>{provisionResult.user?.name}</div>
+                    </div>
+                    <div style={{ marginBottom: "8px" }}>
+                      <strong style={{ color: "#64748b", fontSize: "0.8rem", textTransform: "uppercase" }}>Login Email:</strong>
+                      <div style={{ fontWeight: 600, color: "#0f172a" }}>{provisionResult.user?.email}</div>
+                    </div>
+                    <div>
+                      <strong style={{ color: "#64748b", fontSize: "0.8rem", textTransform: "uppercase" }}>Temporary Password:</strong>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
+                        <code style={{ background: "#fef3c7", color: "#b45309", padding: "4px 10px", borderRadius: "4px", fontWeight: 800, fontSize: "1.05rem", border: "1px dashed #f59e0b" }}>
+                          {provisionResult.temporaryPassword}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(provisionResult.temporaryPassword);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2500);
+                          }}
+                          style={{
+                            background: copied ? "#16a34a" : "#0284c7",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: "6px",
+                            padding: "5px 12px",
+                            fontSize: "0.8rem",
+                            cursor: "pointer",
+                            fontWeight: 600
+                          }}
+                        >
+                          {copied ? "Copied!" : "Copy Password"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "8px", padding: "14px", color: "#166534", marginBottom: "16px" }}>
+                    This applicant already had an active account. Their existing account has been upgraded to Faculty access. They can sign in using their existing password.
+                  </div>
+                )}
+
+                <p style={{ fontSize: "0.85rem", color: "#64748b", margin: 0 }}>
+                  {provisionResult.emailSent
+                    ? "✓ Credentials notification email has been dispatched to the faculty member."
+                    : "ℹ Note: If email delivery is pending or queued, you may share the temporary password above directly with the instructor."}
+                </p>
+              </div>
+              <div className="trm-modal-footer">
+                <button type="button" className="btn-modal-dismiss" onClick={() => setProvisionResult(null)}>
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -300,37 +300,53 @@
   font-family: monospace;
 }
 
+.plan-badge,
 .badge-plan {
-  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 14px;
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: 0.76rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
 }
 
-.badge-plan.pro {
-  background: #f0f9ff;
-  color: #0284c7;
-  border: 1px solid #bae6fd;
-}
-
+.plan-badge.basic,
 .badge-plan.basic {
-  background: #f8fafc;
-  color: #475569;
-  border: 1px solid #e2e8f0;
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1.5px solid #7dd3fc;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(3, 105, 161, 0.12);
 }
 
+.plan-badge.free,
+.badge-plan.free {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1.5px solid #cbd5e1;
+  font-weight: 800;
+}
+
+.plan-badge.pro,
+.badge-plan.pro {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1.5px solid #93c5fd;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(29, 78, 216, 0.12);
+}
+
+.plan-badge.enterprise,
 .badge-plan.enterprise {
   background: #fdf4ff;
-  color: #a855f7;
-  border: 1px solid #f0abfc;
-}
-
-.badge-plan.free {
-  background: #f8fafc;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
+  color: #9333ea;
+  border: 1.5px solid #e9d5ff;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(147, 51, 234, 0.12);
 }
 
 .sa-price {

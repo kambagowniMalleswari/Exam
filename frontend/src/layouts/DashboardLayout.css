@@ -6,6 +6,7 @@
   display: flex;
   min-height: 100vh;
   background-color: #f8fafc;
+  position: relative;
 }
 
 .dashboard-main {
@@ -19,10 +20,10 @@
 /* Glass Floating Top Header */
 .dashboard-header {
   height: 72px;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
   padding: 0 32px;
   display: flex;
   align-items: center;
@@ -33,24 +34,71 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
+.dashboard-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Mobile Hamburger Toggle */
+.dashboard-mobile-menu-btn {
+  display: none;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  color: #0f172a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.dashboard-mobile-menu-btn:hover {
+  background: #e2e8f0;
+  color: #0284c7;
+}
+
+/* Mobile Backdrop Overlay */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 990;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .dashboard-header-title h1 {
   font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 1.35rem;
   font-weight: 700;
   color: #0f172a;
   line-height: 1.2;
+  margin: 0;
 }
 
 .dashboard-header-title p {
   font-size: 0.8rem;
   color: #64748b;
   margin-top: 2px;
+  margin-bottom: 0;
 }
 
 .dashboard-user {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
 .dashboard-user-info {
@@ -88,6 +136,7 @@
   font-weight: 700;
   font-size: 1rem;
   box-shadow: 0 3px 10px rgba(2, 132, 199, 0.25);
+  flex-shrink: 0;
 }
 
 /* Pill Logout Button */
@@ -135,13 +184,52 @@
   padding: 32px;
   max-width: 1440px;
   width: 100%;
+  box-sizing: border-box;
 }
 
+/* Tablet & Mobile Responsiveness */
 @media (max-width: 768px) {
+  .dashboard-mobile-menu-btn {
+    display: inline-flex;
+  }
+
   .dashboard-header {
+    height: 64px;
     padding: 0 16px;
   }
+
+  .dashboard-header-title h1 {
+    font-size: 1.15rem;
+  }
+
+  .dashboard-header-title p {
+    display: none; /* Keep header compact on mobile */
+  }
+
+  .dashboard-user-info {
+    display: none; /* Avatar and logout button suffice on mobile */
+  }
+
+  .dashboard-user {
+    gap: 10px;
+  }
+
+  .dashboard-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .dashboard-logout {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+  }
+
+  .dashboard-logout span {
+    display: none; /* Icon-only on mobile */
+  }
+
   .dashboard-content {
-    padding: 16px;
+    padding: 16px 12px;
   }
 }

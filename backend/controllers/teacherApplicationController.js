@@ -4,8 +4,11 @@ import crypto from "crypto";
 import TeacherApplication from "../models/TeacherApplication.js";
 import OrgApplication from "../models/OrgApplication.js";
 import User from "../models/User.js";
-import Organization from "../models/Organization.js";
-import sendEmail, { sendEmailQuickOrBackground } from "../utils/sendEmail.js";
+import sendEmail, {
+  sendEmailQuickOrBackground,
+  sendAccountCredentialsEmail,
+  getClientUrl
+} from "../utils/sendEmail.js";
 
 // Submit a new Teacher Application (Public)
 export const applyForTeacher = async (req, res) => {
@@ -283,27 +286,65 @@ export const approveTeacherApplication = async (req, res) => {
 
     // 3. Send approval notification email
     const orgName = application.organizationId?.name || "the institution";
-    let emailText = `Dear ${application.name},\n\nCongratulations! Your teacher application for ${orgName} in ${application.subject} has been APPROVED.\n\n`;
+    const portalLoginUrl = `${getClientUrl()}/admin/login`;
+    let emailDispatch = null;
+
     if (temporaryPassword) {
-      emailText += `Your teacher account credentials:\nEmail: ${application.email}\nTemporary Password: ${temporaryPassword}\n\nPlease sign in and update your password immediately.\n\n`;
+      emailDispatch = await sendAccountCredentialsEmail({
+        to: application.email,
+        name: application.name,
+        email: application.email,
+        password: temporaryPassword,
+        role: "Faculty / Teacher",
+        orgName,
+        loginUrl: portalLoginUrl
+      });
     } else {
-      emailText += `Your existing AssessIQ account (${application.email}) has been elevated to Teacher privileges for ${orgName}.\n\n`;
+      const elevationSubject = `🎓 AssessIQ Faculty Access Granted — ${orgName}`;
+      const elevationHtml = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+          <div style="display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 14px;">
+            <div style="width: 40px; height: 40px; background: #1e1b4b; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fbbf24; font-weight: 800; font-size: 18px; margin-right: 12px;">IQ</div>
+            <div>
+              <h2 style="margin: 0; color: #0f172a; font-size: 18px;">AssessIQ Faculty Operations</h2>
+              <span style="font-size: 13px; color: #64748b;">${orgName}</span>
+            </div>
+          </div>
+          <h3 style="color: #0f172a; margin-top: 0;">Congratulations, ${application.name}!</h3>
+          <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+            Your teacher application for <strong>${orgName}</strong> in <strong>${application.subject}</strong> has been officially approved.
+          </p>
+          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 18px; margin: 20px 0;">
+            <p style="margin: 6px 0; font-size: 14px;"><strong>Account Email:</strong> ${application.email}</p>
+            <p style="margin: 6px 0; font-size: 14px;"><strong>Assigned Role:</strong> Faculty / Teacher</p>
+            <p style="margin: 6px 0; font-size: 14px;"><strong>Subject:</strong> ${application.subject}</p>
+            <p style="margin: 6px 0; font-size: 14px;"><strong>Faculty Portal Login:</strong> <a href="${portalLoginUrl}" style="color: #2563eb; font-weight: 600;">Sign in with your existing password</a></p>
+          </div>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${portalLoginUrl}" style="background: #1e1b4b; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Go to Faculty Portal →</a>
+          </div>
+          <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">AssessIQ Multi-Tenant Examination Platform</p>
+        </div>
+      `;
+      const emailText = `Dear ${application.name},\n\nCongratulations! Your teacher application for ${orgName} in ${application.subject} has been APPROVED.\n\nYour existing AssessIQ account (${application.email}) now has Teacher privileges for ${orgName}.\n\nSign in at: ${portalLoginUrl}\n\nAssessIQ Operations`;
+      emailDispatch = await sendEmailQuickOrBackground({
+        to: application.email,
+        subject: elevationSubject,
+        text: emailText,
+        html: elevationHtml
+      });
     }
-    emailText += `Welcome to the faculty!\n${orgName} Management`;
 
     const adminEmail = process.env.SUPER_ADMIN_EMAIL || process.env.EMAIL_USER || "";
-    await Promise.allSettled([
-      sendEmail({
-        to: application.email,
-        subject: `Teacher Application Approved — ${orgName}`,
-        text: emailText
-      }),
-      sendEmail({
+    if (adminEmail && adminEmail.toLowerCase() !== application.email.toLowerCase()) {
+      sendEmailQuickOrBackground({
         to: adminEmail,
         subject: `[AssessIQ Alert] Teacher Application Approved — ${application.name} (${orgName})`,
         text: `Teacher application for ${application.name} (${application.email}) has been approved for institution ${orgName}.\nRole: Faculty / Teacher\nSubject: ${application.subject}`
-      })
-    ]);
+      }).catch(err => console.warn("[Admin Alert] Failed:", err.message));
+    }
+
+    const emailSent = Boolean(emailDispatch?.real || emailDispatch?.success || emailDispatch?.queued);
 
     res.status(200).json({
       success: true,
@@ -316,7 +357,9 @@ export const approveTeacherApplication = async (req, res) => {
         subject: user.subject,
         organizationId: user.organizationId
       },
-      temporaryPassword: temporaryPassword || undefined
+      temporaryPassword: temporaryPassword || undefined,
+      emailSent,
+      emailMessage: emailSent ? "Credentials email dispatched." : "Could not send credentials email automatically."
     });
   } catch (error) {
     console.error("APPROVE TEACHER ERROR:", error);

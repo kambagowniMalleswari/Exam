@@ -313,7 +313,7 @@ export const sendEmail = async ({ to, subject, text, html }) => {
  * - If it exceeds maxWaitMs (e.g. SMTP connecting or cold network), it does NOT block the HTTP response!
  *   It continues executing in the background, logs results, and returns queued=true immediately so the UI responds in < 200ms!
  */
-export const sendEmailQuickOrBackground = async (mailOptions, maxWaitMs = 1200) => {
+export const sendEmailQuickOrBackground = async (mailOptions, maxWaitMs = 5000) => {
   const emailPromise = sendEmail(mailOptions);
 
   const timeoutPromise = new Promise((resolve) =>

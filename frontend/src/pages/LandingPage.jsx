@@ -58,6 +58,7 @@ const LandingPage = () => {
   const [loadingTests, setLoadingTests] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -198,7 +199,31 @@ const LandingPage = () => {
               Sign Up Free
             </Link>
           </div>
+
+          {/* Mobile Menu Toggle Button */}
+          <button
+            type="button"
+            className="lms-mobile-menu-btn"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {mobileMenuOpen ? "✕" : "☰"}
+          </button>
         </div>
+
+        {/* Mobile Dropdown Drawer */}
+        {mobileMenuOpen && (
+          <div className="lms-mobile-drawer">
+            <a href="#lms-courses-section" onClick={() => setMobileMenuOpen(false)}>Browse Tests</a>
+            <a href="#learning-tracks" onClick={() => setMobileMenuOpen(false)}>Skill Tracks</a>
+            <Link to="/join-us" onClick={() => setMobileMenuOpen(false)}>For Institutions</Link>
+            <Link to="/join-us" onClick={() => setMobileMenuOpen(false)}>Teach with Us</Link>
+            <div className="lms-mobile-drawer-auth">
+              <Link to="/login" className="btn btn-secondary" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+              <Link to="/register" className="btn btn-primary" onClick={() => setMobileMenuOpen(false)}>Sign Up Free</Link>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Udemy-Style Hero Billboard Banner */}

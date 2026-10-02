@@ -264,12 +264,43 @@
 }
 
 /* Mobile Responsive */
+.sidebar-mobile-close {
+  display: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-mobile-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
 @media (max-width: 768px) {
+  .sidebar-mobile-close {
+    display: inline-flex;
+  }
+
   .sidebar {
     position: fixed;
-    left: -260px;
-    transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    top: 0;
+    bottom: 0;
+    left: -290px;
+    width: 280px;
+    z-index: 1000;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.65);
+    transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
   .sidebar.open {
     left: 0;
   }
