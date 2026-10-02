@@ -81,6 +81,8 @@ api.interceptors.response.use(
       // Clear expired credentials
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      localStorage.removeItem("organizationId");
+      clearApiCache();
 
       // Only redirect if not already on login/register/landing page
       const currentPath = window.location.pathname;

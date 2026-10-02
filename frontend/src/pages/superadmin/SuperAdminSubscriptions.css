@@ -339,26 +339,44 @@
   font-size: 0.95rem;
 }
 
-.sa-status-badge {
-  padding: 4px 12px;
+.sa-status-badge,
+.sa-table .status-pill {
+  padding: 5px 14px;
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: 0.76rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
 }
 
-.sa-status-badge.active {
-  background: #ecfdf5;
-  color: #059669;
-  border: 1px solid #a7f3d0;
+.sa-status-badge.active,
+.sa-table .status-pill.active {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+  border: 1.5px solid #86efac !important;
+  box-shadow: 0 1px 2px rgba(22, 101, 52, 0.08);
 }
 
 .sa-status-badge.inactive,
-.sa-status-badge.cancelled {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
+.sa-status-badge.cancelled,
+.sa-table .status-pill.inactive,
+.sa-table .status-pill.cancelled {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border: 1.5px solid #fca5a5 !important;
+}
+
+.sa-status-badge.past_due,
+.sa-status-badge.trialing,
+.sa-table .status-pill.past_due,
+.sa-table .status-pill.trialing {
+  background: #fef3c7 !important;
+  color: #b45309 !important;
+  border: 1.5px solid #fcd34d !important;
 }
 
 .sa-date {

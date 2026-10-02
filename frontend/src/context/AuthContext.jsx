@@ -1,6 +1,6 @@
 // Authentication Context
 import { createContext, useContext, useEffect, useState } from "react";
-import api from "../services/api.js";
+import api, { clearApiCache } from "../services/api.js";
 
 const AuthContext = createContext();
 
@@ -42,10 +42,12 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } catch (err) {
-        console.warn("Session sync notice, keeping local user state:", err.message);
-        if (err.response?.status === 401 && isMounted) {
+        console.warn("Session sync notice:", err.message);
+        if ((err.response?.status === 401 || err.response?.status === 403) && isMounted) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
+          localStorage.removeItem("organizationId");
+          clearApiCache();
           setUser(null);
         }
       } finally {
@@ -66,6 +68,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
     localStorage.removeItem("organizationId");
     sessionStorage.clear();
+    clearApiCache();
 
     const response = await api.post("/auth/login", { email, password });
     const { token, user: loggedUser } = response.data;
@@ -83,6 +86,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
     localStorage.removeItem("organizationId");
     sessionStorage.clear();
+    clearApiCache();
 
     const response = await api.post("/auth/register", registrationData);
     const { token, user: registeredUser } = response.data;
@@ -100,6 +104,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
     localStorage.removeItem("organizationId");
     sessionStorage.clear();
+    clearApiCache();
 
     const response = await api.post("/auth/google", googlePayload);
     const { token, user: loggedUser } = response.data;
@@ -117,6 +122,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
     localStorage.removeItem("organizationId");
     sessionStorage.clear();
+    clearApiCache();
     setUser(null);
     window.location.href = "/login";
   };

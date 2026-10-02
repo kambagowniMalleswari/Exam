@@ -237,17 +237,27 @@ const Profile = () => {
     return matchesSearch && matchesBatch;
   });
 
-  const isSuperAdmin = (profileData?.role || user?.role) === "super_admin" || (profileData?.role || user?.role) === "superadmin";
+  const userActiveRole = profileData?.role || user?.role || "";
+  const isSuperAdmin = userActiveRole === "super_admin" || userActiveRole === "superadmin";
   const uniqueBatches = Array.from(new Set(orgStudents.map((s) => s.batchNumber).filter(Boolean)));
   const orgName = isSuperAdmin
     ? "Platform Super Admin (Global Scope)"
     : (profileData?.organizationId?.name || user?.organizationId?.name || "Independent / Platform User");
 
+  let profileTitle = "Account & Faculty Profile";
+  if (isSuperAdmin) {
+    profileTitle = "Platform Super Admin Profile";
+  } else if (userActiveRole === "org_admin" || userActiveRole === "admin") {
+    profileTitle = "Organization Admin Profile";
+  } else if (userActiveRole === "student") {
+    profileTitle = "Student Scholar Profile & Account";
+  }
+
   return (
-    <DashboardLayout title="Account & Faculty Profile">
+    <DashboardLayout title={profileTitle}>
       <div className="profile-page">
         {/* Profile Hero Card */}
-        <div className={`profile-hero-card ${isSuperAdmin ? "superadmin-hero-card" : ""}`}>
+        <div className="profile-hero-card">
           <div className="profile-avatar-box">
             <div className="profile-avatar-circle" style={{ overflow: "hidden" }}>
               {(avatarPreview || profileData?.avatar || user?.avatar) ? (

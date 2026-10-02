@@ -22,11 +22,11 @@
   overflow: hidden;
 }
 
-/* Super Admin Executive Theme */
+/* Super Admin Executive Theme - unified with vibrant blue gradient */
 .profile-hero-card.superadmin-hero-card {
-  background: linear-gradient(135deg, #090d16 0%, #0f172a 40%, #1e1b4b 100%);
-  box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.45);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #0284c7 100%);
+  box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .profile-avatar-image {
@@ -132,22 +132,30 @@
 }
 
 .status-pill.active {
-  background: rgba(16, 185, 129, 0.2);
-  color: #a7f3d0;
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: #dcfce7;
+  color: #15803d;
+  border: 1.5px solid #86efac;
   font-size: 0.75rem;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(22, 101, 52, 0.08);
 }
 
 .status-pill.inactive {
   background: #fee2e2;
   color: #b91c1c;
+  border: 1.5px solid #fca5a5;
   font-size: 0.75rem;
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .profile-hero-sub {

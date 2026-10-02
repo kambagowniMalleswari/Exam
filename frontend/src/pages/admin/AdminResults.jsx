@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
+import {
+  BarChartIcon,
+  CheckCircleIcon,
+  XIcon,
+  TrendingUpIcon,
+  TargetIcon,
+  AwardIcon,
+  FileTextIcon,
+  RefreshIcon,
+  SearchIcon
+} from "../../components/common/Icons.jsx";
 import "./AdminResults.css";
 
 const AdminResults = () => {
@@ -132,11 +143,13 @@ const AdminResults = () => {
             <p>Comprehensive overview of student examinations and performance across your organization.</p>
           </div>
           <div className="ar-header-actions">
-            <button className="btn-secondary" onClick={exportCSV} disabled={filteredResults.length === 0}>
-              📥 Export CSV
+            <button className="btn-secondary" onClick={exportCSV} disabled={filteredResults.length === 0} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <FileTextIcon size={16} />
+              <span>Export CSV</span>
             </button>
-            <button className="btn-primary" onClick={fetchData}>
-              🔄 Refresh
+            <button className="btn-primary" onClick={fetchData} style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <RefreshIcon size={16} />
+              <span>Refresh</span>
             </button>
           </div>
         </div>
@@ -144,42 +157,54 @@ const AdminResults = () => {
         {/* KPI Cards */}
         <div className="ar-stats-grid">
           <div className="ar-kpi total">
-            <div className="kpi-icon">📋</div>
+            <div className="kpi-icon">
+              <BarChartIcon size={20} />
+            </div>
             <div className="kpi-body">
               <span className="kpi-number">{stats.total}</span>
               <span className="kpi-title">Total Submissions</span>
             </div>
           </div>
           <div className="ar-kpi pass">
-            <div className="kpi-icon">✅</div>
+            <div className="kpi-icon">
+              <CheckCircleIcon size={20} />
+            </div>
             <div className="kpi-body">
               <span className="kpi-number">{stats.passed}</span>
               <span className="kpi-title">Passed Tests</span>
             </div>
           </div>
           <div className="ar-kpi fail">
-            <div className="kpi-icon">❌</div>
+            <div className="kpi-icon">
+              <XIcon size={20} />
+            </div>
             <div className="kpi-body">
               <span className="kpi-number">{stats.failed}</span>
               <span className="kpi-title">Failed Tests</span>
             </div>
           </div>
           <div className="ar-kpi rate">
-            <div className="kpi-icon">📈</div>
+            <div className="kpi-icon">
+              <TrendingUpIcon size={20} />
+            </div>
             <div className="kpi-body">
               <span className="kpi-number">{stats.passRate}%</span>
               <span className="kpi-title">Pass Rate</span>
             </div>
           </div>
           <div className="ar-kpi avg">
-            <div className="kpi-icon">🎯</div>
+            <div className="kpi-icon">
+              <TargetIcon size={20} />
+            </div>
             <div className="kpi-body">
               <span className="kpi-number">{stats.avgScore}%</span>
               <span className="kpi-title">Avg Score</span>
             </div>
           </div>
           <div className="ar-kpi top">
-            <div className="kpi-icon">🏆</div>
+            <div className="kpi-icon">
+              <AwardIcon size={20} />
+            </div>
             <div className="kpi-body">
               <span className="kpi-number">{stats.topScore}%</span>
               <span className="kpi-title">Top Score</span>
@@ -190,7 +215,7 @@ const AdminResults = () => {
         {/* Filter Toolbar */}
         <div className="ar-toolbar">
           <div className="ar-search-box">
-            <span>🔍</span>
+            <SearchIcon size={16} />
             <input
               type="text"
               placeholder="Search by student, email, or test title..."

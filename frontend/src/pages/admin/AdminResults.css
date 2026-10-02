@@ -117,16 +117,20 @@
 }
 
 .kpi-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: #f0f9ff;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  background: #f0f9ff;
   border: 1px solid #e0f2fe;
   flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.ar-kpi:hover .kpi-icon {
+  transform: scale(1.05);
 }
 
 .kpi-body {
@@ -151,10 +155,13 @@
   margin-top: 2px;
 }
 
-/* Specific KPI accents */
-.ar-kpi.pass .kpi-icon { background: #ecfdf5; border-color: #a7f3d0; }
-.ar-kpi.fail .kpi-icon { background: #fef2f2; border-color: #fecaca; }
-.ar-kpi.top .kpi-icon { background: #fffbeb; border-color: #fde68a; }
+/* Specific KPI accents matching Teacher Results vector styling */
+.ar-kpi.total .kpi-icon { background: #f0f9ff; border-color: #e0f2fe; color: #0284c7; }
+.ar-kpi.pass .kpi-icon { background: #ecfdf5; border-color: #d1fae5; color: #10b981; }
+.ar-kpi.fail .kpi-icon { background: #fef2f2; border-color: #fee2e2; color: #ef4444; }
+.ar-kpi.rate .kpi-icon { background: #f0fdf4; border-color: #dcfce7; color: #16a34a; }
+.ar-kpi.avg .kpi-icon { background: #faf5ff; border-color: #f3e8ff; color: #9333ea; }
+.ar-kpi.top .kpi-icon { background: #fffbeb; border-color: #fef3c7; color: #f59e0b; }
 
 /* Filter Toolbar */
 .ar-toolbar {
