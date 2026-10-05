@@ -30,13 +30,14 @@ export const getUsers = async (req, res) => {
     }
 
     if (req.query.batchId) {
-      query.batchId = req.query.batchId;
+      query.$or = [{ batchId: req.query.batchId }, { batchIds: req.query.batchId }];
     }
 
     const users = await User.find(query)
       .select("-password")
       .populate("organizationId", "name slug")
       .populate("batchId", "name batchNumber")
+      .populate("batchIds", "name batchNumber department")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -71,12 +72,13 @@ export const getStudents = async (req, res) => {
     }
 
     if (req.query.batchId) {
-      query.batchId = req.query.batchId;
+      query.$or = [{ batchId: req.query.batchId }, { batchIds: req.query.batchId }];
     }
 
     const students = await User.find(query)
       .select("-password")
       .populate("batchId", "name batchNumber department")
+      .populate("batchIds", "name batchNumber department")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -298,6 +300,7 @@ export const createUser = async (req, res) => {
       createdBy: req.user.id,
       batchId: resolvedBatchId,
       batchNumber: resolvedBatchNumber,
+      batchIds: resolvedBatchId ? [resolvedBatchId] : [],
       status: "active",
       isActive: true
     });
@@ -419,6 +422,10 @@ export const updateUser = async (req, res) => {
         if (batch) {
           user.batchId = batch._id;
           user.batchNumber = batch.batchNumber;
+          if (!user.batchIds) user.batchIds = [];
+          if (!user.batchIds.some((b) => b.toString() === batch._id.toString())) {
+            user.batchIds.push(batch._id);
+          }
         }
       } else {
         user.batchId = null;

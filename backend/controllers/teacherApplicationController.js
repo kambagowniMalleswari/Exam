@@ -240,9 +240,11 @@ export const approveTeacherApplication = async (req, res) => {
       });
     }
 
-    // 1. Check if user already exists
+    // 1. Generate fresh secure temporary password for approved teacher
+    const temporaryPassword = `Teach@${Math.floor(100000 + Math.random() * 900000)}`;
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
     let user = await User.findOne({ email: application.email });
-    let temporaryPassword = null;
 
     if (user) {
       if (user.role === "super_admin") {
@@ -251,19 +253,16 @@ export const approveTeacherApplication = async (req, res) => {
           message: "A Platform Super Admin account cannot be altered by a teacher application."
         });
       }
-      // Promote existing user to teacher
+      // Promote existing user to teacher & assign temporary password
       user.role = "teacher";
       user.organizationId = application.organizationId._id;
       user.subject = application.subject;
       user.phone = user.phone || application.phone;
+      user.password = hashedPassword;
       user.status = "active";
       user.isActive = true;
       await user.save();
     } else {
-      // Create new Teacher user with a generated secure initial password
-      temporaryPassword = `Teach@${Math.floor(100000 + Math.random() * 900000)}`;
-      const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
-
       user = await User.create({
         name: application.name,
         email: application.email,
@@ -284,12 +283,12 @@ export const approveTeacherApplication = async (req, res) => {
     application.reviewedAt = new Date();
     await application.save();
 
-    // 3. Send approval notification email
+    // 3. Send approval notification email with temporary password & credentials to teacher's Gmail
     const orgName = application.organizationId?.name || "the institution";
     const portalLoginUrl = `${getClientUrl()}/admin/login`;
-    let emailDispatch = null;
 
-    if (temporaryPassword) {
+    let emailDispatch = null;
+    try {
       emailDispatch = await sendAccountCredentialsEmail({
         to: application.email,
         name: application.name,
@@ -299,40 +298,8 @@ export const approveTeacherApplication = async (req, res) => {
         orgName,
         loginUrl: portalLoginUrl
       });
-    } else {
-      const elevationSubject = `🎓 AssessIQ Faculty Access Granted — ${orgName}`;
-      const elevationHtml = `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
-          <div style="display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 14px;">
-            <div style="width: 40px; height: 40px; background: #1e1b4b; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fbbf24; font-weight: 800; font-size: 18px; margin-right: 12px;">IQ</div>
-            <div>
-              <h2 style="margin: 0; color: #0f172a; font-size: 18px;">AssessIQ Faculty Operations</h2>
-              <span style="font-size: 13px; color: #64748b;">${orgName}</span>
-            </div>
-          </div>
-          <h3 style="color: #0f172a; margin-top: 0;">Congratulations, ${application.name}!</h3>
-          <p style="color: #334155; font-size: 15px; line-height: 1.6;">
-            Your teacher application for <strong>${orgName}</strong> in <strong>${application.subject}</strong> has been officially approved.
-          </p>
-          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 18px; margin: 20px 0;">
-            <p style="margin: 6px 0; font-size: 14px;"><strong>Account Email:</strong> ${application.email}</p>
-            <p style="margin: 6px 0; font-size: 14px;"><strong>Assigned Role:</strong> Faculty / Teacher</p>
-            <p style="margin: 6px 0; font-size: 14px;"><strong>Subject:</strong> ${application.subject}</p>
-            <p style="margin: 6px 0; font-size: 14px;"><strong>Faculty Portal Login:</strong> <a href="${portalLoginUrl}" style="color: #2563eb; font-weight: 600;">Sign in with your existing password</a></p>
-          </div>
-          <div style="text-align: center; margin: 24px 0;">
-            <a href="${portalLoginUrl}" style="background: #1e1b4b; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Go to Faculty Portal →</a>
-          </div>
-          <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">AssessIQ Multi-Tenant Examination Platform</p>
-        </div>
-      `;
-      const emailText = `Dear ${application.name},\n\nCongratulations! Your teacher application for ${orgName} in ${application.subject} has been APPROVED.\n\nYour existing AssessIQ account (${application.email}) now has Teacher privileges for ${orgName}.\n\nSign in at: ${portalLoginUrl}\n\nAssessIQ Operations`;
-      emailDispatch = await sendEmailQuickOrBackground({
-        to: application.email,
-        subject: elevationSubject,
-        text: emailText,
-        html: elevationHtml
-      });
+    } catch (err) {
+      console.error("[Teacher Approval Email Error]:", err.message);
     }
 
     const adminEmail = process.env.SUPER_ADMIN_EMAIL || process.env.EMAIL_USER || "";

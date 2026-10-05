@@ -548,4 +548,33 @@ export const sendStudentRegistrationAdminAlert = async ({ studentName, studentEm
   return sendEmailQuickOrBackground({ to: superAdminEmail, subject, text });
 };
 
+/**
+ * 6. Email Password Reset OTP Verification Code
+ */
+export const sendPasswordResetOtpEmail = async ({ to, name, otp }) => {
+  const subject = "AssessIQ Platform — Password Reset Verification Code";
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+      <div style="display: flex; align-items: center; margin-bottom: 20px;">
+        <div style="width: 36px; height: 36px; background: #1e3a8a; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-right: 12px;">IQ</div>
+        <h3 style="margin: 0; color: #0f172a; font-size: 18px;">AssessIQ Platform Security</h3>
+      </div>
+      <h2 style="color: #0f172a; font-size: 22px; margin-bottom: 12px;">Password Reset Verification</h2>
+      <p style="color: #475569; font-size: 15px; line-height: 1.5;">Hello <strong>${name || "User"}</strong>,</p>
+      <p style="color: #475569; font-size: 15px; line-height: 1.5;">You have requested to reset or modify your account password. Use the single-use 6-digit verification code below to authorize this change:</p>
+      <div style="margin: 28px 0; text-align: center;">
+        <span style="font-family: 'Courier New', monospace; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #1e40af; background: #eff6ff; padding: 14px 28px; border-radius: 10px; border: 2px dashed #93c5fd; display: inline-block;">${otp}</span>
+      </div>
+      <p style="color: #64748b; font-size: 13px; margin-bottom: 6px;">⏱️ This verification code is valid for <strong>10 minutes</strong>.</p>
+      <p style="color: #64748b; font-size: 13px;">If you did not initiate this request, please ignore this email or notify platform security.</p>
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px 0;" />
+      <p style="color: #94a3b8; font-size: 12px; margin: 0; text-align: center;">AssessIQ Multi-Tenant Institutional Assessment Platform</p>
+    </div>
+  `;
+  const text = `Hello ${name || "User"},\n\nYour 6-digit password reset verification code is:\n\n${otp}\n\nThis code will expire in 10 minutes. If you did not request a password change, please ignore this email.\n\nAssessIQ Security Operations`;
+
+  return sendEmailQuickOrBackground({ to, subject, text, html }, 5000);
+};
+
 export default sendEmail;
+

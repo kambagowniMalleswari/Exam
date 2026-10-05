@@ -57,7 +57,7 @@
   box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
 }
 
-/* KPI Strip */
+/* KPI Strip with Colorful Accents */
 .batch-kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -71,12 +71,48 @@
   padding: 1.25rem 1.5rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.1rem;
   box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.batch-kpi-card .kpi-icon {
-  font-size: 2rem;
+.batch-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.kpi-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-indigo {
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #e0e7ff;
+}
+
+.icon-emerald {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #d1fae5;
+}
+
+.icon-amber {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fef3c7;
+}
+
+.icon-purple {
+  background: #faf5ff;
+  color: #7c3aed;
+  border: 1px solid #f3e8ff;
 }
 
 .kpi-number {
@@ -93,22 +129,68 @@
   font-weight: 600;
 }
 
-/* Search Bar */
-.batch-search-bar input {
+/* Modern Unified Actions & Search Bar */
+.batch-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.batch-search-wrap {
+  flex: 1;
+  min-width: 280px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.batch-search-wrap svg {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.batch-search-wrap input {
   width: 100%;
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  padding: 0.85rem 1.25rem;
+  padding: 0.85rem 1.25rem 0.85rem 2.6rem;
   border-radius: 12px;
   font-size: 0.9rem;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
 }
 
-.batch-search-bar input:focus {
-  border-color: var(--primary, #0284c7);
+.batch-search-wrap input:focus {
+  border-color: #0284c7;
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.btn-primary-batch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.85rem 1.6rem;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.btn-primary-batch:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
 }
 
 /* Batches Grid */

@@ -1,5 +1,5 @@
-// Unified Profile Page for Super Admin, Org Admin, Teacher, and Student
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../layouts/DashboardLayout.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import api from "../services/api.js";
@@ -23,10 +23,26 @@ import "./Profile.css";
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab");
 
-  const [activeTab, setActiveTab] = useState(user?.role === "teacher" ? "students" : "overview");
+  const [activeTab, setActiveTab] = useState(
+    requestedTab || (user?.role === "teacher" ? "students" : "overview")
+  );
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState(null);
+
+  // Sync tab if URL param changes
+  useEffect(() => {
+    if (requestedTab && ["students", "overview", "edit", "security"].includes(requestedTab)) {
+      setActiveTab(requestedTab);
+    }
+  }, [requestedTab]);
+
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    setSearchParams({ tab: tabKey });
+  };
 
   // Edit form state
   const [name, setName] = useState("");
@@ -157,11 +173,14 @@ const Profile = () => {
     try {
       setOtpLoading(true);
       const res = await api.post("/auth/send-reset-otp", { email: profileData?.email || user?.email });
-      setSecurityAlert({ text: res.data?.message || "Verification code sent to your email!", type: "success" });
+      setSecurityAlert({
+        text: res.data?.message || "Verification code dispatched to your email! Please check your inbox (and Spam folder).",
+        type: "success"
+      });
       setOtpStep(2);
       setOtpCountdown(600); // 10 minutes
     } catch (err) {
-      setSecurityAlert({ text: err.response?.data?.message || "Failed to send reset code.", type: "error" });
+      setSecurityAlert({ text: err.response?.data?.message || "Failed to dispatch reset code.", type: "error" });
     } finally {
       setOtpLoading(false);
     }
@@ -326,7 +345,7 @@ const Profile = () => {
           {user?.role === "teacher" && (
             <button
               className={`profile-tab-btn ${activeTab === "students" ? "active" : ""}`}
-              onClick={() => setActiveTab("students")}
+              onClick={() => handleTabChange("students")}
             >
               <UsersIcon size={16} />
               <span>Organization Students</span>
@@ -336,7 +355,7 @@ const Profile = () => {
 
           <button
             className={`profile-tab-btn ${activeTab === "overview" ? "active" : ""}`}
-            onClick={() => setActiveTab("overview")}
+            onClick={() => handleTabChange("overview")}
           >
             <UserIcon size={16} />
             <span>Account Details</span>
@@ -344,7 +363,7 @@ const Profile = () => {
 
           <button
             className={`profile-tab-btn ${activeTab === "edit" ? "active" : ""}`}
-            onClick={() => setActiveTab("edit")}
+            onClick={() => handleTabChange("edit")}
           >
             <EditIcon size={16} />
             <span>Edit Information</span>
@@ -352,7 +371,7 @@ const Profile = () => {
 
           <button
             className={`profile-tab-btn ${activeTab === "security" ? "active" : ""}`}
-            onClick={() => setActiveTab("security")}
+            onClick={() => handleTabChange("security")}
           >
             <KeyIcon size={16} />
             <span>Security & OTP Reset</span>

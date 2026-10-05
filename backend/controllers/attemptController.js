@@ -26,13 +26,19 @@ export const isStudentEligibleForTest = async (student, test) => {
 
   // 2. Batch check
   let matchedBatch = false;
-  if (test.targetBatches && test.targetBatches.length > 0) {
-    if (student.batchId) {
-      matchedBatch = test.targetBatches.some((b) => {
-        const bId = b._id ? b._id.toString() : b.toString();
-        return bId === student.batchId.toString();
-      });
+  const studentBatchIds = (student.batchIds || []).map((b) => (b._id ? b._id.toString() : b.toString()));
+  if (student.batchId) {
+    const singleBId = student.batchId._id ? student.batchId._id.toString() : student.batchId.toString();
+    if (!studentBatchIds.includes(singleBId)) {
+      studentBatchIds.push(singleBId);
     }
+  }
+
+  if (test.targetBatches && test.targetBatches.length > 0) {
+    matchedBatch = test.targetBatches.some((b) => {
+      const bId = b._id ? b._id.toString() : b.toString();
+      return studentBatchIds.includes(bId);
+    });
   }
   if (!matchedBatch && test.targetBatchNumbers && test.targetBatchNumbers.length > 0) {
     if (student.batchNumber) {
@@ -104,12 +110,11 @@ export const isStudentEligibleForTest = async (student, test) => {
   // If test has batch restriction, check student's batch; but if teacher published it for the organization, let it reflect
   if (hasBatchRestriction && !matchedBatch) {
     // If student is enrolled in a batch linked to this test, they match
-    if (student.batchId) {
-      const isBatchLinked = test.targetBatches?.some(
-        (b) => (b._id ? b._id.toString() : b.toString()) === student.batchId.toString()
-      );
-      if (isBatchLinked) return { eligible: true };
-    }
+    const isBatchLinked = test.targetBatches?.some((b) => {
+      const bId = b._id ? b._id.toString() : b.toString();
+      return studentBatchIds.includes(bId);
+    });
+    if (isBatchLinked) return { eligible: true };
     // If teacher set targetType to all or general organization test, allow access
     if (test.targetType !== "selective") {
       return { eligible: true };

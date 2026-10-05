@@ -13,7 +13,8 @@ import {
   TargetIcon,
   GraduationCapIcon,
   UserIcon,
-  ShieldIcon
+  ShieldIcon,
+  KeyIcon
 } from "./common/Icons.jsx";
 import { BrandCrest } from "./common/BrandLogo.jsx";
 import "./Sidebar.css";
@@ -56,6 +57,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
     { label: "Student Results", path: "/admin/results", icon: <AwardIcon size={18} /> },
     { label: "Reports & Analytics", path: "/admin/reports", icon: <BarChartIcon size={18} /> },
     { label: "SaaS Subscription", path: "/admin/subscription", icon: <ShieldIcon size={18} /> },
+    { label: "Security & OTP Reset", path: "/profile?tab=security", icon: <KeyIcon size={18} /> },
     { label: "My Profile", path: "/profile", icon: <UserIcon size={18} /> }
   ];
 
@@ -70,6 +72,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
     },
     { label: "Platform Reports", path: "/superadmin/reports", icon: <BarChartIcon size={18} /> },
     { label: "SaaS Subscriptions", path: "/superadmin/subscriptions", icon: <ShieldIcon size={18} /> },
+    { label: "Security & OTP Reset", path: "/profile?tab=security", icon: <KeyIcon size={18} /> },
     { label: "My Profile", path: "/profile", icon: <UserIcon size={18} /> }
   ];
 
@@ -83,6 +86,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       { label: "My Tests", path: "/teacher/tests", icon: <FileTextIcon size={18} /> },
       { label: "Student Batches", path: "/teacher/batches", icon: <TagIcon size={18} /> },
       { label: "Student Results", path: "/teacher/results", icon: <AwardIcon size={18} /> },
+      { label: "Security & OTP Reset", path: "/profile?tab=security", icon: <KeyIcon size={18} /> },
       { label: "Faculty Profile", path: "/profile", icon: <UserIcon size={18} /> }
     ],
     student: [
@@ -90,6 +94,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       { label: "Available Tests", path: "/student/available-tests", icon: <TargetIcon size={18} /> },
       { label: "Course Batches", path: "/student/batches", icon: <TagIcon size={18} /> },
       { label: "My Attempts & Results", path: "/student/my-attempts", icon: <AwardIcon size={18} /> },
+      { label: "Security & OTP Reset", path: "/profile?tab=security", icon: <KeyIcon size={18} /> },
       { label: "Student Profile", path: "/profile", icon: <UserIcon size={18} /> }
     ]
   };
@@ -147,22 +152,28 @@ const Sidebar = ({ isOpen = false, onClose }) => {
       <nav className="sidebar-nav">
         <div className="sidebar-section-title">PORTAL MENU</div>
         <div className="sidebar-links">
-          {currentMenu.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={() => onClose && onClose()}
-              className={({ isActive }) =>
-                isActive ? "sidebar-link active" : "sidebar-link"
-              }
-            >
-              <span className="sidebar-link-icon">{item.icon}</span>
-              <span className="sidebar-link-label">{item.label}</span>
-              {item.badge != null && (
-                <span className="sidebar-item-badge">{item.badge}</span>
-              )}
-            </NavLink>
-          ))}
+          {currentMenu.map((item) => {
+            const isTabSecurity = item.path.includes("tab=security");
+            const isProfileOnly = item.path === "/profile";
+            const isSecurityActive = isTabSecurity && location.pathname === "/profile" && location.search.includes("tab=security");
+            const isProfileActive = isProfileOnly && location.pathname === "/profile" && !location.search.includes("tab=security");
+            const isItemActive = isTabSecurity ? isSecurityActive : (isProfileOnly ? isProfileActive : location.pathname === item.path);
+
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={() => onClose && onClose()}
+                className={() => (isItemActive ? "sidebar-link active" : "sidebar-link")}
+              >
+                <span className="sidebar-link-icon">{item.icon}</span>
+                <span className="sidebar-link-label">{item.label}</span>
+                {item.badge != null && (
+                  <span className="sidebar-item-badge">{item.badge}</span>
+                )}
+              </NavLink>
+            );
+          })}
         </div>
       </nav>
 

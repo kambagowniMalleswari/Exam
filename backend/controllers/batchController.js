@@ -30,8 +30,28 @@ export const getBatches = async (req, res) => {
 
     const batchIds = batches.map((b) => b._id);
     const studentCounts = await User.aggregate([
-      { $match: { batchId: { $in: batchIds }, role: "student" } },
-      { $group: { _id: "$batchId", count: { $sum: 1 } } }
+      {
+        $match: {
+          role: "student",
+          $or: [
+            { batchIds: { $in: batchIds } },
+            { batchId: { $in: batchIds } }
+          ]
+        }
+      },
+      {
+        $project: {
+          allBatches: {
+            $setUnion: [
+              { $ifNull: ["$batchIds", []] },
+              { $cond: [{ $ifNull: ["$batchId", false] }, ["$batchId"], []] }
+            ]
+          }
+        }
+      },
+      { $unwind: "$allBatches" },
+      { $match: { allBatches: { $in: batchIds } } },
+      { $group: { _id: "$allBatches", count: { $sum: 1 } } }
     ]);
     const scMap = new Map(studentCounts.map((s) => [s._id.toString(), s.count]));
 
@@ -78,10 +98,10 @@ export const getBatchById = async (req, res) => {
     }
 
     const students = await User.find({
-      batchId: batch._id,
+      $or: [{ batchIds: batch._id }, { batchId: batch._id }],
       role: "student"
     })
-      .select("name email phone lastLogin createdAt")
+      .select("name email phone lastLogin createdAt batchNumber batchIds")
       .sort({ name: 1 });
 
     res.status(200).json({
@@ -288,7 +308,13 @@ export const deleteBatch = async (req, res) => {
       });
     }
 
-    // Unassign students from this batch
+    // Unassign students from this batch without removing them from other batches
+    await User.updateMany(
+      { $or: [{ batchId: batch._id }, { batchIds: batch._id }] },
+      {
+        $pull: { batchIds: batch._id }
+      }
+    );
     await User.updateMany(
       { batchId: batch._id },
       { batchId: null, batchNumber: "" }
@@ -310,7 +336,7 @@ export const deleteBatch = async (req, res) => {
   }
 };
 
-// 6. Bulk assign students to a batch
+// 6. Bulk assign students to a batch (supports multiple batches per student)
 export const assignStudentsToBatch = async (req, res) => {
   try {
     const { id } = req.params;
@@ -337,7 +363,7 @@ export const assignStudentsToBatch = async (req, res) => {
       });
     }
 
-    // Assign students
+    // Assign students into batchIds array while preserving existing batches
     const updateResult = await User.updateMany(
       {
         _id: { $in: studentIds },
@@ -345,8 +371,8 @@ export const assignStudentsToBatch = async (req, res) => {
         role: "student"
       },
       {
-        batchId: batch._id,
-        batchNumber: batch.batchNumber
+        $addToSet: { batchIds: batch._id },
+        $set: { batchId: batch._id, batchNumber: batch.batchNumber }
       }
     );
 
@@ -392,10 +418,30 @@ export const removeStudentFromBatch = async (req, res) => {
       });
     }
 
-    await User.updateOne(
-      { _id: studentId, batchId: batch._id },
-      { batchId: null, batchNumber: "" }
-    );
+    // Pull batch from student's batchIds
+    const userToUpdate = await User.findById(studentId);
+    if (userToUpdate) {
+      await User.updateOne(
+        { _id: studentId },
+        {
+          $pull: { batchIds: batch._id }
+        }
+      );
+
+      // If primary batchId was this batch, set batchId to remaining batch or null
+      if (userToUpdate.batchId && userToUpdate.batchId.toString() === batch._id.toString()) {
+        const remaining = (userToUpdate.batchIds || []).filter(
+          (b) => b.toString() !== batch._id.toString()
+        );
+        const nextBatchId = remaining.length > 0 ? remaining[remaining.length - 1] : null;
+        let nextBatchNum = "";
+        if (nextBatchId) {
+          const nextB = await Batch.findById(nextBatchId);
+          nextBatchNum = nextB?.batchNumber || "";
+        }
+        await User.updateOne({ _id: studentId }, { batchId: nextBatchId, batchNumber: nextBatchNum });
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -433,15 +479,36 @@ export const getAvailableBatchesForStudent = async (req, res) => {
 
     const batchIds = batches.map((b) => b._id);
     const studentCounts = await User.aggregate([
-      { $match: { batchId: { $in: batchIds }, role: "student" } },
-      { $group: { _id: "$batchId", count: { $sum: 1 } } }
+      {
+        $match: {
+          role: "student",
+          $or: [
+            { batchIds: { $in: batchIds } },
+            { batchId: { $in: batchIds } }
+          ]
+        }
+      },
+      {
+        $project: {
+          allBatches: {
+            $setUnion: [
+              { $ifNull: ["$batchIds", []] },
+              { $cond: [{ $ifNull: ["$batchId", false] }, ["$batchId"], []] }
+            ]
+          }
+        }
+      },
+      { $unwind: "$allBatches" },
+      { $match: { allBatches: { $in: batchIds } } },
+      { $group: { _id: "$allBatches", count: { $sum: 1 } } }
     ]);
     const scMap = new Map(studentCounts.map((s) => [s._id.toString(), s.count]));
 
     const batchesWithStatus = batches.map((b) => {
       const studentCount = scMap.get(b._id.toString()) || 0;
       const isEnrolled =
-        studentUser?.batchId && studentUser.batchId.toString() === b._id.toString();
+        (studentUser?.batchIds && studentUser.batchIds.some((id) => id.toString() === b._id.toString())) ||
+        (studentUser?.batchId && studentUser.batchId.toString() === b._id.toString());
       const maxLimit = b.maxStudents || 50;
       const isFull = studentCount >= maxLimit;
 
@@ -477,7 +544,7 @@ export const getAvailableBatchesForStudent = async (req, res) => {
   }
 };
 
-// 9. Student self-enroll in a batch with limit & authorization checks
+// 9. Student self-enroll in a batch with limit & authorization checks (Supports Multiple Batches)
 export const enrollStudentInBatch = async (req, res) => {
   try {
     const { id } = req.params;
@@ -502,8 +569,12 @@ export const enrollStudentInBatch = async (req, res) => {
       });
     }
 
-    // 2. Already enrolled check
-    if (studentUser.batchId && studentUser.batchId.toString() === batch._id.toString()) {
+    // 2. Check if student is already enrolled in THIS batch
+    const alreadyEnrolledInThisBatch =
+      (studentUser.batchIds && studentUser.batchIds.some((bId) => bId.toString() === batch._id.toString())) ||
+      (studentUser.batchId && studentUser.batchId.toString() === batch._id.toString());
+
+    if (alreadyEnrolledInThisBatch) {
       return res.status(400).json({
         success: false,
         alreadyEnrolled: true,
@@ -519,9 +590,9 @@ export const enrollStudentInBatch = async (req, res) => {
       });
     }
 
-    // 4. Capacity limit check
+    // 4. Capacity limit check across both batchIds and batchId
     const currentCount = await User.countDocuments({
-      batchId: batch._id,
+      $or: [{ batchIds: batch._id }, { batchId: batch._id }],
       role: "student"
     });
     const maxLimit = batch.maxStudents || 50;
@@ -559,7 +630,15 @@ export const enrollStudentInBatch = async (req, res) => {
       }
     }
 
-    // 7. Enroll student
+    // 7. Enroll student in multiple batches
+    if (!studentUser.batchIds) {
+      studentUser.batchIds = [];
+    }
+    // Retain previous batchId in array if not already included
+    if (studentUser.batchId && !studentUser.batchIds.some((b) => b.toString() === studentUser.batchId.toString())) {
+      studentUser.batchIds.push(studentUser.batchId);
+    }
+    studentUser.batchIds.push(batch._id);
     studentUser.batchId = batch._id;
     studentUser.batchNumber = batch.batchNumber;
     if (!studentUser.organizationId) {

@@ -97,7 +97,7 @@ const userSchema = new mongoose.Schema(
       default: null
     },
 
-    // Student Batch Assignment
+    // Student Batch Assignment (Legacy primary batch reference)
     batchId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Batch",
@@ -110,6 +110,13 @@ const userSchema = new mongoose.Schema(
       trim: true,
       index: true
     },
+    // Student Multiple Batch Assignments
+    batchIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Batch"
+      }
+    ],
 
     // Last successful login time
     lastLogin: {
@@ -135,6 +142,7 @@ const userSchema = new mongoose.Schema(
 // Indexes
 userSchema.index({ organizationId: 1, role: 1 });
 userSchema.index({ organizationId: 1, batchId: 1 });
+userSchema.index({ organizationId: 1, batchIds: 1 });
 userSchema.index({ subject: 1 });
 
 // Create User model

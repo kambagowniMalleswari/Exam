@@ -304,23 +304,6 @@ const BatchesManager = () => {
   return (
     <DashboardLayout title={isTeacher ? "Faculty Batches & Cohorts" : "Institutional Batches Manager"}>
       <div className="batches-manager">
-        {/* Page Top Banner */}
-        <div className="batches-page-header">
-          <div>
-            <h2>{isTeacher ? "My Course Batches & Test Cohorts" : "Student Batches & Cohorts"}</h2>
-            <p>
-              {isTeacher
-                ? "Create batches, link your test series, configure student capacity limits, and allow students to self-enroll."
-                : "Manage institutional student cohorts, review capacities, and inspect enrolled rosters."}
-            </p>
-          </div>
-          <button className="btn-primary-gold" onClick={openCreate}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-              <PlusIcon size={16} /> Create New Batch
-            </span>
-          </button>
-        </div>
-
         {/* Feedback Alert */}
         {feedback && (
           <div className="batch-alert alert-success">
@@ -337,30 +320,30 @@ const BatchesManager = () => {
           </div>
         )}
 
-        {/* Quick KPI Stat Strip */}
+        {/* Quick KPI Stat Strip with Modern Color Accents */}
         <div className="batch-kpi-grid">
-          <div className="batch-kpi-card">
-            <span className="kpi-icon">
-              <TagIcon size={24} />
-            </span>
+          <div className="batch-kpi-card kpi-indigo">
+            <div className="kpi-icon-wrap icon-indigo">
+              <TagIcon size={22} />
+            </div>
             <div>
               <div className="kpi-number">{batches.length}</div>
               <div className="kpi-label">Active Batches</div>
             </div>
           </div>
-          <div className="batch-kpi-card">
-            <span className="kpi-icon">
-              <GraduationCapIcon size={24} />
-            </span>
+          <div className="batch-kpi-card kpi-emerald">
+            <div className="kpi-icon-wrap icon-emerald">
+              <GraduationCapIcon size={22} />
+            </div>
             <div>
               <div className="kpi-number">{totalStudentsEnrolled}</div>
               <div className="kpi-label">Enrolled Students</div>
             </div>
           </div>
-          <div className="batch-kpi-card">
-            <span className="kpi-icon">
-              <FileTextIcon size={24} />
-            </span>
+          <div className="batch-kpi-card kpi-amber">
+            <div className="kpi-icon-wrap icon-amber">
+              <FileTextIcon size={22} />
+            </div>
             <div>
               <div className="kpi-number">
                 {batches.reduce((sum, b) => sum + (b.tests?.length || 0), 0)}
@@ -368,10 +351,10 @@ const BatchesManager = () => {
               <div className="kpi-label">Test Series Linked</div>
             </div>
           </div>
-          <div className="batch-kpi-card">
-            <span className="kpi-icon">
-              <BuildingIcon size={24} />
-            </span>
+          <div className="batch-kpi-card kpi-purple">
+            <div className="kpi-icon-wrap icon-purple">
+              <BuildingIcon size={22} />
+            </div>
             <div>
               <div className="kpi-number">
                 {new Set(batches.map((b) => b.department).filter(Boolean)).size}
@@ -381,14 +364,21 @@ const BatchesManager = () => {
           </div>
         </div>
 
-        {/* Filter Bar */}
-        <div className="batch-search-bar">
-          <input
-            type="text"
-            placeholder="Search by batch name, code (e.g. CS2026-A), or department..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        {/* Clean Unified Search & Actions Bar (No Header Collision) */}
+        <div className="batch-actions-bar">
+          <div className="batch-search-wrap">
+            <SearchIcon size={18} />
+            <input
+              type="text"
+              placeholder="Search by batch name, code (e.g. CS2026-A), or department..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <button className="btn-primary-batch" onClick={openCreate}>
+            <PlusIcon size={16} />
+            <span>Create New Batch</span>
+          </button>
         </div>
 
         {/* Batches Grid */}
