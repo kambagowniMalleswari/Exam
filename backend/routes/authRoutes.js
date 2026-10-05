@@ -9,6 +9,7 @@ import {
   getCurrentUser,
   updateProfile,
   sendResetPasswordOtp,
+  checkResetPasswordOtp,
   verifyResetPasswordOtp
 } from "../controllers/authController.js";
 
@@ -37,6 +38,8 @@ router.put("/update-profile", protect, updateProfile);
 
 // OTP-based Password Reset (accessible logged-in or logged-out via email)
 router.post("/send-reset-otp", sendResetPasswordOtp);
+router.post("/verify-otp", checkResetPasswordOtp);
+router.post("/check-reset-otp", checkResetPasswordOtp);
 router.post("/verify-reset-otp", verifyResetPasswordOtp);
 
 // Export router

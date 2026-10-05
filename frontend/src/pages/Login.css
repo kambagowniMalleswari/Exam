@@ -843,6 +843,151 @@
   background: #e2e8f0;
 }
 
+/* Modal Multi-Step Indicators & Controls */
+.auth-modal-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.modal-step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.modal-step-item.active {
+  color: #1d4ed8;
+}
+
+.modal-step-item.completed {
+  color: #16a34a;
+}
+
+.modal-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.modal-step-item.active .modal-step-num {
+  background: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.modal-step-item.completed .modal-step-num {
+  background: #16a34a;
+}
+
+.modal-step-arrow {
+  color: #cbd5e1;
+  font-size: 0.8rem;
+}
+
+.auth-otp-large-input {
+  font-size: 1.5rem !important;
+  letter-spacing: 8px !important;
+  text-align: center !important;
+  font-weight: 800 !important;
+  padding: 12px 16px !important;
+  border-radius: 12px !important;
+  border: 2px solid #cbd5e1 !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  transition: all 0.2s ease !important;
+}
+
+.auth-otp-large-input:focus {
+  border-color: #2563eb !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15) !important;
+}
+
+.auth-modal-resend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.btn-link-resend {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 0.84rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.btn-link-resend:hover:not(:disabled) {
+  color: #1d4ed8;
+}
+
+.btn-link-resend:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.pwd-checklist-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 12px 0 18px 0;
+  font-size: 0.78rem;
+}
+
+.pwd-checklist-title {
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.pwd-checklist-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.pwd-check-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.pwd-check-item.valid {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.pwd-check-item.invalid {
+  color: #94a3b8;
+}
+
+
 /* ==========================================================================
    Universal Role Coverage Indicator
    ========================================================================== */

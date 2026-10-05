@@ -215,11 +215,16 @@ export const login = async (req, res) => {
       });
     }
 
-    // Find user by exact email or username prefix
+    // Find user by exact email, username/name, or email prefix
     const rawIdentifier = (email || "").trim();
     const cleanIdentifier = rawIdentifier.toLowerCase();
 
     let user = await User.findOne({ email: cleanIdentifier });
+
+    if (!user) {
+      const escapedRaw = rawIdentifier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      user = await User.findOne({ name: new RegExp(`^${escapedRaw}$`, "i") });
+    }
 
     if (!user) {
       if (!cleanIdentifier.includes("@")) {
@@ -602,7 +607,64 @@ export const sendResetPasswordOtp = async (req, res) => {
   }
 };
 
-// Verify OTP and Reset Password
+// Step 2: Validate 6-Digit OTP before showing new password fields
+export const checkResetPasswordOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const targetEmail = email?.toLowerCase().trim() || req.user?.email;
+
+    if (!targetEmail || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and 6-digit verification code are required"
+      });
+    }
+
+    const cleanOtp = otp.toString().trim();
+    if (cleanOtp.length !== 6 || !/^\d{6}$/.test(cleanOtp)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid 6-digit numeric verification code"
+      });
+    }
+
+    const user = await User.findOne({ email: targetEmail });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid verification code or account not found"
+      });
+    }
+
+    if (!user.resetPasswordOtp || user.resetPasswordOtp !== cleanOtp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid verification code. Please check the code in your email and try again."
+      });
+    }
+
+    if (!user.resetPasswordOtpExpires || new Date() > user.resetPasswordOtpExpires) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification code has expired. Please request a fresh OTP."
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Verification code verified successfully. You may now set your new password."
+    });
+  } catch (error) {
+    console.error("Check Reset OTP Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to verify code",
+      error: error.message
+    });
+  }
+};
+
+// Step 3: Verify OTP and Reset Password
 export const verifyResetPasswordOtp = async (req, res) => {
   try {
     const { email, otp, newPassword, confirmPassword } = req.body;

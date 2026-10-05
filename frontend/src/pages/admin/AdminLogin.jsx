@@ -9,7 +9,10 @@ import {
   BarChartIcon,
   KeyIcon,
   UsersIcon,
-  GraduationCapIcon
+  GraduationCapIcon,
+  MailIcon,
+  CheckCircleIcon,
+  AlertTriangleIcon
 } from "../../components/common/Icons.jsx";
 import api from "../../services/api.js";
 import { getDefaultDashboard, isRoleAuthorizedForPath, normalizeRole } from "../../utils/roleUtils.js";
@@ -81,15 +84,31 @@ const AdminLogin = () => {
     }
   };
 
-  // Forgot Password modal state
+  // Forgot Password modal state (3-Step Progression)
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotOtp, setForgotOtp] = useState("");
   const [forgotNewPass, setForgotNewPass] = useState("");
   const [forgotConfirmPass, setForgotConfirmPass] = useState("");
+  const [showForgotNewPass, setShowForgotNewPass] = useState(false);
+  const [showForgotConfirmPass, setShowForgotConfirmPass] = useState(false);
   const [forgotStep, setForgotStep] = useState(1);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotMsg, setForgotMsg] = useState({ text: "", type: "" });
+  const [forgotResendTimer, setForgotResendTimer] = useState(0);
+
+  // Timer countdown effect for OTP resend
+  useEffect(() => {
+    let interval = null;
+    if (forgotResendTimer > 0) {
+      interval = setInterval(() => {
+        setForgotResendTimer((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [forgotResendTimer]);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -140,18 +159,21 @@ const AdminLogin = () => {
     }
   };
 
+  // Step 1: Send OTP
   const handleSendForgotOtp = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setForgotMsg({ text: "", type: "" });
-    if (!forgotEmail.trim()) {
+    const cleanEmail = forgotEmail.trim();
+    if (!cleanEmail) {
       setForgotMsg({ text: "Please enter your administrative email address.", type: "error" });
       return;
     }
     try {
       setForgotLoading(true);
-      const res = await api.post("/auth/send-reset-otp", { email: forgotEmail.trim() });
-      setForgotMsg({ text: res.data?.message || "Verification code dispatched to your email.", type: "success" });
+      const res = await api.post("/auth/send-reset-otp", { email: cleanEmail });
+      setForgotMsg({ text: res.data?.message || `Verification code dispatched to ${cleanEmail}.`, type: "success" });
       setForgotStep(2);
+      setForgotResendTimer(45);
     } catch (err) {
       setForgotMsg({ text: err.response?.data?.message || "Failed to send reset code.", type: "error" });
     } finally {
@@ -159,11 +181,72 @@ const AdminLogin = () => {
     }
   };
 
-  const handleVerifyForgotOtp = async (e) => {
+  // Step 2: Resend OTP
+  const handleResendForgotOtp = async () => {
+    if (forgotResendTimer > 0 || forgotLoading) return;
+    setForgotMsg({ text: "", type: "" });
+    try {
+      setForgotLoading(true);
+      const res = await api.post("/auth/send-reset-otp", { email: forgotEmail.trim() });
+      setForgotMsg({ text: res.data?.message || "A fresh 6-digit verification code has been dispatched.", type: "success" });
+      setForgotResendTimer(45);
+    } catch (err) {
+      setForgotMsg({ text: err.response?.data?.message || "Failed to resend reset code.", type: "error" });
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  // Step 2: Verify OTP only
+  const handleVerifyForgotOtpStep = async (e) => {
     e.preventDefault();
     setForgotMsg({ text: "", type: "" });
-    if (!forgotOtp.trim() || !forgotNewPass) {
-      setForgotMsg({ text: "Please enter the 6-digit OTP and your new password.", type: "error" });
+    const cleanOtp = forgotOtp.trim();
+    if (!cleanOtp) {
+      setForgotMsg({ text: "Please enter the 6-digit verification code.", type: "error" });
+      return;
+    }
+    if (cleanOtp.length !== 6) {
+      setForgotMsg({ text: "Verification code must be exactly 6 digits.", type: "error" });
+      return;
+    }
+    try {
+      setForgotLoading(true);
+      const res = await api.post("/auth/verify-otp", {
+        email: forgotEmail.trim(),
+        otp: cleanOtp
+      });
+      setForgotMsg({ text: res.data?.message || "OTP verified! Please create your new password.", type: "success" });
+      setForgotStep(3);
+    } catch (err) {
+      setForgotMsg({ text: err.response?.data?.message || "Invalid or expired verification code.", type: "error" });
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  // Step 3: Create New Password
+  const handleResetPasswordFinal = async (e) => {
+    e.preventDefault();
+    setForgotMsg({ text: "", type: "" });
+    if (!forgotNewPass || !forgotConfirmPass) {
+      setForgotMsg({ text: "Please enter and confirm your new password.", type: "error" });
+      return;
+    }
+    if (forgotNewPass.length < 6) {
+      setForgotMsg({ text: "Password must be at least 6 characters long.", type: "error" });
+      return;
+    }
+    if (!/[A-Z]/.test(forgotNewPass)) {
+      setForgotMsg({ text: "Password must contain at least 1 uppercase letter (A-Z).", type: "error" });
+      return;
+    }
+    if (!/[a-z]/.test(forgotNewPass)) {
+      setForgotMsg({ text: "Password must contain at least 1 lowercase letter (a-z).", type: "error" });
+      return;
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(forgotNewPass)) {
+      setForgotMsg({ text: "Password must contain at least 1 special character (!@#$%^&* etc.).", type: "error" });
       return;
     }
     if (forgotNewPass !== forgotConfirmPass) {
@@ -179,6 +262,7 @@ const AdminLogin = () => {
         confirmPassword: forgotConfirmPass
       });
       setForgotMsg({ text: res.data?.message || "Password updated successfully! You may now sign in.", type: "success" });
+      setEmail(forgotEmail.trim());
       setTimeout(() => {
         setShowForgotModal(false);
         setForgotStep(1);
@@ -189,7 +273,7 @@ const AdminLogin = () => {
         setForgotMsg({ text: "", type: "" });
       }, 2000);
     } catch (err) {
-      setForgotMsg({ text: err.response?.data?.message || "Invalid or expired OTP code.", type: "error" });
+      setForgotMsg({ text: err.response?.data?.message || "Failed to update password.", type: "error" });
     } finally {
       setForgotLoading(false);
     }
@@ -451,65 +535,242 @@ const AdminLogin = () => {
               </div>
             )}
 
-            {forgotStep === 1 ? (
-              <form onSubmit={handleSendForgotOtp} style={{ padding: "1.25rem" }}>
-                <p style={{ fontSize: "0.9rem", color: "#64748b", marginBottom: "1rem" }}>
-                  Enter your administrative email address. We will dispatch a 6-digit verification code.
+            {/* Step Progress Bar */}
+            <div className="auth-modal-stepper" style={{ margin: "1rem 1.25rem 0 1.25rem" }}>
+              <div className={`modal-step-item ${forgotStep === 1 ? "active" : "completed"}`}>
+                <span className="modal-step-num">{forgotStep > 1 ? "✓" : "1"}</span>
+                <span>Email</span>
+              </div>
+              <span className="modal-step-arrow">→</span>
+              <div className={`modal-step-item ${forgotStep === 2 ? "active" : forgotStep > 2 ? "completed" : ""}`}>
+                <span className="modal-step-num">{forgotStep > 2 ? "✓" : "2"}</span>
+                <span>Verify OTP</span>
+              </div>
+              <span className="modal-step-arrow">→</span>
+              <div className={`modal-step-item ${forgotStep === 3 ? "active" : ""}`}>
+                <span className="modal-step-num">3</span>
+                <span>Set Password</span>
+              </div>
+            </div>
+
+            {/* STEP 1: Enter Administrative Email */}
+            {forgotStep === 1 && (
+              <form onSubmit={handleSendForgotOtp} className="auth-modal-body">
+                <p className="auth-modal-desc">
+                  Enter your registered administrative account email. We will dispatch a 6-digit verification code.
                 </p>
-                <div className="field-group" style={{ marginBottom: "1.25rem" }}>
-                  <label className="field-label">Administrator Email Address</label>
-                  <input
-                    type="email"
-                    className="field-input"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder="admin@institution.edu"
-                    required
-                  />
+                <div className="field-group">
+                  <label className="field-label">Administrator Account Email</label>
+                  <div className="field-input-box">
+                    <MailIcon size={18} className="field-icon" />
+                    <input
+                      type="email"
+                      className="field-input"
+                      placeholder="admin@institution.edu"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </div>
                 </div>
-                <button type="submit" className="auth-submit-btn" disabled={forgotLoading}>
-                  {forgotLoading ? "Dispatching Code..." : "Send Verification OTP →"}
-                </button>
+                <div className="auth-modal-actions">
+                  <button
+                    type="button"
+                    className="btn-modal-cancel"
+                    onClick={() => setShowForgotModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="auth-submit-btn"
+                    disabled={forgotLoading}
+                  >
+                    {forgotLoading ? "Dispatching..." : "Dispatch Verification Code →"}
+                  </button>
+                </div>
               </form>
-            ) : (
-              <form onSubmit={handleVerifyForgotOtp} style={{ padding: "1.25rem" }}>
-                <div className="field-group" style={{ marginBottom: "1rem" }}>
-                  <label className="field-label">6-Digit Verification Code</label>
+            )}
+
+            {/* STEP 2: Enter & Confirm OTP Only */}
+            {forgotStep === 2 && (
+              <form onSubmit={handleVerifyForgotOtpStep} className="auth-modal-body">
+                <p className="auth-modal-desc">
+                  Enter the 6-digit verification code dispatched to <strong>{forgotEmail}</strong>.
+                </p>
+
+                <div className="field-group">
+                  <label className="field-label" style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>6-Digit Verification OTP</span>
+                    <span style={{ color: "#64748b", fontSize: "0.8rem", fontWeight: "normal" }}>Numbers only</span>
+                  </label>
                   <input
                     type="text"
-                    maxLength="6"
-                    className="field-input"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    className="field-input auth-otp-large-input"
+                    maxLength={6}
+                    placeholder="• • • • • •"
                     value={forgotOtp}
-                    onChange={(e) => setForgotOtp(e.target.value)}
-                    placeholder="Enter 6-digit OTP"
+                    onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     required
+                    autoFocus
                   />
+                  <div className="auth-modal-resend-row">
+                    <span>Didn't receive the code?</span>
+                    <button
+                      type="button"
+                      className="btn-link-resend"
+                      disabled={forgotResendTimer > 0 || forgotLoading}
+                      onClick={handleResendForgotOtp}
+                    >
+                      {forgotResendTimer > 0 ? `Resend Code (${forgotResendTimer}s)` : "Resend Verification Code"}
+                    </button>
+                  </div>
                 </div>
-                <div className="field-group" style={{ marginBottom: "1rem" }}>
+
+                <div className="auth-modal-actions">
+                  <button
+                    type="button"
+                    className="btn-modal-cancel"
+                    onClick={() => {
+                      setForgotStep(1);
+                      setForgotMsg({ text: "", type: "" });
+                    }}
+                  >
+                    ← Change Email
+                  </button>
+                  <button
+                    type="submit"
+                    className="auth-submit-btn"
+                    disabled={forgotLoading || forgotOtp.trim().length !== 6}
+                  >
+                    {forgotLoading ? "Verifying OTP..." : "Confirm OTP & Continue →"}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* STEP 3: Create New Password */}
+            {forgotStep === 3 && (
+              <form onSubmit={handleResetPasswordFinal} className="auth-modal-body">
+                <p className="auth-modal-desc" style={{ color: "#16a34a", fontWeight: "600" }}>
+                  ✓ Code verified for {forgotEmail}! Now set a new strong password.
+                </p>
+
+                <div className="field-group">
                   <label className="field-label">New Password</label>
-                  <input
-                    type="password"
-                    className="field-input"
-                    value={forgotNewPass}
-                    onChange={(e) => setForgotNewPass(e.target.value)}
-                    placeholder="Minimum 6 characters"
-                    required
-                  />
+                  <div className="field-input-box">
+                    <KeyIcon size={18} className="field-icon" />
+                    <input
+                      type={showForgotNewPass ? "text" : "password"}
+                      className="field-input"
+                      placeholder="Minimum 6 characters"
+                      value={forgotNewPass}
+                      onChange={(e) => setForgotNewPass(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      className="field-toggle-visibility"
+                      onClick={() => setShowForgotNewPass(!showForgotNewPass)}
+                      tabIndex="-1"
+                    >
+                      {showForgotNewPass ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div className="field-group" style={{ marginBottom: "1.25rem" }}>
+
+                <div className="field-group">
                   <label className="field-label">Confirm New Password</label>
-                  <input
-                    type="password"
-                    className="field-input"
-                    value={forgotConfirmPass}
-                    onChange={(e) => setForgotConfirmPass(e.target.value)}
-                    placeholder="Re-enter new password"
-                    required
-                  />
+                  <div className="field-input-box">
+                    <KeyIcon size={18} className="field-icon" />
+                    <input
+                      type={showForgotConfirmPass ? "text" : "password"}
+                      className="field-input"
+                      placeholder="Re-enter new password"
+                      value={forgotConfirmPass}
+                      onChange={(e) => setForgotConfirmPass(e.target.value)}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="field-toggle-visibility"
+                      onClick={() => setShowForgotConfirmPass(!showForgotConfirmPass)}
+                      tabIndex="-1"
+                    >
+                      {showForgotConfirmPass ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <button type="submit" className="auth-submit-btn" disabled={forgotLoading}>
-                  {forgotLoading ? "Updating Password..." : "Confirm Password Reset"}
-                </button>
+
+                {/* Password Criteria Checklist */}
+                <div className="pwd-checklist-card">
+                  <span className="pwd-checklist-title">Password Security Requirements:</span>
+                  <div className="pwd-checklist-grid">
+                    <span className={`pwd-check-item ${forgotNewPass.length >= 6 ? "valid" : "invalid"}`}>
+                      {forgotNewPass.length >= 6 ? "✓" : "○"} At least 6 characters
+                    </span>
+                    <span className={`pwd-check-item ${/[A-Z]/.test(forgotNewPass) ? "valid" : "invalid"}`}>
+                      {/[A-Z]/.test(forgotNewPass) ? "✓" : "○"} 1 Uppercase (A-Z)
+                    </span>
+                    <span className={`pwd-check-item ${/[a-z]/.test(forgotNewPass) ? "valid" : "invalid"}`}>
+                      {/[a-z]/.test(forgotNewPass) ? "✓" : "○"} 1 Lowercase (a-z)
+                    </span>
+                    <span className={`pwd-check-item ${/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(forgotNewPass) ? "valid" : "invalid"}`}>
+                      {/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(forgotNewPass) ? "✓" : "○"} 1 Special character (!@#$)
+                    </span>
+                  </div>
+                  {forgotConfirmPass && (
+                    <div style={{ marginTop: "6px", borderTop: "1px dashed #e2e8f0", paddingTop: "6px" }}>
+                      <span className={`pwd-check-item ${forgotNewPass === forgotConfirmPass ? "valid" : "invalid"}`}>
+                        {forgotNewPass === forgotConfirmPass ? "✓ Passwords match" : "✕ Passwords do not match"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="auth-modal-actions">
+                  <button
+                    type="button"
+                    className="btn-modal-cancel"
+                    onClick={() => {
+                      setForgotStep(2);
+                      setForgotMsg({ text: "", type: "" });
+                    }}
+                  >
+                    ← Re-check OTP
+                  </button>
+                  <button
+                    type="submit"
+                    className="auth-submit-btn"
+                    disabled={forgotLoading || !forgotNewPass || forgotNewPass !== forgotConfirmPass}
+                  >
+                    {forgotLoading ? "Updating Password..." : "Create New Password →"}
+                  </button>
+                </div>
               </form>
             )}
           </div>
