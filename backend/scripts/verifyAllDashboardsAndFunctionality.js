@@ -10,7 +10,7 @@ dotenv.config({ path: join(__dirname, "../.env") });
 const API_BASE = process.env.API_BASE_URL || "https://assess-iq-backend.onrender.com/api";
 
 const accounts = {
-  superAdmin: { email: "madhusujan593@gmail.com", password: "Admin@12345" },
+  superAdmin: { email: "kambagownikmalleswari@gmail.com", password: "Admin@145" },
   orgAdmin: { email: "orgadmin.itacademy@gmail.com", password: "Admin@12345" },
   teacher: { email: "teacher.cs@itacademy.edu", password: "Teacher@12345" },
   student1: { email: "student.aarav@itacademy.edu", password: "Student@12345" },
@@ -60,7 +60,7 @@ async function runVerification() {
   let saAuth, oaAuth, tAuth, s1Auth, s3Auth;
 
   // 1. Super Admin Verification
-  console.log("--- 1. TESTING SUPER ADMIN (madhusujan593@gmail.com) ---");
+  console.log("--- 1. TESTING SUPER ADMIN (kambagownikmalleswari@gmail.com) ---");
   try {
     saAuth = await login(accounts.superAdmin.email, accounts.superAdmin.password);
     logResult("Super Admin", "Authentication", true, `Logged in as ${saAuth.user.email} (Role: ${saAuth.user.role})`);

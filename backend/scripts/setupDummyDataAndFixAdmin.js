@@ -22,22 +22,7 @@ async function run() {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("Connected successfully!");
 
-    // 1. Fix madhusujan593@gmail.com to be Platform Super Admin (with organizationId: null)
-    const fixedAdmin = await User.findOneAndUpdate(
-      { email: "madhusujan593@gmail.com" },
-      {
-        $set: {
-          role: "super_admin",
-          organizationId: null,
-          status: "active",
-          isActive: true
-        }
-      },
-      { new: true }
-    );
-    console.log("1. Fixed madhusujan593@gmail.com:", fixedAdmin?.email, "Role:", fixedAdmin?.role, "OrgId:", fixedAdmin?.organizationId);
-
-    // Also ensure default super admin is active
+    // 1. Ensure kambagownikmalleswari@gmail.com is Platform Super Admin
     await User.findOneAndUpdate(
       { email: "kambagownikmalleswari@gmail.com" },
       { $set: { role: "super_admin", organizationId: null, status: "active", isActive: true } }
@@ -512,7 +497,7 @@ async function run() {
     console.log("SETUP & SEEDING COMPLETED SUCCESSFULLY!");
     console.log("==================================================");
     console.log("Credentials Summary:");
-    console.log("1. Super Admin: madhusujan593@gmail.com (Password: unchanged / or Admin@12345)");
+    console.log("1. Super Admin: kambagownikmalleswari@gmail.com (Password: Admin@145)");
     console.log("2. Org Admin:   orgadmin.itacademy@gmail.com (Password: Admin@12345)");
     console.log("3. Teacher:     teacher.cs@itacademy.edu (Password: Teacher@12345)");
     console.log("4. Student:     student.aarav@itacademy.edu (Password: Student@12345)");
