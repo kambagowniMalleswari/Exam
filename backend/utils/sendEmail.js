@@ -223,7 +223,9 @@ export const sendEmail = async ({ to, subject, text, html }) => {
 
     const senderEmail = userEmail || "kambagownikmalleswari@gmail.com";
     const senderName = "AssessIQ Platform";
-    const fromAddress = process.env.EMAIL_FROM || `"AssessIQ Platform" <${senderEmail}>`;
+    const fromAddress = process.env.EMAIL_FROM
+      ? process.env.EMAIL_FROM.replace(/^["']|["']$/g, "").trim()
+      : `"AssessIQ Platform" <${senderEmail}>`;
 
     // 1. Try Brevo HTTP API if configured (HTTPS Port 443 - highly recommended for Render free tier)
     if (process.env.BREVO_API_KEY) {

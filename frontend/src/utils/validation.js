@@ -4,8 +4,17 @@ export const PHONE_REGEX = /^\d{10}$/;
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const SPECIAL_CHAR_REGEX = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/;
 
-export const validatePhone = (phone) => {
-  if (!phone) return "Phone number is required.";
+/**
+ * Strips all non-digit characters and truncates to maxLen (default 10)
+ */
+export const sanitizeDigits = (val = "", maxLen = 10) => {
+  return String(val || "").replace(/\D/g, "").slice(0, maxLen);
+};
+
+export const validatePhone = (phone, optional = false) => {
+  if (!phone || !phone.toString().trim()) {
+    return optional ? "" : "Phone number is required.";
+  }
   const clean = phone.toString().trim();
   if (!PHONE_REGEX.test(clean)) {
     return "Phone number must be exactly 10 numeric digits.";
@@ -29,19 +38,27 @@ export const validateEmail = (email) => {
   return "";
 };
 
+export const getPasswordCriteria = (password = "") => {
+  const pwd = String(password || "");
+  const hasLength = pwd.length >= 6;
+  const hasUpper = /[A-Z]/.test(pwd);
+  const hasLower = /[a-z]/.test(pwd);
+  const hasSpecial = SPECIAL_CHAR_REGEX.test(pwd);
+  return {
+    hasLength,
+    hasUpper,
+    hasLower,
+    hasSpecial,
+    isValid: hasLength && hasUpper && hasLower && hasSpecial
+  };
+};
+
 export const validatePassword = (password) => {
   if (!password) return "Password is required.";
-  if (password.length < 6) {
-    return "Password must be at least 6 characters long.";
-  }
-  if (!/[A-Z]/.test(password)) {
-    return "Password must contain at least 1 uppercase letter (A-Z).";
-  }
-  if (!/[a-z]/.test(password)) {
-    return "Password must contain at least 1 lowercase letter (a-z).";
-  }
-  if (!SPECIAL_CHAR_REGEX.test(password)) {
-    return "Password must contain at least 1 special character (!@#$%^&* etc.).";
-  }
+  const { hasLength, hasUpper, hasLower, hasSpecial } = getPasswordCriteria(password);
+  if (!hasLength) return "Password must be at least 6 characters long.";
+  if (!hasUpper) return "Password must contain at least 1 uppercase letter (A-Z).";
+  if (!hasLower) return "Password must contain at least 1 lowercase letter (a-z).";
+  if (!hasSpecial) return "Password must contain at least 1 special character (!@#$%^&* etc.).";
   return "";
 };

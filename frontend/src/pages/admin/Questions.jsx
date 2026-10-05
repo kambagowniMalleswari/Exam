@@ -252,8 +252,35 @@ const Questions = () => {
             className="modal-overlay"
             onClick={(e) => e.target.classList.contains("modal-overlay") && setShowModal(false)}
           >
-            <div className="aq-modal">
-              <h2>{editQ ? "Edit Question" : "Add New Question"}</h2>
+            <div className="aq-modal" onClick={(e) => e.stopPropagation()}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+                <h2 style={{ margin: 0 }}>
+                  <HelpCircleIcon size={22} color="#0284c7" />
+                  <span>{editQ ? "Edit Question" : "Add New Question"}</span>
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  style={{
+                    background: "#f1f5f9",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "36px",
+                    height: "36px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "1.1rem",
+                    cursor: "pointer",
+                    color: "#64748b",
+                    transition: "all 0.15s ease"
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#e2e8f0"; e.currentTarget.style.color = "#0f172a"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.color = "#64748b"; }}
+                >
+                  ✕
+                </button>
+              </div>
               <div className="aq-modal-form">
                 <div className="aq-form-group">
                   <label>Question Statement *</label>

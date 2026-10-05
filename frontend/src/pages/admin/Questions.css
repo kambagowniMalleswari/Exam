@@ -313,3 +313,266 @@
   letter-spacing: 0.04em;
   margin-bottom: 2px;
 }
+
+/* ==========================================================================
+   Question Modal & Form Styling (Image 2 Fix)
+   ========================================================================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.aq-modal {
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 2.25rem;
+  animation: modalFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.aq-modal h2 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 1.5rem 0;
+  letter-spacing: -0.015em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aq-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.aq-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.aq-form-group label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+  letter-spacing: 0.01em;
+}
+
+.aq-form-group textarea,
+.aq-form-group input[type="text"],
+.aq-form-group input[type="number"] {
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.92rem;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  resize: vertical;
+}
+
+.aq-form-group textarea:focus,
+.aq-form-group input[type="text"]:focus,
+.aq-form-group input[type="number"]:focus {
+  border-color: #0284c7;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+}
+
+/* MCQ Options Form */
+.aq-options-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: #f8fafc;
+  padding: 1.15rem;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.aq-options-form > label {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.opt-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #ffffff;
+  padding: 0.5rem 0.85rem;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.opt-input-row:focus-within {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.08);
+}
+
+.opt-input-row:has(input[type="radio"]:checked) {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.opt-label {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #e0f2fe;
+  color: #0369a1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.88rem;
+  flex-shrink: 0;
+}
+
+.opt-input-row:has(input[type="radio"]:checked) .opt-label {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.opt-input-row input[type="text"] {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.45rem 0.5rem;
+  font-size: 0.92rem;
+  outline: none;
+  color: #0f172a;
+  font-family: inherit;
+}
+
+.opt-input-row input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.radio-label {
+  cursor: pointer;
+  padding: 0.4rem 0.95rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1.5px solid #cbd5e1;
+  background: #f8fafc;
+  color: #64748b;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.radio-label:hover {
+  border-color: #94a3b8;
+  color: #334155;
+}
+
+.opt-input-row input[type="radio"]:checked + .radio-label {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+}
+
+.opt-input-row input[type="radio"]:checked + .radio-label::before {
+  content: "✓ ";
+}
+
+/* Numeric Row */
+.aq-form-row {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.aq-form-group.half {
+  flex: 1;
+}
+
+/* Actions */
+.aq-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.85rem;
+  margin-top: 0.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.btn-cancel {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 0.7rem 1.4rem;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.btn-submit {
+  background: linear-gradient(135deg, #0284c7 0%, #00a8cc 100%);
+  color: #ffffff;
+  border: none;
+  padding: 0.7rem 1.6rem;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45);
+}
+
+.btn-submit:disabled,
+.btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -13,6 +13,14 @@ import {
   EditIcon,
   PlusIcon
 } from "../../components/common/Icons.jsx";
+import {
+  sanitizeDigits,
+  getPasswordCriteria,
+  validatePassword,
+  validateEmail,
+  validateUsername,
+  validatePhone
+} from "../../utils/validation.js";
 import "./Students.css";
 
 const Students = () => {
@@ -84,38 +92,29 @@ const Students = () => {
     e.preventDefault();
     setModalError("");
 
-    if (!addForm.name.trim() || !addForm.email.trim() || !addForm.password) {
-      setModalError("Please fill in Name, Email and Password.");
+    const nameErr = validateUsername(addForm.name, "Full name");
+    if (nameErr) {
+      setModalError(nameErr);
       return;
     }
 
-    if (addForm.name.trim().length <= 3) {
-      setModalError("Name must be more than 3 characters (at least 4 characters).");
+    const emailErr = validateEmail(addForm.email);
+    if (emailErr) {
+      setModalError(emailErr);
       return;
     }
 
-    if (addForm.phone.trim() && !/^\d{10}$/.test(addForm.phone.trim())) {
-      setModalError("Phone number must be exactly 10 numeric digits.");
-      return;
+    if (addForm.phone) {
+      const phoneErr = validatePhone(addForm.phone);
+      if (phoneErr) {
+        setModalError(phoneErr);
+        return;
+      }
     }
 
-    if (addForm.password.length < 6) {
-      setModalError("Password must be at least 6 characters long.");
-      return;
-    }
-
-    if (!/[A-Z]/.test(addForm.password)) {
-      setModalError("Password must contain at least 1 uppercase letter (A-Z).");
-      return;
-    }
-
-    if (!/[a-z]/.test(addForm.password)) {
-      setModalError("Password must contain at least 1 lowercase letter (a-z).");
-      return;
-    }
-
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(addForm.password)) {
-      setModalError("Password must contain at least 1 special character (!@#$%^&* etc.).");
+    const pwdErr = validatePassword(addForm.password);
+    if (pwdErr) {
+      setModalError(pwdErr);
       return;
     }
 
@@ -153,19 +152,24 @@ const Students = () => {
     if (!selectedStudent) return;
     setModalError("");
 
-    if (!editForm.name.trim()) {
-      setModalError("Student name is required.");
+    const nameErr = validateUsername(editForm.name, "Student name");
+    if (nameErr) {
+      setModalError(nameErr);
       return;
     }
 
-    if (editForm.name.trim().length <= 3) {
-      setModalError("Name must be more than 3 characters (at least 4 characters).");
+    const emailErr = validateEmail(editForm.email);
+    if (emailErr) {
+      setModalError(emailErr);
       return;
     }
 
-    if (editForm.phone.trim() && !/^\d{10}$/.test(editForm.phone.trim())) {
-      setModalError("Phone number must be exactly 10 numeric digits.");
-      return;
+    if (editForm.phone) {
+      const phoneErr = validatePhone(editForm.phone);
+      if (phoneErr) {
+        setModalError(phoneErr);
+        return;
+      }
     }
 
     try {
@@ -627,12 +631,18 @@ const Students = () => {
                     <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "4px" }}>Phone Number</label>
                     <input
                       type="tel"
+                      maxLength={10}
+                      placeholder="10-digit number"
                       value={editForm.phone}
-                      onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                      onChange={(e) => setEditForm({ ...editForm, phone: sanitizeDigits(e.target.value, 10) })}
                       style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
                     />
+                    {editForm.phone && editForm.phone.length < 10 && (
+                      <span style={{ fontSize: "0.76rem", color: "#e11d48", marginTop: "4px", display: "block" }}>
+                        ⚠️ Phone must be exactly 10 digits ({editForm.phone.length}/10)
+                      </span>
+                    )}
                   </div>
-
                   <div>
                     <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "4px" }}>Cohort / Batch Assignment</label>
                     <select
@@ -650,7 +660,7 @@ const Students = () => {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "24px" }}>
                   <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>Cancel</button>
                   <button type="submit" className="btn btn-primary" disabled={modalLoading}>
                     {modalLoading ? "Saving..." : "Save Changes"}
@@ -662,111 +672,161 @@ const Students = () => {
         )}
 
         {/* Add Student Modal */}
-        {showAddModal && (
-          <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "18px"
-                }}
-              >
-                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: "8px" }}>
-                  <PlusIcon size={18} />
-                  <span>Add New Student</span>
-                </h3>
-                <button
-                  onClick={() => setShowAddModal(false)}
-                  style={{ background: "none", border: "none", fontSize: "1.3rem", cursor: "pointer", color: "#64748b" }}
+        {showAddModal && (() => {
+          const pwdCriteria = getPasswordCriteria(addForm.password);
+          return (
+            <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+              <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "520px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "18px"
+                  }}
                 >
-                  ✕
-                </button>
-              </div>
-
-              {modalError && (
-                <div style={{ background: "#fef2f2", color: "#991b1b", padding: "10px", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "14px" }}>
-                  {modalError}
-                </div>
-              )}
-
-              <form onSubmit={handleAddStudent}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                  <div>
-                    <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "4px" }}>Full Name *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Alex Johnson"
-                      value={addForm.name}
-                      onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-                      required
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "4px" }}>Email Address *</label>
-                    <input
-                      type="email"
-                      placeholder="alex@student.edu"
-                      value={addForm.email}
-                      onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-                      required
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "4px" }}>Phone Number (Optional)</label>
-                    <input
-                      type="tel"
-                      placeholder="10-digit number"
-                      value={addForm.phone}
-                      onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "4px" }}>Cohort / Batch Assignment (Optional)</label>
-                    <select
-                      value={addForm.batchId}
-                      onChange={(e) => setAddForm({ ...addForm, batchId: e.target.value })}
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#ffffff" }}
-                    >
-                      <option value="">No Batch Assigned</option>
-                      {batches.map((b) => (
-                        <option key={b._id} value={b._id}>
-                          {b.name} ({b.batchNumber})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "4px" }}>Initial Password (min 6 characters) *</label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      value={addForm.password}
-                      onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
-                      required
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "24px" }}>
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={modalLoading}>
-                    {modalLoading ? "Creating..." : "Create Student"}
+                  <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                    <PlusIcon size={18} />
+                    <span>Add New Student</span>
+                  </h3>
+                  <button
+                    onClick={() => setShowAddModal(false)}
+                    style={{ background: "none", border: "none", fontSize: "1.3rem", cursor: "pointer", color: "#64748b" }}
+                  >
+                    ✕
                   </button>
                 </div>
-              </form>
+
+                {modalError && (
+                  <div style={{ background: "#fef2f2", color: "#991b1b", padding: "10px 14px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "14px", border: "1px solid #fecaca" }}>
+                    ⚠️ {modalError}
+                  </div>
+                )}
+
+                <form onSubmit={handleAddStudent}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                    <div>
+                      <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "4px" }}>Full Name *</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Alex Johnson"
+                        value={addForm.name}
+                        onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                        required
+                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                      />
+                      {addForm.name && addForm.name.trim().length > 0 && addForm.name.trim().length <= 3 && (
+                        <span style={{ fontSize: "0.76rem", color: "#e11d48", marginTop: "4px", display: "block" }}>
+                          ⚠️ Name must be at least 4 characters
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "4px" }}>Email Address *</label>
+                      <input
+                        type="email"
+                        placeholder="alex@student.edu"
+                        value={addForm.email}
+                        onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                        required
+                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                      />
+                    </div>
+
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                        <label style={{ fontSize: "0.85rem", fontWeight: 600 }}>Phone Number (Optional)</label>
+                        <span style={{ fontSize: "0.75rem", color: "#64748b" }}>10 digits</span>
+                      </div>
+                      <input
+                        type="tel"
+                        maxLength={10}
+                        placeholder="e.g. 9876543210"
+                        value={addForm.phone}
+                        onChange={(e) => setAddForm({ ...addForm, phone: sanitizeDigits(e.target.value, 10) })}
+                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                      />
+                      {addForm.phone && addForm.phone.length < 10 && (
+                        <span style={{ fontSize: "0.76rem", color: "#e11d48", marginTop: "4px", display: "block" }}>
+                          ⚠️ Must be exactly 10 numeric digits ({addForm.phone.length}/10)
+                        </span>
+                      )}
+                      {addForm.phone && addForm.phone.length === 10 && (
+                        <span style={{ fontSize: "0.76rem", color: "#16a34a", marginTop: "4px", display: "block" }}>
+                          ✓ Valid 10-digit number
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "4px" }}>Cohort / Batch Assignment (Optional)</label>
+                      <select
+                        value={addForm.batchId}
+                        onChange={(e) => setAddForm({ ...addForm, batchId: e.target.value })}
+                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", background: "#ffffff" }}
+                      >
+                        <option value="">No Batch Assigned</option>
+                        {batches.map((b) => (
+                          <option key={b._id} value={b._id}>
+                            {b.name} ({b.batchNumber})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: "0.85rem", fontWeight: 600, display: "block", marginBottom: "4px" }}>
+                        Initial Password (min 6 characters) *
+                      </label>
+                      <input
+                        type="password"
+                        placeholder="••••••••"
+                        value={addForm.password}
+                        onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+                        required
+                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                      />
+                      {addForm.password.length > 0 && (
+                        <div style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "4px 8px",
+                          marginTop: "6px",
+                          fontSize: "0.74rem",
+                          background: "#f8fafc",
+                          padding: "8px 10px",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0"
+                        }}>
+                          <span style={{ color: pwdCriteria.hasLength ? "#16a34a" : "#94a3b8", fontWeight: pwdCriteria.hasLength ? 600 : 400 }}>
+                            {pwdCriteria.hasLength ? "✓" : "○"} Min 6 characters
+                          </span>
+                          <span style={{ color: pwdCriteria.hasUpper ? "#16a34a" : "#94a3b8", fontWeight: pwdCriteria.hasUpper ? 600 : 400 }}>
+                            {pwdCriteria.hasUpper ? "✓" : "○"} 1 Uppercase (A-Z)
+                          </span>
+                          <span style={{ color: pwdCriteria.hasLower ? "#16a34a" : "#94a3b8", fontWeight: pwdCriteria.hasLower ? 600 : 400 }}>
+                            {pwdCriteria.hasLower ? "✓" : "○"} 1 Lowercase (a-z)
+                          </span>
+                          <span style={{ color: pwdCriteria.hasSpecial ? "#16a34a" : "#94a3b8", fontWeight: pwdCriteria.hasSpecial ? 600 : 400 }}>
+                            {pwdCriteria.hasSpecial ? "✓" : "○"} 1 Special char (!@#$)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "24px" }}>
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
+                    <button type="submit" className="btn btn-primary" disabled={modalLoading}>
+                      {modalLoading ? "Creating..." : "Create Student"}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </DashboardLayout>
   );

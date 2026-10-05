@@ -504,6 +504,9 @@ const TeacherTests = () => {
                     <label>Passing Percentage (%) *</label>
                     <input type="number" min="0" max="100" value={form.passingPercentage} onChange={(e) => setForm({ ...form, passingPercentage: +e.target.value })} />
                   </div>
+                </div>
+
+                <div className="form-grid-2" style={{ marginTop: "4px" }}>
                   <div className="form-row">
                     <label>Status *</label>
                     <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
@@ -515,13 +518,14 @@ const TeacherTests = () => {
                     <label>Max Attempts Allowed *</label>
                     <input type="number" min="1" max="10" value={form.numberOfAttempts} onChange={(e) => setForm({ ...form, numberOfAttempts: +e.target.value })} />
                   </div>
-                  <div className="form-row">
-                    <label>Attempt Evaluation Policy *</label>
-                    <select value={form.attemptMode || "re_attempt_on_fail"} onChange={(e) => setForm({ ...form, attemptMode: e.target.value })}>
-                      <option value="re_attempt_on_fail">Re-attempts Only If Failed (Passed students cannot re-attempt)</option>
-                      <option value="best_of_n">Best of N Attempts (All attempts permitted up to N, best score counted)</option>
-                    </select>
-                  </div>
+                </div>
+
+                <div className="form-row" style={{ marginTop: "4px" }}>
+                  <label>Attempt Evaluation Policy *</label>
+                  <select value={form.attemptMode || "re_attempt_on_fail"} onChange={(e) => setForm({ ...form, attemptMode: e.target.value })}>
+                    <option value="re_attempt_on_fail">Re-attempts Only If Failed (Passed students cannot re-attempt)</option>
+                    <option value="best_of_n">Best of N Attempts (All attempts permitted up to N, best score counted)</option>
+                  </select>
                 </div>
 
                 {/* Scheduling Section */}

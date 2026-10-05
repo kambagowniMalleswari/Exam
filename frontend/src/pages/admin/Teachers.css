@@ -228,12 +228,20 @@
   color: #172033;
   font-size: 14px;
   margin-bottom: 3px;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .teacher-profile span {
   display: block;
   color: #8a93a5;
   font-size: 12px;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Subject */

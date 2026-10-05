@@ -354,23 +354,25 @@
 .test-modal {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 2rem;
+  border-radius: 24px;
+  padding: 2.25rem 2.5rem;
   width: 100%;
-  max-width: 560px;
+  max-width: 780px;
   max-height: 90vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.28);
 }
 
 .test-modal h2 {
-  font-size: 1.45rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.55rem;
   font-weight: 800;
   color: #0f172a;
   margin: 0;
+  letter-spacing: -0.015em;
 }
 
 .modal-form {

@@ -19,6 +19,13 @@ import {
   SearchIcon,
   EditIcon
 } from "../components/common/Icons.jsx";
+import {
+  sanitizeDigits,
+  getPasswordCriteria,
+  validatePassword,
+  validatePhone,
+  validateUsername
+} from "../utils/validation.js";
 import "./Profile.css";
 
 const Profile = () => {
@@ -585,15 +592,28 @@ const Profile = () => {
               </div>
 
               <div className="form-group-profile">
-                <label>10-Digit Phone Number</label>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <label>10-Digit Phone Number</label>
+                  <span style={{ fontSize: "0.75rem", color: "#64748b" }}>10 digits</span>
+                </div>
                 <input
                   type="tel"
                   maxLength={10}
                   className="profile-input"
                   placeholder="e.g. 9876543210"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                  onChange={(e) => setPhone(sanitizeDigits(e.target.value, 10))}
                 />
+                {phone && phone.length < 10 && (
+                  <span style={{ fontSize: "0.76rem", color: "#e11d48", marginTop: "4px", display: "block" }}>
+                    ⚠️ Must be 10 numeric digits ({phone.length}/10)
+                  </span>
+                )}
+                {phone && phone.length === 10 && (
+                  <span style={{ fontSize: "0.76rem", color: "#16a34a", marginTop: "4px", display: "block" }}>
+                    ✓ Valid 10-digit number
+                  </span>
+                )}
               </div>
 
               {user?.role === "teacher" && (
@@ -728,6 +748,35 @@ const Profile = () => {
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
                     />
+                    {newPassword.length > 0 && (() => {
+                      const pwdCriteria = getPasswordCriteria(newPassword);
+                      return (
+                        <div style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "4px 8px",
+                          marginTop: "6px",
+                          fontSize: "0.74rem",
+                          background: "#f8fafc",
+                          padding: "8px 10px",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0"
+                        }}>
+                          <span style={{ color: pwdCriteria.hasLength ? "#16a34a" : "#94a3b8", fontWeight: pwdCriteria.hasLength ? 600 : 400 }}>
+                            {pwdCriteria.hasLength ? "✓" : "○"} Min 6 characters
+                          </span>
+                          <span style={{ color: pwdCriteria.hasUpper ? "#16a34a" : "#94a3b8", fontWeight: pwdCriteria.hasUpper ? 600 : 400 }}>
+                            {pwdCriteria.hasUpper ? "✓" : "○"} 1 Uppercase (A-Z)
+                          </span>
+                          <span style={{ color: pwdCriteria.hasLower ? "#16a34a" : "#94a3b8", fontWeight: pwdCriteria.hasLower ? 600 : 400 }}>
+                            {pwdCriteria.hasLower ? "✓" : "○"} 1 Lowercase (a-z)
+                          </span>
+                          <span style={{ color: pwdCriteria.hasSpecial ? "#16a34a" : "#94a3b8", fontWeight: pwdCriteria.hasSpecial ? 600 : 400 }}>
+                            {pwdCriteria.hasSpecial ? "✓" : "○"} 1 Special char (!@#$)
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="form-group-profile">
@@ -740,6 +789,16 @@ const Profile = () => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
                     />
+                    {confirmPassword.length > 0 && (
+                      <span style={{
+                        fontSize: "0.76rem",
+                        color: newPassword === confirmPassword ? "#16a34a" : "#e11d48",
+                        marginTop: "4px",
+                        display: "block"
+                      }}>
+                        {newPassword === confirmPassword ? "✓ Passwords match" : "⚠️ Passwords do not match"}
+                      </span>
+                    )}
                   </div>
 
                   <div className="otp-form-actions">

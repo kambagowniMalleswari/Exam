@@ -654,9 +654,9 @@ const Tests = () => {
                   </div>
                 </div>
 
-                <div className="atm-row">
-                  <div className="atm-group half">
-                    <label>Max Attempts Allowed *</label>
+                <div className="atm-row atm-attempts-row">
+                  <div className="atm-group compact">
+                    <label>Max Attempts *</label>
                     <input
                       type="number"
                       min="1"
@@ -665,7 +665,7 @@ const Tests = () => {
                       onChange={(e) => setForm({ ...form, numberOfAttempts: Number(e.target.value) })}
                     />
                   </div>
-                  <div className="atm-group half">
+                  <div className="atm-group wide">
                     <label>Attempt Evaluation Policy *</label>
                     <select
                       value={form.attemptMode || "re_attempt_on_fail"}
@@ -678,46 +678,38 @@ const Tests = () => {
                 </div>
 
                 {/* Scheduling Section */}
-                <div style={{
-                  background: "#f8fafc",
-                  padding: "0.85rem",
-                  borderRadius: "8px",
-                  border: "1px solid #e2e8f0",
-                  marginBottom: "0.85rem"
-                }}>
-                  <div style={{ fontWeight: 600, fontSize: "0.88rem", color: "#334155", marginBottom: "0.5rem", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <div className="atm-schedule-box">
+                  <div className="atm-section-title">
                     <CalendarIcon size={16} />
                     <span>Schedule Window (Optional)</span>
                   </div>
-                  <div className="atm-row">
-                    <div className="atm-group half">
-                      <label style={{ fontSize: "0.8rem" }}>Start Date</label>
+                  <div className="atm-grid-2">
+                    <div className="atm-group">
+                      <label>Start Date</label>
                       <input
                         type="date"
                         value={form.startDate}
                         onChange={(e) => setForm({ ...form, startDate: e.target.value })}
                       />
                     </div>
-                    <div className="atm-group half">
-                      <label style={{ fontSize: "0.8rem" }}>Start Time</label>
+                    <div className="atm-group">
+                      <label>Start Time</label>
                       <input
                         type="time"
                         value={form.startTime}
                         onChange={(e) => setForm({ ...form, startTime: e.target.value })}
                       />
                     </div>
-                  </div>
-                  <div className="atm-row" style={{ marginTop: "0.4rem" }}>
-                    <div className="atm-group half">
-                      <label style={{ fontSize: "0.8rem" }}>End Date</label>
+                    <div className="atm-group">
+                      <label>End Date</label>
                       <input
                         type="date"
                         value={form.endDate}
                         onChange={(e) => setForm({ ...form, endDate: e.target.value })}
                       />
                     </div>
-                    <div className="atm-group half">
-                      <label style={{ fontSize: "0.8rem" }}>End Time</label>
+                    <div className="atm-group">
+                      <label>End Time</label>
                       <input
                         type="time"
                         value={form.endTime}
