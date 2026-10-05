@@ -27,7 +27,7 @@ const Profile = () => {
   const requestedTab = searchParams.get("tab");
 
   const [activeTab, setActiveTab] = useState(
-    requestedTab || (user?.role === "teacher" ? "students" : "overview")
+    requestedTab || "overview"
   );
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState(null);
@@ -342,17 +342,6 @@ const Profile = () => {
 
         {/* Tab Navigation */}
         <div className="profile-tabs-bar">
-          {user?.role === "teacher" && (
-            <button
-              className={`profile-tab-btn ${activeTab === "students" ? "active" : ""}`}
-              onClick={() => handleTabChange("students")}
-            >
-              <UsersIcon size={16} />
-              <span>Organization Students</span>
-              <span className="tab-pill-count">{orgStudents.length}</span>
-            </button>
-          )}
-
           <button
             className={`profile-tab-btn ${activeTab === "overview" ? "active" : ""}`}
             onClick={() => handleTabChange("overview")}
@@ -376,6 +365,17 @@ const Profile = () => {
             <KeyIcon size={16} />
             <span>Security & OTP Reset</span>
           </button>
+
+          {user?.role === "teacher" && (
+            <button
+              className={`profile-tab-btn ${activeTab === "students" ? "active" : ""}`}
+              onClick={() => handleTabChange("students")}
+            >
+              <UsersIcon size={16} />
+              <span>Organization Students</span>
+              <span className="tab-pill-count">{orgStudents.length}</span>
+            </button>
+          )}
         </div>
 
         {/* Tab 1: Organization Students (For Teachers) */}
