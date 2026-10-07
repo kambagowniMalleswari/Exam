@@ -328,6 +328,31 @@
   color: #b91c1c;
 }
 
+.btn-action-pill.resend {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+  font-weight: 700;
+}
+.btn-action-pill.resend:hover {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Modals Overlay - Always Center in Viewport */
+.modal-overlay,
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
 /* Custom Confirmation Modal */
 .custom-confirm-modal {
   background: #ffffff;
@@ -338,6 +363,7 @@
   text-align: center;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   animation: modalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin: auto;
 }
 
 @keyframes modalPopIn {

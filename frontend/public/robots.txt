@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Allow: /public-tests
+Allow: /join-us
+Allow: /login
+Allow: /register
+
+# Disallow private dashboards from public indexing
+Disallow: /superadmin/
+Disallow: /admin/
+Disallow: /teacher/
+Disallow: /student/
+Disallow: /profile
+
+Sitemap: https://assess-iq.web.app/sitemap.xml

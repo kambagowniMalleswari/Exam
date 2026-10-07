@@ -37,6 +37,9 @@ const Organizations = () => {
   const [modalError, setModalError] = useState("");
   const [createdCredentials, setCreatedCredentials] = useState(null);
   const [copiedField, setCopiedField] = useState("");
+  const [resendingOrgId, setResendingOrgId] = useState(null);
+  const [resendCredsResult, setResendCredsResult] = useState(null);
+  const [showResendModal, setShowResendModal] = useState(false);
 
   const copyToClipboard = async (text, fieldName) => {
     try {
@@ -201,6 +204,22 @@ const Organizations = () => {
       alert(err.response?.data?.message || "Failed to delete organization.");
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleResendOrgCredentials = async (org) => {
+    try {
+      setResendingOrgId(org._id);
+      const res = await api.post(`/organizations/${org._id}/resend-credentials`);
+      setResendCredsResult({
+        ...res.data,
+        orgName: org.name
+      });
+      setShowResendModal(true);
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to resend credentials.");
+    } finally {
+      setResendingOrgId(null);
     }
   };
 
@@ -464,6 +483,16 @@ const Organizations = () => {
                             >
                               <CheckCircleIcon size={13} />
                               {isActive ? "Deactivate" : "Activate"}
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn-action-pill resend"
+                              onClick={() => handleResendOrgCredentials(organization)}
+                              title="Reissue administrator credentials and email them"
+                              disabled={resendingOrgId === organization._id}
+                            >
+                              {resendingOrgId === organization._id ? "Sending..." : "Resend Credentials"}
                             </button>
 
                             <button
@@ -899,9 +928,9 @@ const Organizations = () => {
           </div>
         )}
 
-        {/* Custom Modern Delete Confirmation Modal */}
+        {/* Custom Modern Delete Confirmation Modal - Centered */}
         {deleteOrgTarget && (
-          <div className="modal-backdrop" onClick={() => !deleteLoading && setDeleteOrgTarget(null)}>
+          <div className="modal-overlay" onClick={() => !deleteLoading && setDeleteOrgTarget(null)}>
             <div className="custom-confirm-modal" onClick={(e) => e.stopPropagation()}>
               <div className="confirm-icon-danger">
                 <AlertTriangleIcon size={32} />
@@ -927,6 +956,85 @@ const Organizations = () => {
                   onClick={confirmDeleteOrg}
                 >
                   {deleteLoading ? "Deleting..." : "Yes, Delete Organization"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Resend Credentials Result Modal - Centered */}
+        {showResendModal && resendCredsResult && (
+          <div className="modal-overlay" onClick={() => setShowResendModal(false)}>
+            <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "520px" }}>
+              <div style={{ textAlign: "center", marginBottom: "18px" }}>
+                <div style={{ fontSize: "2rem", marginBottom: "6px" }}>🔐</div>
+                <h3 style={{ margin: "0 0 6px 0", color: "#0f172a" }}>Credentials Reissued</h3>
+                <p style={{ color: "#64748b", fontSize: "0.9rem", margin: 0 }}>
+                  Updated administrator credentials for <strong>{resendCredsResult.orgName}</strong>.
+                </p>
+              </div>
+
+              <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "16px", marginBottom: "16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px solid #e2e8f0" }}>
+                  <div>
+                    <strong style={{ fontSize: "0.85rem", color: "#475569" }}>Admin Email:</strong>{" "}
+                    <code style={{ fontSize: "0.85rem", color: "#0f172a" }}>{resendCredsResult.adminEmail}</code>
+                  </div>
+                  <button
+                    type="button"
+                    style={{ padding: "4px 10px", fontSize: "0.78rem", border: "1px solid #cbd5e1", borderRadius: "6px", background: "#fff", cursor: "pointer" }}
+                    onClick={() => copyToClipboard(resendCredsResult.adminEmail, "resendEmail")}
+                  >
+                    {copiedField === "resendEmail" ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", padding: "8px 10px", background: "#fffbeb", borderRadius: "8px", border: "1px dashed #f59e0b" }}>
+                  <div>
+                    <strong style={{ fontSize: "0.85rem", color: "#92400e" }}>Temporary Password:</strong>{" "}
+                    <code style={{ fontSize: "1rem", fontWeight: "bold", color: "#b45309" }}>{resendCredsResult.temporaryPassword}</code>
+                  </div>
+                  <button
+                    type="button"
+                    style={{ padding: "4px 10px", fontSize: "0.78rem", border: "1px solid #fde68a", borderRadius: "6px", background: "#fef3c7", color: "#92400e", fontWeight: "bold", cursor: "pointer" }}
+                    onClick={() => copyToClipboard(resendCredsResult.temporaryPassword, "resendPassword")}
+                  >
+                    {copiedField === "resendPassword" ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <strong style={{ fontSize: "0.85rem", color: "#475569" }}>Admin Portal URL:</strong>{" "}
+                    <code style={{ fontSize: "0.85rem", color: "#0f172a" }}>{window.location.origin}/admin/login</code>
+                  </div>
+                  <button
+                    type="button"
+                    style={{ padding: "4px 10px", fontSize: "0.78rem", border: "1px solid #cbd5e1", borderRadius: "6px", background: "#fff", cursor: "pointer" }}
+                    onClick={() => copyToClipboard(`${window.location.origin}/admin/login`, "resendUrl")}
+                  >
+                    {copiedField === "resendUrl" ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              </div>
+
+              {resendCredsResult.emailSent ? (
+                <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", color: "#065f46", padding: "10px 14px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "16px" }}>
+                  ✓ Email with updated credentials dispatched to {resendCredsResult.adminEmail}.
+                </div>
+              ) : (
+                <div style={{ background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e", padding: "10px 14px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "16px" }}>
+                  ⚠️ Email delivery notice: Please copy the temporary password above and share it directly with the administrator.
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  style={{ background: "#0f172a", color: "#fff", padding: "10px 24px", borderRadius: "8px", border: "none", fontWeight: "bold", cursor: "pointer" }}
+                  onClick={() => setShowResendModal(false)}
+                >
+                  Done
                 </button>
               </div>
             </div>

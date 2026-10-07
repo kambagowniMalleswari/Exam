@@ -10,7 +10,8 @@ import {
   XIcon,
   PhoneIcon,
   BuildingIcon,
-  CheckIcon
+  CheckIcon,
+  TrashIcon
 } from "../../components/common/Icons.jsx";
 import "./OrgRequestsManager.css";
 
@@ -39,6 +40,13 @@ const OrgRequestsManager = () => {
   const [provisionResult, setProvisionResult] = useState(null);
   const [resendResult, setResendResult] = useState(null);
   const [copiedField, setCopiedField] = useState("");
+
+  // Delete & Bulk-Clear states
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteAppTarget, setDeleteAppTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showClearApprovedModal, setShowClearApprovedModal] = useState(false);
+  const [clearLoading, setClearLoading] = useState(false);
 
   const copyToClipboard = async (text, fieldName) => {
     try {
@@ -179,6 +187,38 @@ const OrgRequestsManager = () => {
     }
   };
 
+  const handleDeleteApplication = async () => {
+    if (!deleteAppTarget) return;
+    try {
+      setDeleteLoading(true);
+      await api.delete(`/org-applications/${deleteAppTarget._id}`);
+      setShowDeleteModal(false);
+      setDeleteAppTarget(null);
+      setFeedback(`Application record for '${deleteAppTarget.name}' deleted successfully.`);
+      setTimeout(() => setFeedback(""), 5000);
+      await fetchApplications(true);
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete application.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleClearApproved = async () => {
+    try {
+      setClearLoading(true);
+      const res = await api.delete("/org-applications/approved/clear");
+      setShowClearApprovedModal(false);
+      setFeedback(res.data?.message || "All approved application records deleted successfully.");
+      setTimeout(() => setFeedback(""), 6000);
+      await fetchApplications(true);
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to clear approved applications.");
+    } finally {
+      setClearLoading(false);
+    }
+  };
+
   return (
     <DashboardLayout title="Organization Onboarding Requests">
       <div className="org-requests-manager">
@@ -204,6 +244,16 @@ const OrgRequestsManager = () => {
                 <RefreshIcon size={14} />
                 <span>{refreshing ? "Syncing..." : "Refresh"}</span>
               </button>
+              {statusFilter === "approved" && counts.approved > 0 && (
+                <button
+                  className="btn-clear-approved"
+                  onClick={() => setShowClearApprovedModal(true)}
+                  title="Delete all approved application data from database"
+                >
+                  <TrashIcon size={14} />
+                  <span>Delete All Approved Data ({counts.approved})</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -403,6 +453,17 @@ const OrgRequestsManager = () => {
                             Resend Credentials
                           </button>
                         )}
+                        <button
+                          className="btn-action-delete"
+                          onClick={() => {
+                            setDeleteAppTarget(app);
+                            setShowDeleteModal(true);
+                          }}
+                          title="Permanently delete this application"
+                        >
+                          <TrashIcon size={13} />
+                          <span>Delete</span>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -789,6 +850,78 @@ const OrgRequestsManager = () => {
                 </button>
                 <button className="btn-danger" onClick={handleReject} disabled={modalLoading}>
                   {modalLoading ? "Rejecting..." : "Reject Application"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* DELETE APPLICATION MODAL                                  */}
+        {/* ========================================================= */}
+        {showDeleteModal && deleteAppTarget && (
+          <div className="req-modal-overlay" onClick={() => !deleteLoading && setShowDeleteModal(false)}>
+            <div className="req-modal-box custom-confirm-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="confirm-icon-danger">
+                <AlertTriangleIcon size={32} />
+              </div>
+              <h3 style={{ margin: "0 0 10px 0", color: "#0f172a" }}>Permanently Delete Application?</h3>
+              <p style={{ color: "#64748b", fontSize: "0.92rem", lineHeight: 1.5, margin: "0 0 20px 0" }}>
+                Are you sure you want to delete the onboarding request for <strong>"{deleteAppTarget.name}"</strong> ({deleteAppTarget.email})?
+                This action is irreversible and removes this request record.
+              </p>
+              <div className="confirm-actions">
+                <button
+                  type="button"
+                  className="btn-modal-cancel"
+                  disabled={deleteLoading}
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-modal-danger"
+                  disabled={deleteLoading}
+                  onClick={handleDeleteApplication}
+                >
+                  {deleteLoading ? "Deleting..." : "Yes, Delete Application"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* CLEAR ALL APPROVED DATA MODAL                             */}
+        {/* ========================================================= */}
+        {showClearApprovedModal && (
+          <div className="req-modal-overlay" onClick={() => !clearLoading && setShowClearApprovedModal(false)}>
+            <div className="req-modal-box custom-confirm-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="confirm-icon-danger">
+                <TrashIcon size={32} />
+              </div>
+              <h3 style={{ margin: "0 0 10px 0", color: "#0f172a" }}>Delete All Approved Requests Data?</h3>
+              <p style={{ color: "#64748b", fontSize: "0.92rem", lineHeight: 1.5, margin: "0 0 20px 0" }}>
+                This will delete all <strong>{counts.approved} approved institution request records</strong> from the database.
+                Existing active organization tenants will remain safe in Organizations Management.
+              </p>
+              <div className="confirm-actions">
+                <button
+                  type="button"
+                  className="btn-modal-cancel"
+                  disabled={clearLoading}
+                  onClick={() => setShowClearApprovedModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-modal-danger"
+                  disabled={clearLoading}
+                  onClick={handleClearApproved}
+                >
+                  {clearLoading ? "Deleting All..." : `Yes, Delete All (${counts.approved})`}
                 </button>
               </div>
             </div>

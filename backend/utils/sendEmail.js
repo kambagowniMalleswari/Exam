@@ -578,5 +578,57 @@ export const sendPasswordResetOtpEmail = async ({ to, name, otp }) => {
   return sendEmailQuickOrBackground({ to, subject, text, html }, 5000);
 };
 
+/**
+ * 7. Student Test Completion & Scorecard Email
+ */
+export const sendStudentScorecardEmail = async ({ to, studentName, testTitle, score, totalMarks, percentage, passed, timeTaken }) => {
+  const subject = `📊 AssessIQ Scorecard: ${testTitle} (${passed ? "PASSED" : "COMPLETED"})`;
+  const formattedTime = timeTaken ? `${Math.floor(timeTaken / 60)}m ${timeTaken % 60}s` : "N/A";
+  const statusColor = passed ? "#16a34a" : "#dc2626";
+  const statusBg = passed ? "#f0fdf4" : "#fef2f2";
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+      <div style="display: flex; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 14px;">
+        <div style="width: 40px; height: 40px; background: #1e1b4b; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fbbf24; font-weight: 800; font-size: 18px; margin-right: 12px;">IQ</div>
+        <div>
+          <h3 style="margin: 0; color: #0f172a; font-size: 18px;">AssessIQ Examination Scorecard</h3>
+          <span style="font-size: 13px; color: #64748b;">Instant Automated Evaluation</span>
+        </div>
+      </div>
+      <p style="color: #334155; font-size: 15px;">Hello <strong>${studentName || "Student"}</strong>,</p>
+      <p style="color: #334155; font-size: 15px;">You have successfully completed <strong>"${testTitle}"</strong>. Below is your official evaluation summary:</p>
+      <div style="background: ${statusBg}; border: 1px solid ${passed ? "#bbf7d0" : "#fecaca"}; border-radius: 10px; padding: 20px; margin: 20px 0;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+          <span style="color: #475569; font-size: 14px;"><strong>Result Status:</strong></span>
+          <span style="color: ${statusColor}; font-weight: 800; font-size: 15px;">${passed ? "PASSED ✓" : "NEEDS IMPROVEMENT"}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+          <span style="color: #475569; font-size: 14px;"><strong>Score:</strong></span>
+          <span style="color: #0f172a; font-weight: 700; font-size: 15px;">${score} / ${totalMarks}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+          <span style="color: #475569; font-size: 14px;"><strong>Percentage:</strong></span>
+          <span style="color: #0f172a; font-weight: 700; font-size: 15px;">${percentage}%</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: #475569; font-size: 14px;"><strong>Time Taken:</strong></span>
+          <span style="color: #475569; font-size: 14px;">${formattedTime}</span>
+        </div>
+      </div>
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${getClientUrl()}/student/history" style="background: #1e1b4b; color: #ffffff; padding: 12px 26px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">View Full Scorecard & Answer Breakdown →</a>
+      </div>
+      <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0 14px 0;" />
+      <p style="color: #94a3b8; font-size: 12px; margin: 0; text-align: center;">AssessIQ Academic Examination Platform</p>
+    </div>
+  `;
+
+  const text = `Hello ${studentName || "Student"},\n\nYou have completed "${testTitle}".\n\nResult: ${passed ? "PASSED" : "COMPLETED"}\nScore: ${score} / ${totalMarks} (${percentage}%)\nTime Taken: ${formattedTime}\n\nView details: ${getClientUrl()}/student/history\n\nAssessIQ Operations`;
+
+  return sendEmailQuickOrBackground({ to, subject, text, html });
+};
+
 export default sendEmail;
+
 

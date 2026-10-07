@@ -108,10 +108,21 @@ export const applyOrganization = async (req, res) => {
       else normalizedExpectedStudents = "2000+";
     }
 
+    const typeMap = {
+      college: "College",
+      university: "University",
+      school: "School",
+      "coaching / training": "Coaching / Training",
+      coaching: "Coaching / Training",
+      training: "Coaching / Training",
+      corporate: "Corporate"
+    };
+    const normalizedType = typeMap[type?.toString()?.toLowerCase()?.trim()] || type || "College";
+
     const application = await OrgApplication.create({
       name: name.trim(),
       slug: generatedSlug,
-      type,
+      type: normalizedType,
       adminName: adminName.trim(),
       email: cleanEmail,
       phone: cleanPhone,
@@ -588,3 +599,54 @@ export const rejectOrganizationApplication = async (req, res) => {
     });
   }
 };
+
+// 5. Delete Single Organization Application (Super Admin only)
+export const deleteOrganizationApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const application = await OrgApplication.findById(id);
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Organization application not found."
+      });
+    }
+
+    const appName = application.name;
+    await OrgApplication.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: `Application record for '${appName}' was deleted successfully.`
+    });
+  } catch (error) {
+    console.error("Delete organization application error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete organization application",
+      error: error.message
+    });
+  }
+};
+
+// 6. Clear All Approved Applications (Super Admin only)
+export const clearApprovedApplications = async (req, res) => {
+  try {
+    const result = await OrgApplication.deleteMany({ status: "approved" });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} approved application record(s).`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error("Clear approved applications error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to clear approved applications",
+      error: error.message
+    });
+  }
+};
+

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import TeacherApplication from "../models/TeacherApplication.js";
 import OrgApplication from "../models/OrgApplication.js";
+import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import sendEmail, {
   sendEmailQuickOrBackground,

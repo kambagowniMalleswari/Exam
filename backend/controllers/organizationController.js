@@ -402,3 +402,123 @@ export const deleteOrganization = async (req, res) => {
     });
   }
 };
+
+// Resend / Reissue Organization Admin Credentials (Super Admin)
+export const resendOrganizationCredentials = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid organization ID"
+      });
+    }
+
+    const organization = await Organization.findById(id);
+    if (!organization) {
+      return res.status(404).json({
+        success: false,
+        message: "Organization not found"
+      });
+    }
+
+    // Find the org_admin user for this organization
+    let adminUser = await User.findOne({
+      $or: [
+        { organizationId: organization._id, role: "org_admin" },
+        { email: organization.email }
+      ]
+    });
+
+    // Generate fresh secure temporary password
+    const tempPassword = `OrgAdmin#${Math.random().toString(36).slice(-6)}!`;
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(tempPassword, salt);
+
+    if (adminUser) {
+      adminUser.password = hashedPassword;
+      adminUser.status = "active";
+      adminUser.isActive = true;
+      adminUser.role = "org_admin";
+      adminUser.organizationId = organization._id;
+      await adminUser.save();
+    } else {
+      adminUser = await User.create({
+        name: organization.adminName || organization.name + " Admin",
+        email: organization.email,
+        phone: organization.phone || "9999999999",
+        password: hashedPassword,
+        role: "org_admin",
+        organizationId: organization._id,
+        status: "active",
+        isActive: true
+      });
+    }
+
+    const portalLoginUrl = `${getClientUrl()}/admin/login`;
+    const targetEmail = (adminUser.email || organization.email).toLowerCase().trim();
+    let emailDispatch = null;
+
+    try {
+      emailDispatch = await sendEmailQuickOrBackground({
+        to: targetEmail,
+        subject: `AssessIQ — Institutional Admin Credentials Reissued (${organization.name})`,
+        text: `Dear ${adminUser.name || organization.name},\n\nYour administrator credentials for "${organization.name}" on AssessIQ have been updated by platform administration:\n\nAdmin Portal: ${portalLoginUrl}\nAdministrator Email: ${targetEmail}\nTemporary Password: ${tempPassword}\nOrganization Slug: ${organization.slug}\n\nPlease sign in immediately at ${portalLoginUrl}.\n\nAssessIQ Enterprise Operations`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+            <div style="display: flex; align-items: center; margin-bottom: 24px; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px;">
+              <div style="width: 44px; height: 44px; background: #1e1b4b; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fbbf24; font-weight: 800; font-size: 20px; margin-right: 14px;">IQ</div>
+              <div>
+                <h2 style="margin: 0; color: #0f172a; font-size: 20px;">AssessIQ Platform Operations</h2>
+                <span style="font-size: 13px; color: #64748b;">Enterprise Multi-Tenant Examination System</span>
+              </div>
+            </div>
+
+            <h3 style="color: #0f172a; font-size: 19px; margin-bottom: 12px;">Institutional Access Credentials Reissued</h3>
+            <p style="color: #334155; font-size: 15px; line-height: 1.6;">Dear <strong>${adminUser.name || organization.name}</strong>,</p>
+            <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+              Your administrator credentials for <strong>${organization.name}</strong> have been reissued by platform administration.
+            </p>
+
+            <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 22px; margin: 24px 0;">
+              <h4 style="margin: 0 0 14px 0; color: #0369a1; font-size: 16px;">Institutional Administrator Credentials:</h4>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Admin Portal:</strong> <a href="${portalLoginUrl}" style="color: #2563eb; font-weight: 700; text-decoration: underline;">${portalLoginUrl}</a></p>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Admin Email:</strong> <code style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-weight: 600;">${targetEmail}</code></p>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Temporary Password:</strong> <code style="background: #fef3c7; color: #b45309; padding: 4px 10px; border-radius: 4px; font-weight: 800; font-size: 16px; border: 1px dashed #f59e0b;">${tempPassword}</code></p>
+              <p style="margin: 8px 0; font-size: 14px;"><strong>Organization Slug:</strong> <code style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-weight: 600;">${organization.slug}</code></p>
+            </div>
+
+            <div style="text-align: center; margin: 28px 0 16px 0;">
+              <a href="${portalLoginUrl}" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 15px; display: inline-block;">Sign In to Admin Console →</a>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px 0;" />
+            <p style="font-size: 13px; color: #64748b; margin: 0; text-align: center;">AssessIQ Enterprise Platform Operations</p>
+          </div>
+        `
+      }, 3000);
+    } catch (emailErr) {
+      console.error("[Org Resend Credentials Error]:", emailErr);
+      emailDispatch = { success: false, error: emailErr.message };
+    }
+
+    const emailSent = Boolean(emailDispatch?.real || emailDispatch?.success || emailDispatch?.queued);
+
+    res.status(200).json({
+      success: true,
+      message: emailSent
+        ? `Credentials reissued and dispatched to ${targetEmail}!`
+        : `Credentials reissued, but email could not be delivered. Please provide the temporary password manually.`,
+      temporaryPassword: tempPassword,
+      adminEmail: targetEmail,
+      emailSent,
+      emailError: emailSent ? null : (emailDispatch?.error || "Email delivery failed")
+    });
+  } catch (error) {
+    console.error("Resend org credentials error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to resend organization credentials",
+      error: error.message
+    });
+  }
+};

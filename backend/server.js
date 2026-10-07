@@ -57,7 +57,7 @@ app.use(cors({
 app.use(express.json());
 
 // Root API route
-app.get("/", (req, res) => {
+app.get(["/", "/api"], (req, res) => {
   res.status(200).json({
     success: true,
     message: "Multi-Tenant MCQ Test Portal API is running"

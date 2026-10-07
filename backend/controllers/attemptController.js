@@ -5,6 +5,7 @@ import Question from "../models/Question.js";
 import Result from "../models/Result.js";
 import User from "../models/User.js";
 import { evaluateAttempt } from "../utils/calculateResult.js";
+import { sendStudentScorecardEmail } from "../utils/sendEmail.js";
 
 // Helper: Check student eligibility for selective tests
 export const isStudentEligibleForTest = async (student, test) => {
@@ -534,6 +535,24 @@ const autoSubmitAttempt = async (attempt, test) => {
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
+  // Dispatch student scorecard email asynchronously
+  User.findById(attempt.studentId)
+    .then((student) => {
+      if (student && student.email) {
+        sendStudentScorecardEmail({
+          to: student.email,
+          studentName: student.name,
+          testTitle: test.title || test.name || "Assessment",
+          score: evaluation.score,
+          totalMarks: evaluation.totalMarks,
+          percentage: evaluation.percentage,
+          passed: evaluation.passed,
+          timeTaken: evaluation.timeTaken
+        }).catch((err) => console.warn("[Auto-Submit Scorecard Email Error]:", err.message));
+      }
+    })
+    .catch(() => {});
+
   return result;
 };
 
@@ -669,6 +688,20 @@ export const submitAttempt = async (req, res) => {
       { $set: resultData },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
+
+    // Dispatch student scorecard email asynchronously
+    if (req.user && req.user.email) {
+      sendStudentScorecardEmail({
+        to: req.user.email,
+        studentName: req.user.name,
+        testTitle: test.title || test.name || "Assessment",
+        score: evaluation.score,
+        totalMarks: evaluation.totalMarks,
+        percentage: evaluation.percentage,
+        passed: evaluation.passed,
+        timeTaken: evaluation.timeTaken
+      }).catch((err) => console.warn("[Scorecard Email Error]:", err.message));
+    }
 
     res.status(200).json({
       success: true,

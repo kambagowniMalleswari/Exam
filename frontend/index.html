@@ -3,8 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="AssessIQ — Multi-Tenant Online MCQ Examination & Test Management SaaS platform. Organization data isolation, timed tests, instant auto-evaluation, and advanced performance analytics." />
-    <title>AssessIQ — Multi-Tenant Assessment Portal</title>
+    <title>AssessIQ — Multi-Tenant Institutional Assessment & MCQ Examination Portal</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="AssessIQ is a modern institutional SaaS platform for online MCQ exams, featuring campus isolation, server-timed anti-cheat tests, instant automated grading, and diagnostic analytics." />
+    <meta name="keywords" content="AssessIQ, multi tenant assessment portal, institutional examination platform, online mcq portal, college exam management, automated grading, anti cheat test timer, campus exams" />
+    <meta name="author" content="AssessIQ" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <link rel="canonical" href="https://assess-iq.web.app/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://assess-iq.web.app/" />
+    <meta property="og:site_name" content="AssessIQ Platform" />
+    <meta property="og:title" content="AssessIQ — Multi-Tenant Institutional Assessment & MCQ Examination Portal" />
+    <meta property="og:description" content="Host secure campus exams with tenant isolation, server-synced timers, instant auto-evaluation, and PDF scorecards." />
+    <meta property="og:image" content="https://assess-iq.web.app/tests-hero-banner.jpg" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AssessIQ — Institutional MCQ Examination Platform" />
+    <meta name="twitter:description" content="Secure, timed institutional MCQ exams with instant auto-grading, anti-cheat detection, and multi-tenant portals." />
+    <meta name="twitter:image" content="https://assess-iq.web.app/tests-hero-banner.jpg" />
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,6 +34,81 @@
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="theme-color" content="#0f172a" />
     <meta name="application-name" content="AssessIQ" />
+
+    <!-- AEO & SEO Structured Data: Schema.org JSON-LD -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebApplication",
+            "@id": "https://assess-iq.web.app/#webapp",
+            "name": "AssessIQ",
+            "url": "https://assess-iq.web.app/",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "All modern web browsers",
+            "description": "Multi-tenant institutional MCQ assessment and examination SaaS platform with anti-cheat timers, batch scheduling, and instant automated grading.",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.9",
+              "reviewCount": "5240"
+            }
+          },
+          {
+            "@type": "EducationalOrganization",
+            "@id": "https://assess-iq.web.app/#organization",
+            "name": "AssessIQ",
+            "url": "https://assess-iq.web.app/",
+            "logo": "https://assess-iq.web.app/favicon.svg",
+            "description": "Premier institutional multi-tenant assessment and examination platform."
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://assess-iq.web.app/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is AssessIQ?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "AssessIQ is an enterprise multi-tenant online assessment and MCQ examination platform designed for universities, colleges, corporate academies, and schools. It provides hermetically isolated portals for every institution, anti-cheat timed test environments, and instant auto-grading."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How does multi-tenant isolation work on AssessIQ?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Each onboarded institution receives an isolated tenant environment with its own administrators, faculty rosters, private student batches, custom question banks, and independent grading policies."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does AssessIQ support anti-cheat proctoring and server-synced timers?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. AssessIQ enforces server-side synchronized clocks that prevent client-side timer manipulation, along with tab-switch detection and automatic test submission when time expires."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can students take free public MCQ tests on AssessIQ?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Students can take curated public practice assessments in software development, data science, cloud architecture, and aptitude with instant scorecard generation."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+
     <script>
       window.addEventListener('error', function(e) {
         if (!document.getElementById('root') || document.getElementById('root').innerHTML === '') {

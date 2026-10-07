@@ -9,6 +9,7 @@ import {
   updateOrganization,
   toggleOrganizationStatus,
   deleteOrganization,
+  resendOrganizationCredentials,
   getPublicOrganizations
 } from "../controllers/organizationController.js";
 
@@ -33,6 +34,7 @@ router.post("/", authorize("super_admin"), createOrganization);
 router.get("/", authorize("super_admin"), getAllOrganizations);
 router.put("/:id", authorize("super_admin"), updateOrganization);
 router.patch("/:id/status", authorize("super_admin"), toggleOrganizationStatus);
+router.post("/:id/resend-credentials", authorize("super_admin"), resendOrganizationCredentials);
 router.delete("/:id", authorize("super_admin"), deleteOrganization);
 
 // Export router

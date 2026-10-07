@@ -4,7 +4,9 @@ import {
   getOrganizationApplications,
   approveOrganizationApplication,
   resendOrgApprovalEmail,
-  rejectOrganizationApplication
+  rejectOrganizationApplication,
+  deleteOrganizationApplication,
+  clearApprovedApplications
 } from "../controllers/orgApplicationController.js";
 import protect from "../middleware/authMiddleware.js";
 import authorize from "../middleware/roleMiddleware.js";
@@ -19,8 +21,11 @@ router.use(protect);
 router.use(authorize("super_admin"));
 
 router.get("/", getOrganizationApplications);
+router.delete("/approved/clear", clearApprovedApplications);
 router.patch("/:id/approve", approveOrganizationApplication);
 router.post("/:id/resend-email", resendOrgApprovalEmail);
 router.patch("/:id/reject", rejectOrganizationApplication);
+router.delete("/:id", deleteOrganizationApplication);
+
 
 export default router;
