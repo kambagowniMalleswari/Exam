@@ -58,6 +58,8 @@ const BatchesManager = () => {
   const [selectedStudentIds, setSelectedStudentIds] = useState(new Set());
   const [studentSearch, setStudentSearch] = useState("");
   const [savingStudents, setSavingStudents] = useState(false);
+  const [whitelistSearch, setWhitelistSearch] = useState("");
+  const [whitelistSort, setWhitelistSort] = useState("name-asc");
 
   useEffect(() => {
     fetchBatches();
@@ -93,6 +95,8 @@ const BatchesManager = () => {
 
   const openCreate = () => {
     setModalError("");
+    setWhitelistSearch("");
+    setWhitelistSort("name-asc");
     setFormData({
       name: "",
       batchNumber: "",
@@ -113,6 +117,8 @@ const BatchesManager = () => {
   const openEdit = (batch) => {
     setActiveBatch(batch);
     setModalError("");
+    setWhitelistSearch("");
+    setWhitelistSort("name-asc");
     setFormData({
       name: batch.name || "",
       batchNumber: batch.batchNumber || "",
@@ -295,6 +301,58 @@ const BatchesManager = () => {
       (s.name || "").toLowerCase().includes(studentSearch.toLowerCase()) ||
       (s.email || "").toLowerCase().includes(studentSearch.toLowerCase())
   );
+
+  const processedWhitelistStudents = orgStudents
+    .filter((s) => {
+      const q = whitelistSearch.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        (s.name || "").toLowerCase().includes(q) ||
+        (s.email || "").toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      if (whitelistSort === "name-asc") {
+        return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
+      }
+      if (whitelistSort === "name-desc") {
+        return (b.name || "").localeCompare(a.name || "", undefined, { sensitivity: "base" });
+      }
+      if (whitelistSort === "selected-first") {
+        const aSelected = formData.selectiveStudentIds?.includes(a._id) ? 1 : 0;
+        const bSelected = formData.selectiveStudentIds?.includes(b._id) ? 1 : 0;
+        if (bSelected !== aSelected) return bSelected - aSelected;
+        return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
+      }
+      if (whitelistSort === "email-asc") {
+        return (a.email || "").localeCompare(b.email || "", undefined, { sensitivity: "base" });
+      }
+      return 0;
+    });
+
+  const handleSelectAllWhitelist = () => {
+    const visibleIds = processedWhitelistStudents.map((s) => s._id);
+    const combined = Array.from(new Set([...(formData.selectiveStudentIds || []), ...visibleIds]));
+    setFormData({
+      ...formData,
+      selectiveStudentIds: combined
+    });
+  };
+
+  const handleClearAllWhitelist = () => {
+    if (whitelistSearch.trim()) {
+      const visibleSet = new Set(processedWhitelistStudents.map((s) => s._id));
+      setFormData({
+        ...formData,
+        selectiveStudentIds: (formData.selectiveStudentIds || []).filter((id) => !visibleSet.has(id))
+      });
+    } else {
+      setFormData({
+        ...formData,
+        selectiveStudentIds: []
+      });
+    }
+  };
 
   const totalStudentsEnrolled = batches.reduce(
     (sum, b) => sum + (b.studentCount || 0),
@@ -632,46 +690,150 @@ const BatchesManager = () => {
 
                 {/* Selective Whitelist (if selective) */}
                 {formData.enrollmentType === "selective" && (
-                  <div className="form-group">
-                    <label>Selective Students Whitelist</label>
-                    <p style={{ margin: "0 0 0.5rem 0", fontSize: "0.82rem", color: "var(--text-secondary)" }}>
-                      Only the selected students will be authorized to self-enroll in this batch.
-                    </p>
-                    <div
-                      style={{
-                        maxHeight: "150px",
-                        overflowY: "auto",
-                        border: "1px solid var(--border)",
-                        borderRadius: "8px",
-                        padding: "0.5rem",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "4px"
-                      }}
-                    >
-                      {orgStudents.map((s) => {
-                        const isSelected = formData.selectiveStudentIds?.includes(s._id);
-                        return (
-                          <label
-                            key={s._id}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                              fontSize: "0.85rem",
-                              cursor: "pointer",
-                              padding: "4px"
-                            }}
+                  <div className="form-group whitelist-management-group">
+                    <div className="whitelist-header-row">
+                      <div>
+                        <div className="whitelist-title-line">
+                          <label className="whitelist-main-label">Selective Students Whitelist</label>
+                          <span className="whitelist-count-badge">
+                            {(formData.selectiveStudentIds || []).length} / {orgStudents.length} Selected
+                          </span>
+                        </div>
+                        <p className="whitelist-subtext">
+                          Only the selected students will be authorized to self-enroll in this batch.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Filter, Sort & Bulk Selection Bar */}
+                    <div className="whitelist-controls-bar">
+                      <div className="whitelist-search-box">
+                        <SearchIcon size={14} />
+                        <input
+                          type="text"
+                          placeholder="Search students by name or email..."
+                          value={whitelistSearch}
+                          onChange={(e) => setWhitelistSearch(e.target.value)}
+                          className="whitelist-search-input"
+                        />
+                        {whitelistSearch && (
+                          <button
+                            type="button"
+                            className="whitelist-search-clear"
+                            onClick={() => setWhitelistSearch("")}
+                            title="Clear search"
                           >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleSelectiveStudent(s._id)}
-                            />
-                            <span>{s.name} ({s.email})</span>
-                          </label>
-                        );
-                      })}
+                            ✕
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="whitelist-sort-box">
+                        <span className="whitelist-sort-label">Sort:</span>
+                        <select
+                          className="whitelist-sort-select"
+                          value={whitelistSort}
+                          onChange={(e) => setWhitelistSort(e.target.value)}
+                        >
+                          <option value="name-asc">Name (A → Z)</option>
+                          <option value="name-desc">Name (Z → A)</option>
+                          <option value="selected-first">Selected First</option>
+                          <option value="email-asc">Email (A → Z)</option>
+                        </select>
+                      </div>
+
+                      <div className="whitelist-action-btns">
+                        <button
+                          type="button"
+                          className="btn-whitelist-action"
+                          onClick={handleSelectAllWhitelist}
+                          title="Select all displayed students"
+                        >
+                          Select All
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-whitelist-action"
+                          onClick={handleClearAllWhitelist}
+                          title="Clear selection"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Students List Container */}
+                    <div className="whitelist-list-container">
+                      {processedWhitelistStudents.length > 0 ? (
+                        <div className="whitelist-items-wrapper">
+                          <div className="whitelist-table-head">
+                            <span className="whitelist-col-sno">S.No</span>
+                            <span className="whitelist-col-check">Select</span>
+                            <span className="whitelist-col-student">Student</span>
+                            <span className="whitelist-col-status">Status</span>
+                          </div>
+
+                          {processedWhitelistStudents.map((s, index) => {
+                            const isSelected = formData.selectiveStudentIds?.includes(s._id);
+                            const serialNo = index + 1;
+                            const initials = (s.name || "S")
+                              .split(" ")
+                              .filter(Boolean)
+                              .map((part) => part[0])
+                              .join("")
+                              .slice(0, 2)
+                              .toUpperCase();
+
+                            return (
+                              <label
+                                key={s._id}
+                                className={`whitelist-item-row ${isSelected ? "selected" : ""}`}
+                              >
+                                <div className="whitelist-col-sno">
+                                  <span className="whitelist-sno-badge">#{serialNo}</span>
+                                </div>
+
+                                <div className="whitelist-col-check">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => toggleSelectiveStudent(s._id)}
+                                    className="whitelist-checkbox"
+                                  />
+                                </div>
+
+                                <div className="whitelist-col-student">
+                                  <div className="whitelist-student-avatar">{initials}</div>
+                                  <div className="whitelist-student-info">
+                                    <span className="whitelist-student-name">{s.name}</span>
+                                    <span className="whitelist-student-email">{s.email}</span>
+                                  </div>
+                                </div>
+
+                                <div className="whitelist-col-status">
+                                  {isSelected ? (
+                                    <span className="whitelist-status-pill whitelisted">
+                                      Whitelisted
+                                    </span>
+                                  ) : (
+                                    <span className="whitelist-status-pill excluded">
+                                      Excluded
+                                    </span>
+                                  )}
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="whitelist-empty-state">
+                          {whitelistSearch ? (
+                            <span>No students matching "{whitelistSearch}" found.</span>
+                          ) : (
+                            <span>No students registered in this institution.</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -742,8 +904,12 @@ const BatchesManager = () => {
                 {filteredStudents.filter((s) => selectedStudentIds.has(s._id)).length > 0 ? (
                   filteredStudents
                     .filter((s) => selectedStudentIds.has(s._id))
-                    .map((s) => (
+                    .sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" }))
+                    .map((s, idx) => (
                       <div key={s._id} className="student-row-item selected">
+                        <span className="whitelist-sno-badge" style={{ marginRight: "4px" }}>
+                          #{idx + 1}
+                        </span>
                         <div className="student-row-info">
                           <strong>{s.name}</strong>
                           <span>{s.email}</span>
