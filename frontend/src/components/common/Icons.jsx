@@ -363,5 +363,23 @@ export const BadgeCheckIcon = ({ size = 16, className = "" }) => (
   </svg>
 );
 
+export const UploadCloudIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-upload-cloud ${className}`}>
+    <polyline points="16 16 12 12 8 16" />
+    <line x1="12" y1="12" x2="12" y2="21" />
+    <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+    <polyline points="16 16 12 12 8 16" />
+  </svg>
+);
+
+export const DownloadIcon = ({ size = 16, className = "" }) => (
+  <svg {...baseProps} width={size} height={size} className={`vector-icon icon-download ${className}`}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+
 
 

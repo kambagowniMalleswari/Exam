@@ -14,8 +14,10 @@ import {
   SearchIcon,
   PlusIcon,
   FileTextIcon,
-  ShieldIcon
+  ShieldIcon,
+  UploadCloudIcon
 } from "../../components/common/Icons.jsx";
+import BatchAutoAllocationModal from "../../components/admin/BatchAutoAllocationModal.jsx";
 import "./BatchesManager.css";
 
 const BatchesManager = () => {
@@ -33,6 +35,7 @@ const BatchesManager = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
+  const [showAutoAllocModal, setShowAutoAllocModal] = useState(false);
   const [activeBatch, setActiveBatch] = useState(null);
 
   // Form states
@@ -433,10 +436,21 @@ const BatchesManager = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <button className="btn-primary-batch" onClick={openCreate}>
-            <PlusIcon size={16} />
-            <span>Create New Batch</span>
-          </button>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="btn-auto-allocate-batch"
+              onClick={() => setShowAutoAllocModal(true)}
+              title="Automatically match students from Excel or CSV and allocate cohorts"
+            >
+              <UploadCloudIcon size={16} />
+              <span>Auto-Allocate (Excel / CSV)</span>
+            </button>
+            <button className="btn-primary-batch" onClick={openCreate}>
+              <PlusIcon size={16} />
+              <span>Create New Batch</span>
+            </button>
+          </div>
         </div>
 
         {/* Batches Grid */}
@@ -938,6 +952,19 @@ const BatchesManager = () => {
             </div>
           </div>
         )}
+
+        {/* ========================================================= */}
+        {/* AUTOMATIC STUDENT MATCHING & BATCH ALLOCATION MODAL       */}
+        {/* ========================================================= */}
+        <BatchAutoAllocationModal
+          isOpen={showAutoAllocModal}
+          onClose={() => setShowAutoAllocModal(false)}
+          existingBatches={batches}
+          onSuccess={() => {
+            fetchBatches();
+            loadPrerequisites();
+          }}
+        />
       </div>
     </DashboardLayout>
   );

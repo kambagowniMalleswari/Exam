@@ -132,6 +132,45 @@ const userSchema = new mongoose.Schema(
     resetPasswordOtpExpires: {
       type: Date,
       default: null
+    },
+
+    // Institutional Academic & Registration Identifiers
+    registrationNumber: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      default: ""
+    },
+    studentId: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      default: ""
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    course: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    academicYear: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    semester: {
+      type: String,
+      trim: true,
+      default: ""
+    },
+    section: {
+      type: String,
+      trim: true,
+      default: ""
     }
   },
   {
@@ -143,6 +182,10 @@ const userSchema = new mongoose.Schema(
 userSchema.index({ organizationId: 1, role: 1 });
 userSchema.index({ organizationId: 1, batchId: 1 });
 userSchema.index({ organizationId: 1, batchIds: 1 });
+userSchema.index({ organizationId: 1, registrationNumber: 1 });
+userSchema.index({ organizationId: 1, studentId: 1 });
+userSchema.index({ organizationId: 1, email: 1 });
+userSchema.index({ organizationId: 1, name: 1 });
 userSchema.index({ subject: 1 });
 
 // Create User model

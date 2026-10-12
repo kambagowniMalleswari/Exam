@@ -10,6 +10,11 @@ import {
   getAvailableBatchesForStudent,
   enrollStudentInBatch
 } from "../controllers/batchController.js";
+import {
+  previewBatchAllocation,
+  confirmBatchAllocation,
+  getAllocationHistory
+} from "../controllers/batchAllocationController.js";
 import protect from "../middleware/authMiddleware.js";
 import authorize from "../middleware/roleMiddleware.js";
 import tenantMiddleware from "../middleware/tenantMiddleware.js";
@@ -23,6 +28,22 @@ router.use(tenantMiddleware);
 router.get("/available", authorize("student", "teacher", "org_admin", "admin", "super_admin"), getAvailableBatchesForStudent);
 router.post("/:id/enroll", authorize("student", "teacher", "org_admin", "admin", "super_admin"), enrollStudentInBatch);
 
+// Automated Student Matching & Batch Allocation
+router.post(
+  "/allocation/preview",
+  authorize("super_admin", "admin", "org_admin", "teacher"),
+  previewBatchAllocation
+);
+router.post(
+  "/allocation/confirm",
+  authorize("super_admin", "admin", "org_admin", "teacher"),
+  confirmBatchAllocation
+);
+router.get(
+  "/allocation/history",
+  authorize("super_admin", "admin", "org_admin", "teacher"),
+  getAllocationHistory
+);
 
 // Faculty & Admin Batch Management Routes
 router.get("/", authorize("super_admin", "admin", "org_admin", "teacher"), getBatches);

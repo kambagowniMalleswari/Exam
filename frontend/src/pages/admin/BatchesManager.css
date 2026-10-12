@@ -193,6 +193,32 @@
   box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
 }
 
+.btn-auto-allocate-batch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid #0284c7;
+  color: #0284c7 !important;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.85rem 1.4rem;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.08);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.btn-auto-allocate-batch:hover {
+  background: #f0f9ff;
+  border-color: #0369a1;
+  color: #0369a1 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.18);
+}
+
+
 /* Batches Grid */
 .batches-grid {
   display: grid;
