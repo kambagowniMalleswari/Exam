@@ -26,15 +26,15 @@ router.get(
   getSuperAdminAnalytics
 );
 
-// Organization report (Org Admin, Admin, Super Admin)
+// Organization report (Org Admin, Admin, Super Admin, Teacher)
 router.get(
   "/",
-  authorize("admin", "org_admin", "super_admin"),
+  authorize("admin", "org_admin", "super_admin", "teacher"),
   getOrganizationReport
 );
 router.get(
   "/organization",
-  authorize("admin", "org_admin", "super_admin"),
+  authorize("admin", "org_admin", "super_admin", "teacher"),
   getOrganizationReport
 );
 

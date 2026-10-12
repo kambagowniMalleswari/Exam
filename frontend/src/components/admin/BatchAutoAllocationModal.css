@@ -122,6 +122,16 @@
   transform: translateY(-1px);
 }
 
+.btn-template-download.secondary {
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.btn-template-download.secondary:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
 /* Dropzone */
 .alloc-dropzone {
   border: 2px dashed #94a3b8;

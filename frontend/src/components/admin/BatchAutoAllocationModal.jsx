@@ -159,10 +159,20 @@ const BatchAutoAllocationModal = ({ isOpen, onClose, existingBatches = [], onSuc
       setLoading(true);
       setError("");
 
+      const storedUser = (() => {
+        try {
+          return JSON.parse(localStorage.getItem("user") || "{}");
+        } catch {
+          return {};
+        }
+      })();
+      const resolvedOrgId = storedUser?.organizationId || localStorage.getItem("organizationId") || undefined;
+
       const res = await api.post("/batches/allocation/preview", {
         rows: parsedRows,
         defaultBatchId: defaultBatchId || null,
-        fileName: file?.name || "student_list.xlsx"
+        fileName: file?.name || "student_list.xlsx",
+        organizationId: resolvedOrgId
       });
 
       if (res.data?.success) {
@@ -173,7 +183,11 @@ const BatchAutoAllocationModal = ({ isOpen, onClose, existingBatches = [], onSuc
       }
     } catch (err) {
       console.error("Analysis error:", err);
-      setError(err.response?.data?.message || "Server error while matching students.");
+      if (err.response?.status === 403) {
+        setError("Access restricted: Batch allocation is an administrative tool restricted to Faculty and Institutional Administrators. Please verify that your active account has educator or administrator privileges.");
+      } else {
+        setError(err.response?.data?.message || "Server error while matching students.");
+      }
     } finally {
       setLoading(false);
     }
@@ -256,11 +270,21 @@ const BatchAutoAllocationModal = ({ isOpen, onClose, existingBatches = [], onSuc
         return;
       }
 
+      const storedUser = (() => {
+        try {
+          return JSON.parse(localStorage.getItem("user") || "{}");
+        } catch {
+          return {};
+        }
+      })();
+      const resolvedOrgId = storedUser?.organizationId || localStorage.getItem("organizationId") || undefined;
+
       const res = await api.post("/batches/allocation/confirm", {
         fileName: previewData.fileName || file?.name || "student_list.xlsx",
         allocations: finalAllocations,
         unmatchedRecords: unmatchedToLog,
-        summary: previewData.summary
+        summary: previewData.summary,
+        organizationId: resolvedOrgId
       });
 
       if (res.data?.success) {
@@ -381,13 +405,32 @@ const BatchAutoAllocationModal = ({ isOpen, onClose, existingBatches = [], onSuc
                 <strong>Need the standard spreadsheet format?</strong>
                 <p>Download our pre-structured Excel template with registration numbers and batch columns.</p>
               </div>
-              <button
-                type="button"
-                className="btn-template-download"
-                onClick={handleDownloadTemplate}
-              >
-                <DownloadIcon size={15} /> Download Sample Template (.xlsx)
-              </button>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                <a
+                  href="/AssessIQ_Student_Roster_Batch_Allocation_Sample_1.xlsx"
+                  download="AssessIQ_Student_Roster_Batch_Allocation_Sample_1.xlsx"
+                  className="btn-template-download"
+                  title="Download CS Department Sample Student Roster"
+                >
+                  <DownloadIcon size={14} /> Sample 1 (CS .xlsx)
+                </a>
+                <a
+                  href="/AssessIQ_Student_Roster_Batch_Allocation_Sample_2.xlsx"
+                  download="AssessIQ_Student_Roster_Batch_Allocation_Sample_2.xlsx"
+                  className="btn-template-download"
+                  title="Download ECE & IT Sample Student Roster"
+                >
+                  <DownloadIcon size={14} /> Sample 2 (ECE .xlsx)
+                </a>
+                <button
+                  type="button"
+                  className="btn-template-download secondary"
+                  onClick={handleDownloadTemplate}
+                  title="Generate Fresh Blank Template"
+                >
+                  <DownloadIcon size={14} /> Blank Template
+                </button>
+              </div>
             </div>
 
             {/* Dropzone */}

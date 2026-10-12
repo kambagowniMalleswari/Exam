@@ -108,7 +108,20 @@ const LandingPage = () => {
     e.preventDefault();
     const el = document.getElementById("available-tests");
     if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
+  };  // Derive dynamic categories from available tests
+  const dynamicCategories = [
+    { id: "all", label: "All Assessments" },
+    ...Array.from(
+      new Set(
+        displayTests
+          .map((t) => t.subject?.trim())
+          .filter((s) => s && s.toLowerCase() !== "general")
+      )
+    ).slice(0, 5).map((subj) => ({
+      id: subj.toLowerCase(),
+      label: subj
+    }))
+  ];
 
   return (
     <div className="lms-landing-page">
@@ -169,20 +182,20 @@ const LandingPage = () => {
           <div className="hero-text-column">
             <div className="hero-trust-pill">
               <SparklesIcon size={14} />
-              <span>Multi-Tenant Online Assessment Platform</span>
+              <span>Institutional Examination & MCQ Engine</span>
             </div>
 
             <h1 className="hero-billboard-heading">
-              Multi-Tenant Institutional MCQ & Assessment Platform
+              Secure Online Assessments for Universities & Academies
             </h1>
 
             <p className="hero-billboard-subtext">
-              Conduct secure campus exams with synchronized anti-cheat timers, automatic grading, and dedicated private portals for every college and academy.
+              Conduct server-timed, proctored examinations with automated grading, instant scorecards, and hermetically isolated workspaces for every department.
             </p>
 
             <div className="hero-cta-buttons">
               <a href="#available-tests" className="btn-hero-explore">
-                Explore Tests <PlayIcon size={14} />
+                Explore Assessments <PlayIcon size={14} />
               </a>
               <Link to="/join-us" className="btn-hero-partner">
                 <BuildingIcon size={15} /> Onboard Institution →
@@ -193,7 +206,7 @@ const LandingPage = () => {
               <SearchIcon size={18} className="hero-search-icon" />
               <input
                 type="text"
-                placeholder="Search tests by skill (e.g. Python, Aptitude, Web)..."
+                placeholder="Search assessments by subject or course (e.g. Python, Aptitude, Java)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 aria-label="Search Assessments"
@@ -214,19 +227,19 @@ const LandingPage = () => {
                 <div className="feature-quick-list">
                   <div className="quick-list-item">
                     <span>⏱️</span>
-                    <span>Server-Synchronized Non-Tamper Clocks</span>
+                    <span>Server-Synced Tamper-Proof Timers</span>
                   </div>
                   <div className="quick-list-item">
                     <span>🛡️</span>
-                    <span>Tab-Switch Anti-Cheat Proctoring</span>
+                    <span>Focus & Tab-Switch Proctoring</span>
                   </div>
                   <div className="quick-list-item">
                     <span>📊</span>
-                    <span>Instant Grading with Negative Marking</span>
+                    <span>Instant Scoring & Negative Marking</span>
                   </div>
                   <div className="quick-list-item">
                     <span>🏫</span>
-                    <span>Isolated Campus & Batch Workspaces</span>
+                    <span>Dedicated Department Tenancy</span>
                   </div>
                 </div>
               </div>
@@ -245,19 +258,13 @@ const LandingPage = () => {
         <div className="section-container">
           <div className="section-heading-row">
             <div>
-              <span className="section-kicker">CURATED EXAMS</span>
+              <span className="section-kicker">EXAMINATION CATALOG</span>
               <h2>Available Assessments</h2>
-              <p>Practice with real-time timers, automatic scoring, and comprehensive question answer keys.</p>
+              <p>Practice with real-time countdown timers, automatic evaluation, and comprehensive question answer keys.</p>
             </div>
 
             <div className="lms-filter-tabs">
-              {[
-                { id: "all", label: "All Tests" },
-                { id: "software", label: "Software" },
-                { id: "ai", label: "AI & Data" },
-                { id: "cloud", label: "Cloud" },
-                { id: "aptitude", label: "Aptitude" }
-              ].map((tab) => (
+              {dynamicCategories.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
@@ -341,8 +348,8 @@ const LandingPage = () => {
         <div className="section-container">
           <div className="features-intro">
             <span className="section-kicker">CORE CAPABILITIES</span>
-            <h2>Why Institutions Choose AssessIQ</h2>
-            <p>Engineered for secure, fast, and scalable academic assessment.</p>
+            <h2>Why Institutions Trust AssessIQ</h2>
+            <p>Engineered for secure, uncompromised, and high-concurrency academic assessment.</p>
           </div>
 
           <div className="features-three-grid">
@@ -350,8 +357,8 @@ const LandingPage = () => {
               <div className="feature-icon-circle blue">
                 <ClockIcon size={22} />
               </div>
-              <h3>Anti-Cheat Timed Sessions</h3>
-              <p>Server-side clocks enforce auto-submission the exact second test duration elapses, preventing client-side timer manipulation.</p>
+              <h3>Server-Synced Tamper-Proof Timers</h3>
+              <p>Hardware-synchronized countdown clocks auto-submit exams precisely when the duration concludes, eliminating client-side tampering.</p>
             </div>
 
             <div className="lms-feature-card">
@@ -359,15 +366,15 @@ const LandingPage = () => {
                 <BarChartIcon size={22} />
               </div>
               <h3>Instant Automated Grading</h3>
-              <p>Scores are calculated immediately upon submission with negative marking, speed analytics, and downloadable PDF transcripts.</p>
+              <p>Scores are calculated immediately upon submission with negative marking, question telemetry, and verifiable digital transcripts.</p>
             </div>
 
             <div className="lms-feature-card">
               <div className="feature-icon-circle amber">
                 <BuildingIcon size={22} />
               </div>
-              <h3>Multi-Tenant Campus Isolation</h3>
-              <p>Every university, college, or training academy operates in a completely isolated workspace with private batches and custom question banks.</p>
+              <h3>Hermetic Tenant Isolation</h3>
+              <p>Every university, college, or training academy operates in a completely isolated workspace with private batches, faculty, and custom question banks.</p>
             </div>
           </div>
         </div>

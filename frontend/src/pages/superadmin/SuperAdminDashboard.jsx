@@ -31,8 +31,7 @@ const SuperAdminDashboard = () => {
     students: { total: 0, active: 0, inactive: 0, participatingInTests: 0, averagePerformance: 0, completionRate: 0 },
     tests: { total: 0, bySubject: [] },
     attempts: { total: 0, completed: 0, passRate: 0 },
-    users: { total: 0, teachers: 0, students: 0 },
-    revenue: { available: false, display: "Revenue data unavailable", status: "N/A" }
+    users: { total: 0, teachers: 0, students: 0 }
   });
 
   // Recent Organizations List

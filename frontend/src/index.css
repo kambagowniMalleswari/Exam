@@ -24,21 +24,21 @@
   --info-light: #eff6ff;
   --info-text: #0369a1;
 
-  /* Neutrals & Surfaces */
-  --bg-body: #f1f3f7;
-  --bg-canvas: #e9ecef;
+  /* Neutrals & Surfaces - Clean High-Contrast Modern Theme */
+  --bg-body: #f8fafc;
+  --bg-canvas: #f1f5f9;
   --bg-surface: #ffffff;
   --bg-surface-elevated: #ffffff;
   --bg-sidebar: #0b1120;
   --bg-sidebar-hover: #1e293b;
   --border-subtle: #e2e8f0;
-  --border-focus: #38bdf8;
+  --border-focus: #0284c7;
 
-  /* Typography */
+  /* Typography - Ultra-Crisp Legibility */
   --text-main: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --text-light: #94a3b8;
+  --text-secondary: #334155;
+  --text-muted: #475569;
+  --text-light: #64748b;
   --text-on-dark: #f8fafc;
 
   /* Elevations & Shadows */
@@ -200,6 +200,34 @@ a {
 .btn-sm {
   padding: 6px 14px;
   font-size: 0.8rem;
+}
+
+.btn-primary-gold {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.28) !important;
+  font-weight: 600 !important;
+  border-radius: var(--radius-md) !important;
+  padding: 10px 22px !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  text-decoration: none !important;
+}
+.btn-primary-gold:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 22px rgba(2, 132, 199, 0.38) !important;
+}
+.btn-primary-gold:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* Pill Input Utilities */

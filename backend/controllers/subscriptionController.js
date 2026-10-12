@@ -15,9 +15,14 @@ const PLAN_LIMITS = {
 // Get current organization subscription & usage
 export const getCurrentSubscription = async (req, res) => {
   try {
-    const orgId = req.isSuperAdmin
-      ? req.query.organizationId || req.organizationId
+    let orgId = req.isSuperAdmin
+      ? req.query?.organizationId || req.headers["x-organization-id"] || req.organizationId
       : req.organizationId;
+
+    if (!orgId && req.isSuperAdmin) {
+      const firstOrg = await Organization.findOne({ isActive: true });
+      if (firstOrg) orgId = firstOrg._id;
+    }
 
     if (!orgId) {
       return res.status(400).json({

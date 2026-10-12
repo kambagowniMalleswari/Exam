@@ -1,18 +1,33 @@
 import Batch from "../models/Batch.js";
 import User from "../models/User.js";
+import Organization from "../models/Organization.js";
 import BatchAllocationAudit from "../models/BatchAllocationAudit.js";
 import { runStudentMatchingEngine } from "../services/studentMatcher.js";
+
+// Helper to resolve orgId gracefully even for Super Admin
+const resolveOrgId = async (req, fallbackBatchId = null) => {
+  let orgId = req.organizationId || req.user?.organizationId || req.body?.organizationId || req.query?.organizationId;
+  if (!orgId && (req.isSuperAdmin || req.user?.role === "super_admin" || req.user?.role === "superadmin")) {
+    if (fallbackBatchId) {
+      const b = await Batch.findById(fallbackBatchId);
+      if (b?.organizationId) return b.organizationId;
+    }
+    const firstOrg = await Organization.findOne({ isActive: true });
+    if (firstOrg) return firstOrg._id;
+  }
+  return orgId;
+};
 
 // 1. Preview Batch Allocation (Dry Run)
 export const previewBatchAllocation = async (req, res) => {
   try {
     const { rows, defaultBatchId, fileName = "student_list.xlsx" } = req.body;
-    const orgId = req.organizationId || req.user.organizationId;
+    const orgId = await resolveOrgId(req, defaultBatchId);
 
     if (!orgId) {
       return res.status(400).json({
         success: false,
-        message: "Organization reference is missing"
+        message: "Organization reference is required for batch allocation."
       });
     }
 
@@ -53,12 +68,12 @@ export const confirmBatchAllocation = async (req, res) => {
       unmatchedRecords = [],
       summary = {}
     } = req.body;
-    const orgId = req.organizationId || req.user.organizationId;
+    const orgId = await resolveOrgId(req, allocations[0]?.batchId);
 
     if (!orgId) {
       return res.status(400).json({
         success: false,
-        message: "Organization reference is missing"
+        message: "Organization reference is required for batch allocation."
       });
     }
 
@@ -220,8 +235,8 @@ export const confirmBatchAllocation = async (req, res) => {
 // 3. Get Batch Allocation Audit History
 export const getAllocationHistory = async (req, res) => {
   try {
-    const orgId = req.organizationId || req.user.organizationId;
-    const query = { organizationId: orgId };
+    const orgId = await resolveOrgId(req);
+    const query = orgId ? { organizationId: orgId } : {};
 
     const logs = await BatchAllocationAudit.find(query)
       .populate("uploadedBy", "name email")

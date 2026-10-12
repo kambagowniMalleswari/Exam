@@ -9,8 +9,12 @@ const tenantMiddleware = (req, res, next) => {
 
   // 1. Super Admin has platform-wide global visibility
   if (req.user.role === "super_admin" || req.user.role === "superadmin") {
-    // If a specific organizationId is passed via header or query, attach it
-    req.organizationId = req.headers["x-organization-id"] || req.query.organizationId || null;
+    // If a specific organizationId is passed via header, body, or query, attach it
+    req.organizationId =
+      req.headers["x-organization-id"] ||
+      req.body?.organizationId ||
+      req.query?.organizationId ||
+      null;
     req.isSuperAdmin = true;
     return next();
   }
