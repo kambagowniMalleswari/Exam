@@ -31,7 +31,15 @@ const SuperAdminDashboard = () => {
     students: { total: 0, active: 0, inactive: 0, participatingInTests: 0, averagePerformance: 0, completionRate: 0 },
     tests: { total: 0, bySubject: [] },
     attempts: { total: 0, completed: 0, passRate: 0 },
-    users: { total: 0, teachers: 0, students: 0 }
+    users: { total: 0, teachers: 0, students: 0 },
+    revenue: {
+      available: false,
+      display: "Revenue data unavailable",
+      message: "No paid transactions recorded. Current active organizations are on free/institutional tier.",
+      status: "N/A",
+      totalRevenue: 0,
+      activeSubscriptionsCount: 0
+    }
   });
 
   // Recent Organizations List
@@ -82,7 +90,18 @@ const SuperAdminDashboard = () => {
       ]);
 
       if (reportRes.data?.report) {
-        setMetrics(reportRes.data.report);
+        const rep = reportRes.data.report;
+        setMetrics((prev) => ({
+          ...prev,
+          ...rep,
+          organizations: rep.organizations || prev.organizations,
+          teachers: rep.teachers || prev.teachers,
+          students: rep.students || prev.students,
+          tests: rep.tests || prev.tests,
+          attempts: rep.attempts || prev.attempts,
+          users: rep.users || prev.users,
+          revenue: rep.revenue || prev.revenue
+        }));
       }
 
       const orgs = orgsRes.data?.organizations || orgsRes.data || [];
@@ -248,13 +267,13 @@ const SuperAdminDashboard = () => {
                 <BuildingIcon size={22} />
               </div>
             </div>
-            <div className="kpi-main-number">{metrics.organizations.total}</div>
+            <div className="kpi-main-number">{metrics.organizations?.total ?? 0}</div>
             <div className="kpi-sub-stats">
               <span className="stat-pill active">
-                <span className="dot-green"></span> {metrics.organizations.active} Active
+                <span className="dot-green"></span> {metrics.organizations?.active ?? 0} Active
               </span>
               <span className="stat-pill inactive">
-                {metrics.organizations.inactive} Inactive
+                {metrics.organizations?.inactive ?? 0} Inactive
               </span>
             </div>
           </div>
@@ -273,14 +292,14 @@ const SuperAdminDashboard = () => {
                 <UsersIcon size={22} />
               </div>
             </div>
-            <div className="kpi-main-number">{metrics.teachers.total}</div>
+            <div className="kpi-main-number">{metrics.teachers?.total ?? 0}</div>
             <div className="kpi-sub-stats">
               <span className="stat-pill active">
-                <span className="dot-green"></span> {metrics.teachers.active} Active
+                <span className="dot-green"></span> {metrics.teachers?.active ?? 0} Active
               </span>
-              {metrics.teachers.pendingApprovals > 0 ? (
+              {(metrics.teachers?.pendingApprovals || 0) > 0 ? (
                 <span className="stat-pill pending">
-                  {metrics.teachers.pendingApprovals} Pending
+                  {metrics.teachers?.pendingApprovals} Pending
                 </span>
               ) : (
                 <span className="stat-pill">0 Pending</span>
@@ -302,13 +321,13 @@ const SuperAdminDashboard = () => {
                 <GraduationCapIcon size={22} />
               </div>
             </div>
-            <div className="kpi-main-number">{metrics.students.total}</div>
+            <div className="kpi-main-number">{metrics.students?.total ?? 0}</div>
             <div className="kpi-sub-stats">
               <span className="stat-pill active">
-                <span className="dot-green"></span> {metrics.students.active} Active
+                <span className="dot-green"></span> {metrics.students?.active ?? 0} Active
               </span>
               <span className="stat-pill">
-                {metrics.students.participatingInTests} Completed Tests
+                {metrics.students?.participatingInTests ?? 0} Completed Tests
               </span>
             </div>
           </div>
@@ -327,10 +346,10 @@ const SuperAdminDashboard = () => {
                 <BarChartIcon size={22} />
               </div>
             </div>
-            <div className="kpi-main-number">{metrics.users.total}</div>
+            <div className="kpi-main-number">{metrics.users?.total ?? 0}</div>
             <div className="kpi-sub-stats">
               <span className="stat-pill calc">
-                {metrics.teachers.total} Teachers + {metrics.students.total} Students
+                {metrics.teachers?.total ?? 0} Teachers + {metrics.students?.total ?? 0} Students
               </span>
             </div>
           </div>
@@ -434,23 +453,23 @@ const SuperAdminDashboard = () => {
             <div className="student-metrics-quad">
               <div className="quad-box">
                 <span className="quad-label">Avg Student Score</span>
-                <strong className="quad-value">{metrics.students.averagePerformance}%</strong>
+                <strong className="quad-value">{metrics.students?.averagePerformance ?? 0}%</strong>
                 <span className="quad-hint">Across all verified tests</span>
               </div>
               <div className="quad-box">
                 <span className="quad-label">Overall Pass Rate</span>
-                <strong className="quad-value">{metrics.attempts.passRate}%</strong>
+                <strong className="quad-value">{metrics.attempts?.passRate ?? 0}%</strong>
                 <span className="quad-hint">Threshold passing score</span>
               </div>
               <div className="quad-box">
                 <span className="quad-label">Test Completion Rate</span>
-                <strong className="quad-value">{metrics.students.completionRate}%</strong>
+                <strong className="quad-value">{metrics.students?.completionRate ?? 0}%</strong>
                 <span className="quad-hint">Submitted vs Started</span>
               </div>
               <div className="quad-box">
                 <span className="quad-label">Total Test Attempts</span>
-                <strong className="quad-value">{metrics.attempts.total}</strong>
-                <span className="quad-hint">{metrics.attempts.completed} Evaluated</span>
+                <strong className="quad-value">{metrics.attempts?.total ?? 0}</strong>
+                <span className="quad-hint">{metrics.attempts?.completed ?? 0} Evaluated</span>
               </div>
             </div>
           </div>
@@ -464,15 +483,15 @@ const SuperAdminDashboard = () => {
               </div>
             </div>
 
-            {metrics.revenue.available ? (
+            {metrics?.revenue?.available ? (
               <div className="revenue-active-box">
                 <div className="rev-amount-row">
                   <span className="rev-currency">$</span>
-                  <span className="rev-number">{metrics.revenue.totalRevenue}</span>
+                  <span className="rev-number">{metrics.revenue?.totalRevenue ?? 0}</span>
                   <span className="rev-period">/ month</span>
                 </div>
                 <p className="rev-desc">
-                  Calculated from <strong>{metrics.revenue.activeSubscriptionsCount}</strong> recorded active institutional subscriptions.
+                  Calculated from <strong>{metrics.revenue?.activeSubscriptionsCount ?? 0}</strong> recorded active institutional subscriptions.
                 </p>
                 <div className="rev-badge-row">
                   <span className="status-pill active"><CheckIcon size={12} /> Real Transaction Records Verified</span>
@@ -481,10 +500,9 @@ const SuperAdminDashboard = () => {
             ) : (
               <div className="revenue-unavailable-box">
                 <div className="unavail-icon"><ShieldIcon size={32} /></div>
-                <h4>{metrics.revenue.display}</h4>
+                <h4>{metrics?.revenue?.display || "Revenue data unavailable"}</h4>
                 <p>
-                  Current affiliated organizations are operating under the free or open-access educational tier.
-                  No commercial subscription transactions are recorded in the database.
+                  {metrics?.revenue?.message || "Current affiliated organizations are operating under the free or open-access educational tier. No commercial subscription transactions are recorded in the database."}
                 </p>
                 <div className="unavail-note">
                   <small>Policy: No artificial or estimated revenue metrics are displayed.</small>

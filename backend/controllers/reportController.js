@@ -106,24 +106,29 @@ export const getSuperAdminAnalytics = async (req, res) => {
 
     // Format Organization Growth
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const orgGrowth = orgGrowthRaw.map((item) => ({
-      period: `${monthNames[item._id.month - 1]} ${item._id.year}`,
-      count: item.count
-    }));
+    const orgGrowth = (orgGrowthRaw || []).map((item) => {
+      const m = item._id?.month;
+      const monthLabel = m && m >= 1 && m <= 12 ? monthNames[m - 1] : "N/A";
+      const yearLabel = item._id?.year || "";
+      return {
+        period: `${monthLabel} ${yearLabel}`.trim(),
+        count: item.count || 0
+      };
+    });
 
     // Format Teachers by Subject
-    const teachersBySubject = teachersBySubjectRaw
-      .filter((t) => t._id && t._id.trim())
+    const teachersBySubject = (teachersBySubjectRaw || [])
+      .filter((t) => t._id && String(t._id).trim())
       .map((t) => ({
-        subject: t._id,
-        teachersCount: t.count
+        subject: String(t._id),
+        teachersCount: t.count || 0
       }));
 
     // Format Tests by Subject
-    const testsBySubject = testsBySubjectRaw.map((s) => ({
-      subject: s._id,
-      totalTests: s.totalTests,
-      publishedTests: s.publishedTests
+    const testsBySubject = (testsBySubjectRaw || []).map((s) => ({
+      subject: s._id || "General",
+      totalTests: s.totalTests || 0,
+      publishedTests: s.publishedTests || 0
     }));
 
     // Results calculations
@@ -145,7 +150,7 @@ export const getSuperAdminAnalytics = async (req, res) => {
 
     // Revenue calculation (strictly from real subscription records)
     let revenueData = null;
-    const paidSubscriptions = activeSubscriptionsRaw.filter((sub) => sub.price && sub.price > 0);
+    const paidSubscriptions = (activeSubscriptionsRaw || []).filter((sub) => sub.price && sub.price > 0);
     if (paidSubscriptions.length > 0) {
       const totalAmount = paidSubscriptions.reduce((acc, sub) => acc + sub.price, 0);
       revenueData = {
@@ -170,6 +175,17 @@ export const getSuperAdminAnalytics = async (req, res) => {
     res.status(200).json({
       success: true,
       report: {
+        totalOrganizations: totalOrgs,
+        activeOrganizations: activeOrgs,
+        inactiveOrganizations: inactiveOrgs,
+        totalUsers,
+        totalTeachers,
+        totalStudents,
+        totalTests,
+        totalAttempts,
+        globalPassRate: passRate,
+        globalAvgScore: Number((resSummary.avgPercentage || 0).toFixed(1)),
+
         organizations: {
           total: totalOrgs,
           active: activeOrgs,

@@ -31,7 +31,18 @@ const SuperAdminReports = () => {
         api.get("/reports/platform"),
         api.get("/organizations")
       ]);
-      setReport(repRes.data.report || null);
+      const raw = repRes.data.report || {};
+      const normalized = {
+        ...raw,
+        totalOrganizations: raw.totalOrganizations ?? raw.organizations?.total ?? 0,
+        activeOrganizations: raw.activeOrganizations ?? raw.organizations?.active ?? 0,
+        totalUsers: raw.totalUsers ?? raw.users?.total ?? 0,
+        totalTests: raw.totalTests ?? raw.tests?.total ?? 0,
+        totalAttempts: raw.totalAttempts ?? raw.attempts?.total ?? 0,
+        globalPassRate: raw.globalPassRate ?? raw.attempts?.passRate ?? 0,
+        globalAvgScore: raw.globalAvgScore ?? raw.students?.averagePerformance ?? 0
+      };
+      setReport(normalized);
       setOrgs(orgsRes.data.organizations || orgsRes.data || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load platform analytics report.");
