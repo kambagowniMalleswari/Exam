@@ -431,50 +431,58 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Minimal Clean Footer */}
+      {/* Rich Institutional SaaS Footer */}
       <footer className="lms-footer">
         <div className="footer-top-container">
           <div className="footer-brand-col">
             <div className="footer-logo">
-              <BrandCrest size={28} />
+              <BrandCrest size={32} />
               <span className="footer-brand-title">AssessIQ</span>
             </div>
             <p className="footer-desc">
-              Multi-tenant institutional assessment SaaS platform.
+              Next-generation multi-tenant institutional assessment SaaS platform powering secure, proctored examinations for colleges, academies, and universities.
             </p>
+            <div className="footer-badge-row">
+              <span className="footer-badge">🛡️ Role-Isolated Tenancy</span>
+              <span className="footer-badge">🔒 100% Proctored</span>
+            </div>
           </div>
 
-          <div className="footer-links-row">
-            <div>
-              <h4>Platform</h4>
-              <ul>
-                <li><a href="#available-tests">Browse Tests</a></li>
-                <li><a href="#key-benefits">Features</a></li>
-                <li><a href="#faq-section">FAQ</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4>Institutions</h4>
-              <ul>
-                <li><Link to="/join-us">Campus Onboarding</Link></li>
-                <li><Link to="/join-us">Faculty Portal</Link></li>
-                <li><Link to="/login">Sign In</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4>Support</h4>
-              <ul>
-                <li><Link to="/contact">Help & Contact</Link></li>
-                <li><Link to="/donate">Support Education</Link></li>
-              </ul>
-            </div>
+          <div className="footer-links-col">
+            <h4>Platform</h4>
+            <ul>
+              <li><a href="#available-tests">Browse Tests</a></li>
+              <li><a href="#key-benefits">Enterprise Features</a></li>
+              <li><a href="#live-engine">Proctoring Engine</a></li>
+              <li><a href="#faq-section">Frequently Asked Questions</a></li>
+            </ul>
+          </div>
+
+          <div className="footer-links-col">
+            <h4>Institutions</h4>
+            <ul>
+              <li><Link to="/join-us">Campus Onboarding</Link></li>
+              <li><Link to="/join-us">Faculty & Educator Portal</Link></li>
+              <li><Link to="/login">Institutional Sign In</Link></li>
+              <li><Link to="/register">Student Scholar Portal</Link></li>
+            </ul>
+          </div>
+
+          <div className="footer-links-col">
+            <h4>Support & Security</h4>
+            <ul>
+              <li><Link to="/contact">Help & Contact Desk</Link></li>
+              <li><Link to="/contact">Platform SLA Status</Link></li>
+              <li><Link to="/donate">Support Education</Link></li>
+              <li><a href="#faq-section">Security & Compliance</a></li>
+            </ul>
           </div>
         </div>
 
         <div className="footer-bottom-bar">
           <div className="footer-bottom-container">
-            <span>© 2026 AssessIQ Platform. All rights reserved.</span>
-            <span>Multi-Tenant Architecture</span>
+            <span>© 2026 AssessIQ Platform. All rights reserved. Global Multi-Tenant Architecture.</span>
+            <span style={{ color: "#38bdf8", fontWeight: 600 }}>Tamper-Proof Examination Engine</span>
           </div>
         </div>
       </footer>

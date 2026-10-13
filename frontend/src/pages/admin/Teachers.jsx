@@ -21,6 +21,7 @@ import {
   validateUsername,
   validatePhone
 } from "../../utils/validation.js";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import "./Teachers.css";
 
 const Teachers = () => {
@@ -39,6 +40,8 @@ const Teachers = () => {
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
+  const [deleteTeacherTarget, setDeleteTeacherTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Form states
   const [addForm, setAddForm] = useState({
@@ -193,19 +196,23 @@ const Teachers = () => {
     }
   };
 
-  const handleDeleteTeacher = async (teacher) => {
-    const confirm = window.confirm(
-      `Are you sure you want to delete teacher "${teacher.name}"? This action cannot be undone.`
-    );
-    if (!confirm) return;
+  const handleDeleteTeacher = (teacher) => {
+    setDeleteTeacherTarget(teacher);
+  };
 
+  const confirmDeleteTeacher = async () => {
+    if (!deleteTeacherTarget) return;
     try {
-      await api.delete(`/users/${teacher._id}`);
-      setFeedback(`Teacher "${teacher.name}" deleted.`);
+      setDeleteLoading(true);
+      await api.delete(`/users/${deleteTeacherTarget._id}`);
+      setFeedback(`Teacher "${deleteTeacherTarget.name}" deleted.`);
       setTimeout(() => setFeedback(""), 4000);
+      setDeleteTeacherTarget(null);
       await fetchTeachers();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to delete teacher.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -789,6 +796,18 @@ const Teachers = () => {
             </div>
           );
         })()}
+
+        {/* Centered Modern Delete Confirmation Modal */}
+        <ConfirmModal
+          isOpen={!!deleteTeacherTarget}
+          title="Delete Faculty Account?"
+          message="Are you sure you want to permanently delete this faculty member? All test assignments and teacher roles will be revoked."
+          itemName={deleteTeacherTarget ? `${deleteTeacherTarget.name} (${deleteTeacherTarget.email})` : ""}
+          confirmText="Yes, Delete Faculty"
+          loading={deleteLoading}
+          onConfirm={confirmDeleteTeacher}
+          onCancel={() => !deleteLoading && setDeleteTeacherTarget(null)}
+        />
       </div>
     </DashboardLayout>
   );

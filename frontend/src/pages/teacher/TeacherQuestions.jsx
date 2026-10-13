@@ -11,6 +11,7 @@ import {
   HelpCircleIcon,
   SparklesIcon
 } from "../../components/common/Icons.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import "./TeacherQuestions.css";
 
 const TeacherQuestions = () => {
@@ -23,6 +24,8 @@ const TeacherQuestions = () => {
   const [showModal, setShowModal] = useState(false);
   const [editQ, setEditQ] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [form, setForm] = useState({
     questionText: "", options: [
       { key: "A", text: "" },
@@ -92,12 +95,18 @@ const TeacherQuestions = () => {
     } finally { setSubmitting(false); }
   };
 
-  const handleDelete = async (qId) => {
-    if (!window.confirm("Delete this question?")) return;
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await api.delete(`/questions/${qId}`);
+      setDeleteLoading(true);
+      await api.delete(`/questions/${deleteTarget._id}`);
+      setDeleteTarget(null);
       fetchData();
-    } catch { alert("Failed to delete question."); }
+    } catch {
+      alert("Failed to delete question.");
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const updateOption = (idx, value) => {
@@ -151,7 +160,7 @@ const TeacherQuestions = () => {
                   <div className="q-card-actions">
                     <span className="q-marks">+{q.marks || 1} / -{q.negativeMarks || 0}</span>
                     <button className="q-btn edit" onClick={() => openEdit(q)}>Edit</button>
-                    <button className="q-btn delete" onClick={() => handleDelete(q._id)}>Delete</button>
+                    <button className="q-btn delete" onClick={() => setDeleteTarget(q)}>Delete</button>
                   </div>
                 </div>
                 <p className="q-text">{q.questionText || q.text}</p>
@@ -247,6 +256,17 @@ const TeacherQuestions = () => {
           </div>
         )}
 
+        {/* Centered Modern Delete Confirmation Modal */}
+        <ConfirmModal
+          isOpen={!!deleteTarget}
+          title="Delete Assessment Question?"
+          message="Are you sure you want to permanently delete this question from your curriculum assessment bank?"
+          itemName={deleteTarget ? (deleteTarget.questionText || deleteTarget.text || "Selected Question") : ""}
+          confirmText="Yes, Delete Question"
+          loading={deleteLoading}
+          onConfirm={confirmDelete}
+          onCancel={() => !deleteLoading && setDeleteTarget(null)}
+        />
       </div>
     </DashboardLayout>
   );

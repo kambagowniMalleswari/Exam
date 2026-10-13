@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
 import {
@@ -17,6 +17,9 @@ import "./AttemptResult.css";
 const AttemptResult = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const proctorNotice = location.state?.autoSubmitted ? location.state?.submissionReason : null;
+
   const [result, setResult] = useState(null);
   const [attempt, setAttempt] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -111,6 +114,16 @@ const AttemptResult = () => {
   return (
     <DashboardLayout title="Your Result">
       <div className="result-page">
+
+        {/* Proctoring Event Notification */}
+        {proctorNotice && (
+          <div className="proctor-notice-banner">
+            <span className="proctor-notice-icon">🛡️</span>
+            <div>
+              <strong>Security Protocol Notice:</strong> {proctorNotice}
+            </div>
+          </div>
+        )}
 
         {/* Pass/Fail Hero */}
         <div className={`result-hero ${passed ? "passed" : "failed"}`}>

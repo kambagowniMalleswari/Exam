@@ -1159,11 +1159,12 @@
   font-family: 'Outfit', sans-serif;
   font-size: 1.8rem;
   font-weight: 800;
+  color: #ffffff !important;
   margin: 0 0 8px 0;
 }
 
 .cta-strip-card p {
-  color: #94a3b8;
+  color: #cbd5e1 !important;
   font-size: 1rem;
   margin: 0;
 }

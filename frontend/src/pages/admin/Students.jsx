@@ -21,6 +21,7 @@ import {
   validateUsername,
   validatePhone
 } from "../../utils/validation.js";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import "./Students.css";
 
 const Students = () => {
@@ -39,6 +40,8 @@ const Students = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
+  const [deleteStudentTarget, setDeleteStudentTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [batches, setBatches] = useState([]);
   const [batchFilter, setBatchFilter] = useState("");
@@ -204,19 +207,23 @@ const Students = () => {
     }
   };
 
-  const handleDeleteStudent = async (student) => {
-    const confirm = window.confirm(
-      `Are you sure you want to delete student "${student.name}"? This action cannot be undone.`
-    );
-    if (!confirm) return;
+  const handleDeleteStudent = (student) => {
+    setDeleteStudentTarget(student);
+  };
 
+  const confirmDeleteStudent = async () => {
+    if (!deleteStudentTarget) return;
     try {
-      await api.delete(`/users/${student._id}`);
-      setFeedback(`Student "${student.name}" deleted.`);
+      setDeleteLoading(true);
+      await api.delete(`/users/${deleteStudentTarget._id}`);
+      setFeedback(`Student "${deleteStudentTarget.name}" deleted.`);
       setTimeout(() => setFeedback(""), 4000);
+      setDeleteStudentTarget(null);
       await fetchStudents();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to delete student.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -827,6 +834,18 @@ const Students = () => {
             </div>
           );
         })()}
+
+        {/* Centered Modern Delete Confirmation Modal */}
+        <ConfirmModal
+          isOpen={!!deleteStudentTarget}
+          title="Delete Student Account?"
+          message="Are you sure you want to permanently delete this student? All associated cohort enrollments and test attempts will be removed."
+          itemName={deleteStudentTarget ? `${deleteStudentTarget.name} (${deleteStudentTarget.email})` : ""}
+          confirmText="Yes, Delete Student"
+          loading={deleteLoading}
+          onConfirm={confirmDeleteStudent}
+          onCancel={() => !deleteLoading && setDeleteStudentTarget(null)}
+        />
       </div>
     </DashboardLayout>
   );

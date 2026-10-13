@@ -53,12 +53,31 @@ export const AuthProvider = ({ children }) => {
       } finally {
         if (isMounted) setLoading(false);
       }
-
     };
 
     initializeAuth();
+
+    // Listen for storage changes across tabs to eliminate session desync
+    const handleStorageChange = (e) => {
+      if (e.key === "user" || e.key === "token") {
+        try {
+          const storedUser = localStorage.getItem("user");
+          const storedToken = localStorage.getItem("token");
+          if (!storedToken || !storedUser) {
+            setUser(null);
+          } else {
+            setUser(JSON.parse(storedUser));
+          }
+        } catch {
+          setUser(null);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
     return () => {
       isMounted = false;
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 

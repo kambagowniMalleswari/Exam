@@ -18,6 +18,7 @@ import {
   UploadCloudIcon
 } from "../../components/common/Icons.jsx";
 import BatchAutoAllocationModal from "../../components/admin/BatchAutoAllocationModal.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import "./BatchesManager.css";
 
 const BatchesManager = () => {
@@ -37,6 +38,8 @@ const BatchesManager = () => {
   const [showStudentsModal, setShowStudentsModal] = useState(false);
   const [showAutoAllocModal, setShowAutoAllocModal] = useState(false);
   const [activeBatch, setActiveBatch] = useState(null);
+  const [deleteBatchTarget, setDeleteBatchTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -222,22 +225,23 @@ const BatchesManager = () => {
     }
   };
 
-  const handleDelete = async (batch) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete batch '${batch.name}' (${batch.batchNumber})? Enrolled students will be unlinked.`
-      )
-    ) {
-      return;
-    }
+  const handleDelete = (batch) => {
+    setDeleteBatchTarget(batch);
+  };
 
+  const confirmDeleteBatch = async () => {
+    if (!deleteBatchTarget) return;
     try {
-      await api.delete(`/batches/${batch._id}`);
-      setFeedback(`Batch '${batch.name}' deleted.`);
+      setDeleteLoading(true);
+      await api.delete(`/batches/${deleteBatchTarget._id}`);
+      setFeedback(`Batch '${deleteBatchTarget.name}' deleted.`);
       setTimeout(() => setFeedback(""), 4000);
+      setDeleteBatchTarget(null);
       await fetchBatches();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to delete batch.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -964,6 +968,18 @@ const BatchesManager = () => {
             fetchBatches();
             loadPrerequisites();
           }}
+        />
+
+        {/* Centered Modern Delete Confirmation Modal */}
+        <ConfirmModal
+          isOpen={!!deleteBatchTarget}
+          title="Delete Cohort Batch?"
+          message="Are you sure you want to delete this cohort batch? Enrolled students will be unlinked from this batch."
+          itemName={deleteBatchTarget ? `${deleteBatchTarget.name} (${deleteBatchTarget.batchNumber})` : ""}
+          confirmText="Yes, Delete Batch"
+          loading={deleteLoading}
+          onConfirm={confirmDeleteBatch}
+          onCancel={() => !deleteLoading && setDeleteBatchTarget(null)}
         />
       </div>
     </DashboardLayout>

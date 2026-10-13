@@ -67,6 +67,25 @@
   to { transform: rotate(360deg); }
 }
 
+/* Proctoring Notice Banner */
+.proctor-notice-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-left: 4px solid #e11d48;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  color: #9f1239;
+  font-size: 0.92rem;
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.05);
+}
+
+.proctor-notice-icon {
+  font-size: 1.4rem;
+}
+
 /* Result Hero */
 .result-hero {
   display: flex;

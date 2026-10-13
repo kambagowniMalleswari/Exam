@@ -19,8 +19,68 @@ const TakeTest = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [autoSubmitted, setAutoSubmitted] = useState(false);
 
+  // Proctoring tab-switch state
+  const [tabSwitches, setTabSwitches] = useState(0);
+  const [showProctorWarning, setShowProctorWarning] = useState(false);
+  const [proctorWarningStage, setProctorWarningStage] = useState(1);
+  const [proctorSubmitted, setProctorSubmitted] = useState(false);
+
   const timerRef = useRef(null);
   const submitRef = useRef(false);
+  const lastSwitchTimeRef = useRef(0);
+  const tabSwitchesRef = useRef(0);
+
+  // Tab-switch & focus loss detection
+  const handleTabSwitch = useCallback(() => {
+    // Only detect if test is loaded, active, and not currently submitting
+    if (loading || submitRef.current || autoSubmitted || proctorSubmitted) return;
+
+    const now = Date.now();
+    // Debounce to prevent multiple events from a single switch (visibilitychange + blur)
+    if (now - lastSwitchTimeRef.current < 1500) return;
+    lastSwitchTimeRef.current = now;
+
+    const nextCount = tabSwitchesRef.current + 1;
+    tabSwitchesRef.current = nextCount;
+    setTabSwitches(nextCount);
+
+    if (nextCount >= 3) {
+      // 3rd violation: Auto-submit test immediately!
+      setProctorWarningStage(3);
+      setShowProctorWarning(true);
+      setProctorSubmitted(true);
+      submitRef.current = true;
+      if (timerRef.current) clearInterval(timerRef.current);
+
+      setTimeout(() => {
+        submitAttempt(true, "Auto-submitted: 3 tab switches detected (Focus & Tab-Switch Proctoring)");
+      }, 2500);
+    } else {
+      // Strike 1 or Strike 2: Show popup modal
+      setProctorWarningStage(nextCount);
+      setShowProctorWarning(true);
+    }
+  }, [loading, autoSubmitted, proctorSubmitted]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        handleTabSwitch();
+      }
+    };
+
+    const handleWindowBlur = () => {
+      handleTabSwitch();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleWindowBlur);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleWindowBlur);
+    };
+  }, [handleTabSwitch]);
 
   // Load attempt + questions
   useEffect(() => {
@@ -98,15 +158,20 @@ const TakeTest = () => {
     submitRef.current = true;
     setAutoSubmitted(true);
     clearInterval(timerRef.current);
-    await submitAttempt(true);
+    await submitAttempt(true, "Time expired");
   }, []);
 
-  const submitAttempt = async (isAuto = false) => {
+  const submitAttempt = async (isAuto = false, reason = "") => {
     try {
       setSubmitting(true);
       const res = await api.post(`/attempts/${attemptId}/submit`, { answers });
       const resultAttemptId = res.data.attempt?._id || attemptId;
-      navigate(`/student/result/${resultAttemptId}`, { state: { autoSubmitted: isAuto } });
+      navigate(`/student/result/${resultAttemptId}`, {
+        state: {
+          autoSubmitted: isAuto,
+          submissionReason: reason || (isAuto ? "Exam automatically submitted" : "Manual submission")
+        }
+      });
     } catch (err) {
       setError(err.response?.data?.message || "Submission failed. Please try again.");
       submitRef.current = false;
@@ -254,6 +319,88 @@ const TakeTest = () => {
         </div>
       )}
 
+      {/* Focus & Tab-Switch Proctoring Alert Modal */}
+      {showProctorWarning && (
+        <div className="modal-overlay proctor-overlay">
+          <div className={`confirm-modal proctor-modal stage-${proctorWarningStage}`}>
+            <div className="modal-icon">
+              {proctorWarningStage === 1 && "⚠️"}
+              {proctorWarningStage === 2 && "🚨"}
+              {proctorWarningStage >= 3 && "⛔"}
+            </div>
+
+            <div className="proctor-pill-tag">
+              Focus &amp; Tab-Switch Proctoring
+            </div>
+
+            <h2>
+              {proctorWarningStage === 1 && "Tab Switch Detected (Warning 1 of 3)"}
+              {proctorWarningStage === 2 && "FINAL WARNING: Tab Switch Detected (2 of 3)"}
+              {proctorWarningStage >= 3 && "Exam Terminated (3 of 3 Infractions)"}
+            </h2>
+
+            <p className="proctor-modal-msg">
+              {proctorWarningStage === 1 && (
+                <>
+                  You navigated away from the exam window or switched tabs.
+                  <br />
+                  Under enterprise proctoring rules, your session is monitored in real-time.
+                  <strong style={{ display: "block", marginTop: "8px", color: "#b45309" }}>
+                    You have 2 warnings remaining before your exam is automatically submitted.
+                  </strong>
+                </>
+              )}
+              {proctorWarningStage === 2 && (
+                <>
+                  You left the exam window a second time!
+                  <br />
+                  <strong style={{ display: "block", marginTop: "8px", color: "#dc2626" }}>
+                    ATTENTION: Navigating away or switching tabs ONE MORE TIME will immediately and irreversibly submit your examination.
+                  </strong>
+                </>
+              )}
+              {proctorWarningStage >= 3 && (
+                <>
+                  You have exceeded the maximum limit of 3 tab switch infractions.
+                  <br />
+                  In accordance with Examination Security protocols, your test has been locked and is now being automatically submitted.
+                </>
+              )}
+            </p>
+
+            <div className="proctor-meter">
+              <div className={`proctor-meter-bar step-1 ${tabSwitches >= 1 ? "active" : ""}`}>
+                <span>Strike 1</span>
+              </div>
+              <div className={`proctor-meter-bar step-2 ${tabSwitches >= 2 ? "active" : ""}`}>
+                <span>Strike 2</span>
+              </div>
+              <div className={`proctor-meter-bar step-3 ${tabSwitches >= 3 ? "active danger" : ""}`}>
+                <span>Strike 3 (Auto-Submit)</span>
+              </div>
+            </div>
+
+            {proctorWarningStage < 3 ? (
+              <div className="modal-actions" style={{ marginTop: "1.25rem" }}>
+                <button
+                  className={`btn-modal-resume ${proctorWarningStage === 2 ? "btn-urgent" : ""}`}
+                  onClick={() => setShowProctorWarning(false)}
+                >
+                  {proctorWarningStage === 1 ? "✓ I Understand, Resume Exam" : "⚠️ Return to Exam (Last Chance)"}
+                </button>
+              </div>
+            ) : (
+              <div className="submitting-spinner-row" style={{ marginTop: "1.25rem" }}>
+                <div className="spinner" style={{ margin: "0 auto 10px auto" }}></div>
+                <span style={{ fontSize: "0.9rem", color: "#64748b", fontWeight: 600 }}>
+                  Finalizing &amp; submitting your test answers...
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Top Header Bar */}
       <header className="exam-header">
         <div className="exam-header-left">
@@ -275,6 +422,14 @@ const TakeTest = () => {
               {timeLeft !== null ? formatTime(timeLeft) : "--:--"}
             </span>
             <span className="timer-label">remaining</span>
+          </div>
+
+          {/* Real-time Focus & Tab-Switch Proctoring Indicator */}
+          <div className={`exam-proctor-chip ${tabSwitches > 0 ? (tabSwitches >= 2 ? "danger" : "warning") : "safe"}`}>
+            <span className="proctor-chip-icon">🛡️</span>
+            <span className="proctor-chip-text">
+              {tabSwitches === 0 ? "Focus Monitored" : `Tab Switches: ${tabSwitches}/3`}
+            </span>
           </div>
         </div>
 

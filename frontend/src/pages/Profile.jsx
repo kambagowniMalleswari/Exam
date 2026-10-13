@@ -36,8 +36,7 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState(
     requestedTab || "overview"
   );
-  const [loading, setLoading] = useState(false);
-  const [profileData, setProfileData] = useState(null);
+  const [profileData, setProfileData] = useState(user);
 
   // Sync tab if URL param changes
   useEffect(() => {
@@ -52,13 +51,25 @@ const Profile = () => {
   };
 
   // Edit form state
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [subject, setSubject] = useState("");
-  const [avatar, setAvatar] = useState("");
-  const [avatarPreview, setAvatarPreview] = useState("");
+  const [name, setName] = useState(user?.name || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [subject, setSubject] = useState(user?.subject || "");
+  const [avatar, setAvatar] = useState(user?.avatar || "");
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar || "");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileAlert, setProfileAlert] = useState({ text: "", type: "" });
+
+  // Keep form fields synced when auth user changes
+  useEffect(() => {
+    if (user) {
+      setProfileData(user);
+      setName(user.name || "");
+      setPhone(user.phone || "");
+      setSubject(user.subject || "");
+      setAvatar(user.avatar || "");
+      setAvatarPreview(user.avatar || "");
+    }
+  }, [user]);
 
   // OTP Password Reset state
   const [otpStep, setOtpStep] = useState(1); // 1 = request otp, 2 = verify & reset
@@ -97,6 +108,7 @@ const Profile = () => {
       const u = res.data?.user;
       if (u) {
         setProfileData(u);
+        if (updateUser) updateUser(u);
         setName(u.name || "");
         setPhone(u.phone || "");
         setSubject(u.subject || "");
@@ -263,12 +275,13 @@ const Profile = () => {
     return matchesSearch && matchesBatch;
   });
 
-  const userActiveRole = profileData?.role || user?.role || "";
+  const activeUser = user || profileData;
+  const userActiveRole = activeUser?.role || "";
   const isSuperAdmin = userActiveRole === "super_admin" || userActiveRole === "superadmin";
   const uniqueBatches = Array.from(new Set(orgStudents.map((s) => s.batchNumber).filter(Boolean)));
   const orgName = isSuperAdmin
     ? "Platform Super Admin (Global Scope)"
-    : (profileData?.organizationId?.name || user?.organizationId?.name || "Independent / Platform User");
+    : (activeUser?.organizationId?.name || "Independent / Platform User");
 
   let profileTitle = "Account & Faculty Profile";
   if (isSuperAdmin) {
@@ -286,14 +299,14 @@ const Profile = () => {
         <div className="profile-hero-card">
           <div className="profile-avatar-box">
             <div className="profile-avatar-circle" style={{ overflow: "hidden" }}>
-              {(avatarPreview || profileData?.avatar || user?.avatar) ? (
+              {(avatarPreview || activeUser?.avatar) ? (
                 <img
-                  src={avatarPreview || profileData?.avatar || user?.avatar}
-                  alt={profileData?.name || user?.name || "Avatar"}
+                  src={avatarPreview || activeUser?.avatar}
+                  alt={activeUser?.name || "Avatar"}
                   className="profile-avatar-image"
                 />
               ) : (
-                profileData?.name?.charAt(0).toUpperCase() || user?.name?.charAt(0).toUpperCase() || "U"
+                activeUser?.name?.charAt(0).toUpperCase() || "U"
               )}
             </div>
             <span className="profile-avatar-badge">
@@ -303,24 +316,24 @@ const Profile = () => {
 
           <div className="profile-hero-details">
             <div className="profile-hero-name-row">
-              <h2>{profileData?.name || user?.name}</h2>
-              <span className={`role-pill role-${profileData?.role || user?.role}`}>
-                {(profileData?.role || user?.role)?.replace("_", " ").toUpperCase()}
+              <h2>{activeUser?.name}</h2>
+              <span className={`role-pill role-${activeUser?.role}`}>
+                {activeUser?.role?.replace("_", " ").toUpperCase()}
               </span>
             </div>
 
             <p className="profile-hero-sub">
-              <MailIcon size={14} /> <span>{profileData?.email || user?.email}</span>
-              {profileData?.phone && (
+              <MailIcon size={14} /> <span>{activeUser?.email}</span>
+              {activeUser?.phone && (
                 <>
                   <span className="dot-sep">•</span>
-                  <PhoneIcon size={14} /> <span>{profileData.phone}</span>
+                  <PhoneIcon size={14} /> <span>{activeUser?.phone}</span>
                 </>
               )}
-              {profileData?.subject && (
+              {activeUser?.subject && (
                 <>
                   <span className="dot-sep">•</span>
-                  <GraduationCapIcon size={14} /> <span>{profileData.subject}</span>
+                  <GraduationCapIcon size={14} /> <span>{activeUser?.subject}</span>
                 </>
               )}
             </p>
@@ -338,9 +351,9 @@ const Profile = () => {
               <span className="hero-tag">
                 <ShieldIcon size={13} /> Verified Account
               </span>
-              {profileData?.createdAt && (
+              {activeUser?.createdAt && (
                 <span className="hero-tag">
-                  <ClockIcon size={13} /> Member since {new Date(profileData.createdAt).toLocaleDateString()}
+                  <ClockIcon size={13} /> Member since {new Date(activeUser?.createdAt).toLocaleDateString()}
                 </span>
               )}
             </div>
@@ -500,22 +513,22 @@ const Profile = () => {
             <div className="overview-details-grid">
               <div className="overview-field-card">
                 <span className="field-label">Full Name</span>
-                <span className="field-value">{profileData?.name || user?.name}</span>
+                <span className="field-value">{activeUser?.name}</span>
               </div>
 
               <div className="overview-field-card">
                 <span className="field-label">Official Email Address</span>
-                <span className="field-value">{profileData?.email || user?.email}</span>
+                <span className="field-value">{activeUser?.email}</span>
               </div>
 
               <div className="overview-field-card">
                 <span className="field-label">Contact Phone</span>
-                <span className="field-value">{profileData?.phone || "Not configured"}</span>
+                <span className="field-value">{activeUser?.phone || "Not configured"}</span>
               </div>
 
               <div className="overview-field-card">
                 <span className="field-label">Platform Role</span>
-                <span className="field-value capitalize">{(profileData?.role || user?.role)?.replace("_", " ")}</span>
+                <span className="field-value capitalize">{activeUser?.role?.replace("_", " ")}</span>
               </div>
 
               {isSuperAdmin ? (
@@ -532,18 +545,17 @@ const Profile = () => {
                 </div>
               )}
 
-              {profileData?.subject && (
+              {activeUser?.subject && (
                 <div className="overview-field-card">
                   <span className="field-label">Teaching Department / Subject</span>
-                  <span className="field-value">{profileData.subject}</span>
+                  <span className="field-value">{activeUser.subject}</span>
                 </div>
               )}
-
 
               <div className="overview-field-card">
                 <span className="field-label">Registered On</span>
                 <span className="field-value">
-                  {profileData?.createdAt ? new Date(profileData.createdAt).toLocaleDateString() : "—"}
+                  {activeUser?.createdAt ? new Date(activeUser.createdAt).toLocaleDateString() : "—"}
                 </span>
               </div>
             </div>

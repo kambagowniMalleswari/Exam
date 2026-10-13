@@ -9,6 +9,7 @@ import {
   ClockIcon,
   XIcon
 } from "../../components/common/Icons.jsx";
+import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import "./TeacherRequestsManager.css";
 
 const TeacherRequestsManager = () => {
@@ -30,6 +31,8 @@ const TeacherRequestsManager = () => {
   // Approval credentials modal
   const [provisionResult, setProvisionResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [approveTarget, setApproveTarget] = useState(null);
+  const [approveLoading, setApproveLoading] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -52,22 +55,27 @@ const TeacherRequestsManager = () => {
     }
   };
 
-  const handleApprove = async (appId) => {
-    if (!window.confirm("Are you sure you want to approve this teacher application? An active faculty account will be provisioned.")) {
-      return;
-    }
+  const handleApprove = (app) => {
+    setApproveTarget(app);
+  };
 
+  const confirmApprove = async () => {
+    if (!approveTarget) return;
+    const appId = approveTarget._id;
     try {
+      setApproveLoading(true);
       setProcessingId(appId);
       setSuccessMsg("");
       const res = await api.post(`/teacher-applications/${appId}/approve`);
       setProvisionResult(res.data);
       setSuccessMsg(res.data?.message || "Teacher application approved successfully!");
+      setApproveTarget(null);
       fetchApplications();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to approve application.");
     } finally {
       setProcessingId(null);
+      setApproveLoading(false);
     }
   };
 
@@ -206,7 +214,7 @@ const TeacherRequestsManager = () => {
                               <button
                                 type="button"
                                 className="btn-trm-approve"
-                                onClick={() => handleApprove(app._id)}
+                                onClick={() => handleApprove(app)}
                                 disabled={processingId === app._id}
                               >
                                 {processingId === app._id ? "..." : "Approve"}
@@ -303,8 +311,9 @@ const TeacherRequestsManager = () => {
                       type="button"
                       className="btn-trm-approve"
                       onClick={() => {
-                        handleApprove(viewingApp._id);
+                        const app = viewingApp;
                         setViewingApp(null);
+                        handleApprove(app);
                       }}
                     >
                       Approve & Grant Teacher Role
@@ -439,6 +448,20 @@ const TeacherRequestsManager = () => {
             </div>
           </div>
         )}
+
+        {/* Centered Modern Approval Confirmation Modal */}
+        <ConfirmModal
+          isOpen={!!approveTarget}
+          title="Approve Faculty Application?"
+          message="Are you sure you want to approve this instructor application? A verified faculty login account will be provisioned."
+          itemName={approveTarget ? `${approveTarget.name} (${approveTarget.email})` : ""}
+          confirmText="Yes, Provision Faculty Account"
+          cancelText="Cancel"
+          type="warning"
+          loading={approveLoading}
+          onConfirm={confirmApprove}
+          onCancel={() => !approveLoading && setApproveTarget(null)}
+        />
       </div>
     </DashboardLayout>
   );

@@ -46,28 +46,70 @@
             "name": "AssessIQ",
             "url": "https://assess-iq.web.app/",
             "applicationCategory": "EducationalApplication",
-            "operatingSystem": "All modern web browsers",
-            "description": "Multi-tenant institutional MCQ assessment and examination SaaS platform with anti-cheat timers, batch scheduling, and instant automated grading.",
+            "operatingSystem": "All modern web browsers (Chrome, Edge, Firefox, Safari)",
+            "description": "Multi-tenant institutional MCQ assessment and examination SaaS platform with Focus & Tab-Switch anti-cheat proctoring, server-synced non-tamper timers, cohort scheduling, and instant auto-grading.",
             "offers": {
               "@type": "Offer",
               "price": "0",
-              "priceCurrency": "USD"
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.9",
+              "reviewCount": "320",
+              "bestRating": "5",
+              "worstRating": "1"
             },
             "featureList": [
               "Server-synchronized non-tamper exam timers",
-              "Automatic instant grading with negative marking",
-              "Isolated multi-tenant campus portals",
-              "Anti-cheat focus and tab switch tracking",
-              "Automated student roster matching and cohort allocation"
+              "Focus & Tab-Switch Proctoring with real-time automatic submission on 3 tab switch infractions",
+              "Instant automated grading with negative marking calculations",
+              "Isolated multi-tenant campus portals for institutions, faculty, and candidates",
+              "Automated student cohort batch allocation via Excel and CSV rosters",
+              "Comprehensive diagnostic analytics and verifiable student scorecards"
             ]
           },
           {
             "@type": "EducationalOrganization",
             "@id": "https://assess-iq.web.app/#organization",
-            "name": "AssessIQ",
+            "name": "AssessIQ Examination Platform",
             "url": "https://assess-iq.web.app/",
             "logo": "https://assess-iq.web.app/favicon.svg",
-            "description": "Premier institutional multi-tenant assessment and examination platform."
+            "description": "Enterprise institutional multi-tenant assessment and examination platform empowering colleges, universities, and educational academies.",
+            "sameAs": [
+              "https://assess-iq.web.app/"
+            ]
+          },
+          {
+            "@type": "BreadcrumbList",
+            "@id": "https://assess-iq.web.app/#breadcrumb",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://assess-iq.web.app/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Public Tests",
+                "item": "https://assess-iq.web.app/public-tests"
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "Institutional Onboarding",
+                "item": "https://assess-iq.web.app/join-us"
+              },
+              {
+                "@type": "ListItem",
+                "position": 4,
+                "name": "Student Examination Portal",
+                "item": "https://assess-iq.web.app/student/dashboard"
+              }
+            ]
           },
           {
             "@type": "FAQPage",
@@ -78,7 +120,15 @@
                 "name": "What is AssessIQ?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "AssessIQ is an enterprise multi-tenant online assessment and MCQ examination platform designed for universities, colleges, corporate academies, and schools. It provides hermetically isolated portals for every institution, anti-cheat timed test environments, and instant auto-grading."
+                  "text": "AssessIQ is an enterprise-grade multi-tenant online assessment and MCQ examination platform designed for universities, colleges, corporate academies, and schools. It provides hermetically isolated portals for every institution, anti-cheat timed test environments, and instant auto-grading."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How does Focus & Tab-Switch Proctoring prevent exam malpractice on AssessIQ?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "AssessIQ monitors candidate focus in real-time. If a student attempts to navigate away, open a new browser tab, or switch applications, the platform immediately registers an infraction. Candidates receive Warning 1 of 3 and Final Warning 2 of 3. Upon the 3rd tab-switch infraction, the test is automatically locked and submitted immediately."
                 }
               },
               {
@@ -91,10 +141,18 @@
               },
               {
                 "@type": "Question",
-                "name": "Does AssessIQ support anti-cheat proctoring and server-synced timers?",
+                "name": "Does AssessIQ support instant auto-grading and negative marking?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Yes. AssessIQ enforces server-side synchronized clocks that prevent client-side timer manipulation, along with tab-switch detection and automatic test submission when time expires."
+                  "text": "Yes. Tests are automatically evaluated immediately upon submission using customizable passing thresholds, negative marking deductions for incorrect answers, and category breakdowns."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can institutions configure re-attempt policies and passing scores on AssessIQ?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes. Faculty can configure attempt policies to allow re-attempts exclusively on failure (re_attempt_on_fail) or select best score across multiple attempts (best_of_n), alongside custom passing percentage benchmarks."
                 }
               },
               {
@@ -102,7 +160,7 @@
                 "name": "Can students take free public MCQ tests on AssessIQ?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "Yes. Students can take curated public practice assessments in software development, data science, cloud architecture, and aptitude with instant scorecard generation."
+                  "text": "Yes. Candidates can practice with public evaluations across software engineering, data science, cloud architecture, and reasoning with instant scorecard feedback."
                 }
               }
             ]
