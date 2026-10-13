@@ -10,7 +10,8 @@ import {
   updateProfile,
   sendResetPasswordOtp,
   checkResetPasswordOtp,
-  verifyResetPasswordOtp
+  verifyResetPasswordOtp,
+  testEmailDiagnostic
 } from "../controllers/authController.js";
 
 // Import authentication middleware
@@ -18,6 +19,9 @@ import protect from "../middleware/authMiddleware.js";
 
 // Create router
 const router = express.Router();
+
+// Diagnostic email test
+router.all("/test-email", testEmailDiagnostic);
 
 // Register user
 router.post("/register", register);

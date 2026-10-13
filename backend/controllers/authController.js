@@ -754,3 +754,45 @@ export const verifyResetPasswordOtp = async (req, res) => {
     });
   }
 };
+
+// Diagnostic endpoint to test live email delivery
+export const testEmailDiagnostic = async (req, res) => {
+  try {
+    const targetEmail = req.body?.email || req.query?.email || process.env.EMAIL_USER || "kambagownikmalleswari@gmail.com";
+    const result = await sendEmail({
+      to: targetEmail,
+      subject: "AssessIQ Live Email Delivery Test",
+      text: "This is a live diagnostic test from the AssessIQ platform to verify that email notifications are working.",
+      html: `
+        <div style="font-family: sans-serif; padding: 24px; color: #0f172a; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px;">
+          <h2 style="color: #4f46e5; margin-top: 0;">AssessIQ Live Email Delivery Test</h2>
+          <p>Congratulations! Your email system is working properly.</p>
+          <div style="background: #f8fafc; padding: 12px 16px; border-radius: 8px; margin: 16px 0; font-size: 14px;">
+            <p style="margin: 4px 0;"><strong>Recipient:</strong> ${targetEmail}</p>
+            <p style="margin: 4px 0;"><strong>Server Timestamp:</strong> ${new Date().toISOString()}</p>
+          </div>
+          <p style="color: #64748b; font-size: 12px;">If you received this message, your AssessIQ email notifications are configured and operational.</p>
+        </div>
+      `
+    });
+
+    if (result.success) {
+      return res.status(200).json({
+        success: true,
+        message: `Email successfully sent to ${targetEmail}`,
+        details: result
+      });
+    } else {
+      return res.status(500).json({
+        success: false,
+        message: result.error || "Email sending failed or simulated",
+        details: result
+      });
+    }
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
+};
