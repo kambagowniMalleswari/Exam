@@ -21,7 +21,8 @@ export const createQuestion = async (req, res) => {
       marks = 1,
       negativeMarks = 0,
       order,
-      explanation = ""
+      explanation = "",
+      section = "Section A"
     } = req.body;
 
     // Check required fields
@@ -89,7 +90,8 @@ export const createQuestion = async (req, res) => {
       marks: Number(marks) || 1,
       negativeMarks: Number(negativeMarks) || 0,
       order: questionOrder,
-      explanation: explanation || ""
+      explanation: explanation || "",
+      section: section ? section.trim() : "Section A"
     });
 
     // Update test total marks
@@ -296,7 +298,8 @@ export const updateQuestion = async (req, res) => {
       marks,
       negativeMarks,
       order,
-      explanation
+      explanation,
+      section
     } = req.body;
 
     if (questionText !== undefined) question.questionText = questionText.trim();
@@ -314,6 +317,7 @@ export const updateQuestion = async (req, res) => {
     if (negativeMarks !== undefined) question.negativeMarks = Number(negativeMarks) || 0;
     if (order !== undefined) question.order = Number(order) || 1;
     if (explanation !== undefined) question.explanation = explanation;
+    if (section !== undefined) question.section = section ? section.trim() : "Section A";
 
     await question.save();
 

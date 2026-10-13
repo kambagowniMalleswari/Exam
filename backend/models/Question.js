@@ -69,6 +69,13 @@ const questionSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true
+    },
+
+    // Optional section: 'Section A', 'Section B', 'Section C', etc.
+    section: {
+      type: String,
+      default: "Section A",
+      trim: true
     }
   },
   {

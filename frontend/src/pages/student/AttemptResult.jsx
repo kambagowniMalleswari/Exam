@@ -146,7 +146,15 @@ const AttemptResult = () => {
         <div className="score-section">
           <div className="score-main-card">
             <div className="score-circle-wrapper">
-              <div className={`score-circle ${passed ? "pass" : "fail"}`}>
+              <div
+                className={`score-circle ${passed ? "pass" : "fail"}`}
+                style={{
+                  background: percentage >= 100
+                    ? (passed ? "#10b981" : "#ef4444")
+                    : `conic-gradient(${passed ? "#10b981" : "#ef4444"} ${Math.max(0, percentage)}%, #e2e8f0 0%)`,
+                  "--pct": `${Math.max(0, percentage)}%`
+                }}
+              >
                 <div className="score-circle-inner">
                   <strong>{percentage.toFixed(1)}%</strong>
                   <span>Score</span>

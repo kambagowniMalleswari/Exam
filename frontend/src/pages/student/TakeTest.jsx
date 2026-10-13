@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api.js";
 import "./TakeTest.css";
@@ -229,6 +229,88 @@ const TakeTest = () => {
   const unansweredCount = questions.length - answeredCount;
   const flaggedCount = Object.values(flagged).filter(Boolean).length;
 
+  // Derive sections (Section A, Section B, Section C)
+  const sections = useMemo(() => {
+    if (!questions || questions.length === 0) return [];
+
+    // Check if questions have custom section defined
+    const hasCustomSections = questions.some((q) => q.section && q.section.trim() !== "");
+
+    if (hasCustomSections) {
+      const secMap = new Map();
+      questions.forEach((q, idx) => {
+        const secName = q.section?.trim() || "Section A";
+        if (!secMap.has(secName)) {
+          secMap.set(secName, []);
+        }
+        secMap.get(secName).push({ ...q, _globalIndex: idx });
+      });
+
+      return Array.from(secMap.entries()).map(([name, qs]) => ({
+        name,
+        questions: qs,
+        startIndex: qs[0]._globalIndex,
+        answeredCount: qs.filter((q) => answers[q._id]).length
+      }));
+    }
+
+    // Default intelligent partitioning into Section A, Section B, Section C
+    const total = questions.length;
+    let sectionDefs = [];
+
+    if (total <= 2) {
+      if (total === 1) {
+        sectionDefs = [
+          { name: "Section A", slice: [0, 1] }
+        ];
+      } else {
+        sectionDefs = [
+          { name: "Section A", slice: [0, 1] },
+          { name: "Section B", slice: [1, 2] }
+        ];
+      }
+    } else {
+      const part1 = Math.ceil(total / 3);
+      const part2 = Math.ceil((total - part1) / 2);
+      const split1 = part1;
+      const split2 = part1 + part2;
+
+      sectionDefs = [
+        { name: "Section A", slice: [0, split1] },
+        { name: "Section B", slice: [split1, split2] },
+        { name: "Section C", slice: [split2, total] }
+      ];
+    }
+
+    return sectionDefs.map((def) => {
+      const qs = questions.slice(def.slice[0], def.slice[1]).map((q, i) => ({
+        ...q,
+        _globalIndex: def.slice[0] + i
+      }));
+
+      return {
+        name: def.name,
+        questions: qs,
+        startIndex: qs[0]?._globalIndex ?? 0,
+        answeredCount: qs.filter((q) => answers[q._id]).length
+      };
+    });
+  }, [questions, answers]);
+
+  const currentSection = useMemo(() => {
+    if (!sections.length) return null;
+    return sections.find((sec) =>
+      sec.questions.some((q) => q._globalIndex === currentIdx)
+    ) || sections[0];
+  }, [sections, currentIdx]);
+
+  const handleSelectSection = (secName) => {
+    const targetSec = sections.find((s) => s.name === secName);
+    if (targetSec && targetSec.questions.length > 0) {
+      setCurrentIdx(targetSec.startIndex);
+    }
+  };
+
   const currentQuestion = questions[currentIdx];
   const isLowTime = timeLeft !== null && timeLeft < 300; // < 5 min
   const isCriticalTime = timeLeft !== null && timeLeft < 60; // < 1 min
@@ -453,6 +535,31 @@ const TakeTest = () => {
         </div>
       </header>
 
+      {/* Sections Navigation Bar (Section A, Section B, Section C) */}
+      {sections.length > 0 && (
+        <div className="exam-sections-bar">
+          <div className="section-label-chip">Sections:</div>
+          <div className="section-tabs-wrapper">
+            {sections.map((sec) => {
+              const isActive = currentSection?.name === sec.name;
+              return (
+                <button
+                  key={sec.name}
+                  className={`exam-section-tab ${isActive ? "active" : ""}`}
+                  onClick={() => handleSelectSection(sec.name)}
+                  title={`Switch to ${sec.name}`}
+                >
+                  <span className="sec-tab-title">{sec.name}</span>
+                  <span className="sec-tab-badge">
+                    {sec.answeredCount}/{sec.questions.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="exam-body">
 
@@ -461,9 +568,14 @@ const TakeTest = () => {
           {currentQuestion ? (
             <div className="question-container">
               <div className="question-meta">
-                <span className="question-number">
-                  Question {currentIdx + 1} of {questions.length}
-                </span>
+                <div className="question-meta-left">
+                  {currentSection && (
+                    <span className="section-indicator-pill">{currentSection.name}</span>
+                  )}
+                  <span className="question-number">
+                    Question {currentIdx + 1} of {questions.length}
+                  </span>
+                </div>
                 <div className="question-actions">
                   <button
                     className={`btn-flag ${flagged[currentQuestion._id] ? "flagged" : ""}`}
@@ -559,20 +671,33 @@ const TakeTest = () => {
             </div>
           </div>
 
-          <div className="palette-grid">
-            {questions.map((q, idx) => {
-              const status = getQuestionStatus(idx);
-              return (
-                <button
-                  key={q._id}
-                  className={`palette-btn ${status}`}
-                  onClick={() => setCurrentIdx(idx)}
-                  title={`Question ${idx + 1}`}
-                >
-                  {idx + 1}
-                </button>
-              );
-            })}
+          <div className="palette-sections-container">
+            {sections.map((sec) => (
+              <div key={sec.name} className="palette-section-group">
+                <div className="palette-section-header">
+                  <span className="pal-sec-name">{sec.name}</span>
+                  <span className="pal-sec-count">
+                    ({sec.answeredCount}/{sec.questions.length})
+                  </span>
+                </div>
+                <div className="palette-grid">
+                  {sec.questions.map((q) => {
+                    const globalIdx = q._globalIndex;
+                    const status = getQuestionStatus(globalIdx);
+                    return (
+                      <button
+                        key={q._id}
+                        className={`palette-btn ${status}`}
+                        onClick={() => setCurrentIdx(globalIdx)}
+                        title={`Question ${globalIdx + 1} (${sec.name})`}
+                      >
+                        {globalIdx + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="palette-submit-section">

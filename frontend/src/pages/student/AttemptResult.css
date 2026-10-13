@@ -186,11 +186,11 @@
 }
 
 .score-circle.pass {
-  background: conic-gradient(#10b981 var(--pct, 75%), #e2e8f0 0);
+  background: conic-gradient(#10b981 var(--pct, 100%), #e2e8f0 0);
 }
 
 .score-circle.fail {
-  background: conic-gradient(#ef4444 var(--pct, 40%), #e2e8f0 0);
+  background: conic-gradient(#ef4444 var(--pct, 0%), #e2e8f0 0);
 }
 
 .score-circle-inner {
