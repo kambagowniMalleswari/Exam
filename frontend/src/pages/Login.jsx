@@ -18,6 +18,8 @@ import {
 import { BrandCrest } from "../components/common/BrandLogo.jsx";
 import api from "../services/api.js";
 import { getDefaultDashboard, isRoleAuthorizedForPath, normalizeRole } from "../utils/roleUtils.js";
+import { dispatchFirebasePasswordReset } from "../services/firebaseMailService.js";
+import FirebaseMailTesterModal from "../components/common/FirebaseMailTesterModal.jsx";
 import "./Login.css";
 
 const Login = () => {
@@ -101,6 +103,7 @@ const Login = () => {
 
   // Forgot Password modal state (3-Step Progression)
   const [showForgotModal, setShowForgotModal] = useState(false);
+  const [showFirebaseTesterModal, setShowFirebaseTesterModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotOtp, setForgotOtp] = useState("");
   const [forgotNewPass, setForgotNewPass] = useState("");
@@ -191,6 +194,29 @@ const Login = () => {
       setForgotResendTimer(45);
     } catch (err) {
       setForgotMsg({ text: err.response?.data?.message || "Failed to dispatch reset code.", type: "error" });
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  // Send Instant Password Reset Link through Firebase Auth
+  const handleSendFirebaseResetLink = async (e) => {
+    if (e) e.preventDefault();
+    setForgotMsg({ text: "", type: "" });
+    const cleanEmail = forgotEmail.trim();
+    if (!cleanEmail) {
+      setForgotMsg({ text: "Please enter your registered account email first.", type: "error" });
+      return;
+    }
+    try {
+      setForgotLoading(true);
+      const res = await dispatchFirebasePasswordReset(cleanEmail);
+      setForgotMsg({
+        text: `✓ Firebase Password Reset link dispatched to ${cleanEmail}! Please check your inbox (and spam folder) to set a new password.`,
+        type: "success"
+      });
+    } catch (err) {
+      setForgotMsg({ text: err.message || "Failed to dispatch Firebase reset link.", type: "error" });
     } finally {
       setForgotLoading(false);
     }
@@ -582,7 +608,7 @@ const Login = () => {
             {forgotStep === 1 && (
               <form onSubmit={handleSendForgotOtp} className="auth-modal-body">
                 <p className="auth-modal-desc">
-                  Enter your registered institutional account email. We will dispatch a 6-digit verification code to verify your identity.
+                  Enter your registered institutional account email to choose your preferred recovery method.
                 </p>
                 <div className="field-group">
                   <label className="field-label">Registered Account Email</label>
@@ -599,20 +625,65 @@ const Login = () => {
                     />
                   </div>
                 </div>
-                <div className="auth-modal-actions">
+
+                {/* Recovery Action Buttons */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", margin: "1.25rem 0 0.5rem 0" }}>
+                  <button
+                    type="button"
+                    onClick={handleSendFirebaseResetLink}
+                    disabled={forgotLoading || !forgotEmail.trim()}
+                    style={{
+                      background: "linear-gradient(135deg, #f57c00 0%, #e65100 100%)",
+                      color: "#ffffff",
+                      border: "none",
+                      borderRadius: "10px",
+                      padding: "0.85rem 1rem",
+                      fontWeight: "700",
+                      fontSize: "0.9rem",
+                      cursor: forgotLoading || !forgotEmail.trim() ? "not-allowed" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "0.5rem",
+                      boxShadow: "0 4px 12px rgba(230, 81, 0, 0.25)",
+                      opacity: forgotLoading || !forgotEmail.trim() ? 0.6 : 1,
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    🔥 Send Firebase Password Reset Link (Instant)
+                  </button>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", margin: "0.25rem 0" }}>
+                    <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }}></div>
+                    <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" }}>OR USE OTP</span>
+                    <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }}></div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="auth-submit-btn"
+                    disabled={forgotLoading || !forgotEmail.trim()}
+                    style={{ width: "100%", margin: 0 }}
+                  >
+                    {forgotLoading ? "Dispatching..." : "✉️ Send 6-Digit OTP Code →"}
+                  </button>
+                </div>
+
+                <div style={{ marginTop: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #f1f5f9", paddingTop: "0.75rem" }}>
                   <button
                     type="button"
                     className="btn-modal-cancel"
+                    style={{ padding: "0.4rem 0.8rem", fontSize: "0.825rem" }}
                     onClick={() => setShowForgotModal(false)}
                   >
                     Cancel
                   </button>
                   <button
-                    type="submit"
-                    className="auth-submit-btn"
-                    disabled={forgotLoading}
+                    type="button"
+                    onClick={() => setShowFirebaseTesterModal(true)}
+                    style={{ background: "none", border: "none", color: "#e65100", fontSize: "0.8rem", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.3rem" }}
                   >
-                    {forgotLoading ? "Dispatching..." : "Dispatch Verification Code →"}
+                    🔥 Test Firebase Mailing
                   </button>
                 </div>
               </form>
@@ -801,6 +872,13 @@ const Login = () => {
           </div>
         </div>
       )}
+
+      {/* Firebase Mailing System Diagnostic Modal */}
+      <FirebaseMailTesterModal
+        isOpen={showFirebaseTesterModal}
+        onClose={() => setShowFirebaseTesterModal(false)}
+        defaultEmail={forgotEmail || email || "kambagownikmalleswari@gmail.com"}
+      />
     </div>
   );
 };

@@ -15,6 +15,7 @@ import {
   XIcon,
   FileTextIcon
 } from "../../components/common/Icons.jsx";
+import FirebaseMailTesterModal from "../../components/common/FirebaseMailTesterModal.jsx";
 import "./SuperAdminDashboard.css";
 
 const SuperAdminDashboard = () => {
@@ -49,6 +50,7 @@ const SuperAdminDashboard = () => {
 
   // Add Organization Modal State
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showFirebaseModal, setShowFirebaseModal] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
   const [pendingOrgCount, setPendingOrgCount] = useState(0);
@@ -216,6 +218,27 @@ const SuperAdminDashboard = () => {
             )}
             <button
               type="button"
+              className="btn-sad-secondary"
+              style={{
+                background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
+                border: "1.5px solid #fed7aa",
+                color: "#c2410c",
+                fontWeight: "700",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                padding: "0.6rem 1.1rem",
+                borderRadius: "8px",
+                cursor: "pointer",
+                boxShadow: "0 2px 6px rgba(194, 65, 12, 0.1)"
+              }}
+              onClick={() => setShowFirebaseModal(true)}
+              title="Test & Diagnose Firebase & SMTP Mailing Systems"
+            >
+              🔥 Test Mailing System
+            </button>
+            <button
+              type="button"
               className="btn-sad-primary"
               onClick={() => {
                 setCreatedCredentials(null);
@@ -227,6 +250,7 @@ const SuperAdminDashboard = () => {
             </button>
           </div>
         </div>
+
 
         {pendingOrgCount > 0 && (
           <div
@@ -791,6 +815,12 @@ const SuperAdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {/* Firebase & SMTP Mailing Diagnostic Modal */}
+        <FirebaseMailTesterModal
+          isOpen={showFirebaseModal}
+          onClose={() => setShowFirebaseModal(false)}
+        />
       </div>
     </DashboardLayout>
   );

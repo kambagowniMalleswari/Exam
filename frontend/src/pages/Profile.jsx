@@ -26,12 +26,16 @@ import {
   validatePhone,
   validateUsername
 } from "../utils/validation.js";
+import { dispatchFirebasePasswordReset } from "../services/firebaseMailService.js";
+import FirebaseMailTesterModal from "../components/common/FirebaseMailTesterModal.jsx";
 import "./Profile.css";
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get("tab");
+  const [showFirebaseModal, setShowFirebaseModal] = useState(false);
+  const [firebaseResetLoading, setFirebaseResetLoading] = useState(false);
 
   const [activeTab, setActiveTab] = useState(
     requestedTab || "overview"
@@ -202,6 +206,27 @@ const Profile = () => {
       setSecurityAlert({ text: err.response?.data?.message || "Failed to dispatch reset code.", type: "error" });
     } finally {
       setOtpLoading(false);
+    }
+  };
+
+  const handleSendFirebaseReset = async () => {
+    const targetEmail = profileData?.email || user?.email;
+    if (!targetEmail) return;
+    try {
+      setFirebaseResetLoading(true);
+      setSecurityAlert({ text: "", type: "" });
+      await dispatchFirebasePasswordReset(targetEmail);
+      setSecurityAlert({
+        text: `✓ Official Firebase Password Reset link dispatched to ${targetEmail}! Please check your inbox and spam folder.`,
+        type: "success"
+      });
+    } catch (err) {
+      setSecurityAlert({
+        text: err.message || "Failed to dispatch Firebase reset link.",
+        type: "error"
+      });
+    } finally {
+      setFirebaseResetLoading(false);
     }
   };
 
@@ -717,16 +742,69 @@ const Profile = () => {
               {otpStep === 1 ? (
                 <div className="otp-step-1">
                   <p className="otp-instruction">
-                    Click the button below to dispatch a single-use verification code to your registered email address.
+                    Choose how you want to update your password for <strong>{profileData?.email || user?.email}</strong>:
                   </p>
-                  <button
-                    type="button"
-                    className="btn-primary-otp"
-                    onClick={handleSendOtp}
-                    disabled={otpLoading}
-                  >
-                    {otpLoading ? "Dispatching Code..." : "Send Verification OTP to My Email →"}
-                  </button>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxWidth: "420px", margin: "1rem 0" }}>
+                    <button
+                      type="button"
+                      style={{
+                        background: "linear-gradient(135deg, #f57c00 0%, #e65100 100%)",
+                        color: "#ffffff",
+                        border: "none",
+                        borderRadius: "10px",
+                        padding: "0.85rem 1.25rem",
+                        fontWeight: "700",
+                        fontSize: "0.925rem",
+                        cursor: firebaseResetLoading ? "not-allowed" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "0.5rem",
+                        boxShadow: "0 4px 12px rgba(230, 81, 0, 0.25)"
+                      }}
+                      onClick={handleSendFirebaseReset}
+                      disabled={firebaseResetLoading}
+                    >
+                      {firebaseResetLoading ? "Dispatching..." : "🔥 Send Firebase Password Reset Link"}
+                    </button>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }}></div>
+                      <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: "600" }}>OR</span>
+                      <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }}></div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn-primary-otp"
+                      onClick={handleSendOtp}
+                      disabled={otpLoading}
+                      style={{ margin: 0 }}
+                    >
+                      {otpLoading ? "Dispatching Code..." : "✉️ Send 6-Digit OTP Code →"}
+                    </button>
+                  </div>
+
+                  <div style={{ marginTop: "1rem" }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowFirebaseModal(true)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#e65100",
+                        fontSize: "0.825rem",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.35rem"
+                      }}
+                    >
+                      🔥 Open Firebase Mailing Diagnostic & Tester
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleVerifyOtpAndReset} className="otp-step-2-form">
@@ -835,6 +913,13 @@ const Profile = () => {
             </div>
           </div>
         )}
+
+        {/* Firebase Mailing Diagnostic Modal */}
+        <FirebaseMailTesterModal
+          isOpen={showFirebaseModal}
+          onClose={() => setShowFirebaseModal(false)}
+          defaultEmail={profileData?.email || user?.email}
+        />
       </div>
     </DashboardLayout>
   );

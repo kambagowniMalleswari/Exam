@@ -3,6 +3,10 @@ import axios from "axios";
 
 // Determine base API URL from environment or production Render backend
 const getBaseApiUrl = () => {
+  // If running in production browser (e.g. assess-iq.web.app, assess-iq.firebaseapp.com)
+  if (typeof window !== "undefined" && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1")) {
+    return "https://assess-iq-backend.onrender.com/api";
+  }
   if (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== "/api") {
     return import.meta.env.VITE_API_URL;
   }

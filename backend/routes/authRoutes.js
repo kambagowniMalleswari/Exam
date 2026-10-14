@@ -11,7 +11,10 @@ import {
   sendResetPasswordOtp,
   checkResetPasswordOtp,
   verifyResetPasswordOtp,
-  testEmailDiagnostic
+  testEmailDiagnostic,
+  sendFirebaseResetPassword,
+  testFirebaseMailingController,
+  getFirebaseMailingStatusController
 } from "../controllers/authController.js";
 
 // Import authentication middleware
@@ -20,8 +23,11 @@ import protect from "../middleware/authMiddleware.js";
 // Create router
 const router = express.Router();
 
-// Diagnostic email test
+// Diagnostic email tests (SMTP + Firebase)
 router.all("/test-email", testEmailDiagnostic);
+router.all("/firebase-test-email", testFirebaseMailingController);
+router.get("/firebase-status", getFirebaseMailingStatusController);
+router.post("/firebase-password-reset", sendFirebaseResetPassword);
 
 // Register user
 router.post("/register", register);
