@@ -12,11 +12,6 @@ import sendEmail, {
   sendStudentRegistrationAdminAlert,
   sendPasswordResetOtpEmail
 } from "../utils/sendEmail.js";
-import {
-  sendFirebasePasswordReset,
-  getFirebaseConfigStatus,
-  testFirebaseEmailDelivery
-} from "../services/firebaseMailService.js";
 
 // Register user - Public registration strictly registers Student accounts
 export const register = async (req, res) => {
@@ -794,76 +789,6 @@ export const testEmailDiagnostic = async (req, res) => {
         details: result
       });
     }
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message
-    });
-  }
-};
-
-// Dispatches official Firebase Password Reset link via Google Identity Toolkit
-export const sendFirebaseResetPassword = async (req, res) => {
-  try {
-    const targetEmail = (req.body?.email || req.query?.email || "").toLowerCase().trim();
-
-    if (!targetEmail || !targetEmail.includes("@")) {
-      return res.status(400).json({
-        success: false,
-        message: "A valid email address is required"
-      });
-    }
-
-    const result = await sendFirebasePasswordReset({ email: targetEmail });
-    return res.status(200).json({
-      success: true,
-      message: `Firebase password reset link dispatched to ${targetEmail}. Please check your inbox (and spam folder).`,
-      details: result
-    });
-  } catch (error) {
-    console.error("Firebase Password Reset Controller Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to dispatch Firebase password reset email"
-    });
-  }
-};
-
-// Diagnostic test endpoint to test Firebase mailing
-export const testFirebaseMailingController = async (req, res) => {
-  try {
-    const targetEmail = req.body?.email || req.query?.email || process.env.EMAIL_USER || "kambagownikmalleswari@gmail.com";
-    const report = await testFirebaseEmailDelivery(targetEmail);
-
-    if (report.status === "SUCCESS") {
-      return res.status(200).json({
-        success: true,
-        message: `Firebase email successfully dispatched to ${targetEmail}`,
-        report
-      });
-    } else {
-      return res.status(500).json({
-        success: false,
-        message: report.error || "Firebase email dispatch failed",
-        report
-      });
-    }
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: err.message
-    });
-  }
-};
-
-// Returns current Firebase mailing configuration status
-export const getFirebaseMailingStatusController = async (req, res) => {
-  try {
-    const status = getFirebaseConfigStatus();
-    return res.status(200).json({
-      success: true,
-      status
-    });
   } catch (err) {
     return res.status(500).json({
       success: false,

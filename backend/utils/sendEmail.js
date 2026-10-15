@@ -43,6 +43,10 @@ const getTransporter = () => {
   if (service === "gmail" || user.endsWith("@gmail.com") || (!host && pass)) {
     transporterConfig = {
       service: "gmail",
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+      rateLimit: 14,
       auth: {
         user,
         pass
@@ -50,16 +54,18 @@ const getTransporter = () => {
       tls: {
         rejectUnauthorized: false
       },
-      // Aggressive short timeouts so blocked cloud SMTP ports fail fast instead of freezing the UI
-      connectionTimeout: 4000,
-      greetingTimeout: 4000,
-      socketTimeout: 6000
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000
     };
   } else if (host) {
     transporterConfig = {
       host,
       port,
       secure,
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
       auth: {
         user,
         pass
@@ -67,9 +73,9 @@ const getTransporter = () => {
       tls: {
         rejectUnauthorized: false
       },
-      connectionTimeout: 4000,
-      greetingTimeout: 4000,
-      socketTimeout: 6000
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000
     };
   }
 

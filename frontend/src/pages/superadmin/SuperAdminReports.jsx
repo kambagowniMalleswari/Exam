@@ -165,47 +165,24 @@ const SuperAdminReports = () => {
                 <p className="panel-desc">Real-time health of multi-tenant assessment clusters.</p>
 
                 <div className="telemetry-items">
-                  <div className="tele-item">
-                    <div className="tele-top">
-                      <span>Multi-Tenant Isolation</span>
-                      <span className="tele-val safe">Enforced (Active)</span>
-                    </div>
-                    <div className="tele-track">
-                      <div className="tele-fill safe" style={{ width: "100%" }}></div>
-                    </div>
+                  <div className="tele-item-card">
+                    <span className="tele-lbl">Multi-Tenant Isolation</span>
+                    <span className="tele-val-pill safe">Enforced (Active)</span>
                   </div>
 
-                  <div className="tele-item">
-                    <div className="tele-top">
-                      <span>Database Query Load</span>
-                      <span className="tele-val normal">Optimal</span>
-                    </div>
-                    <div className="tele-track">
-                      <div className="tele-fill normal" style={{ width: "28%" }}></div>
-                    </div>
+                  <div className="tele-item-card">
+                    <span className="tele-lbl">Database Query Load</span>
+                    <span className="tele-val-pill normal">Optimal (28% Load)</span>
                   </div>
 
-                  <div className="tele-item">
-                    <div className="tele-top">
-                      <span>Automated Grading Latency</span>
-                      <span className="tele-val fast">&lt; 150ms</span>
-                    </div>
-                    <div className="tele-track">
-                      <div className="tele-fill fast" style={{ width: "95%" }}></div>
-                    </div>
+                  <div className="tele-item-card">
+                    <span className="tele-lbl">Automated Grading Latency</span>
+                    <span className="tele-val-pill fast">&lt; 150ms Speed</span>
                   </div>
 
-                  <div className="tele-item">
-                    <div className="tele-top">
-                      <span>Global Exam Pass Rate</span>
-                      <span className="tele-val">{report.globalPassRate}%</span>
-                    </div>
-                    <div className="tele-track">
-                      <div
-                        className="tele-fill pass"
-                        style={{ width: `${Math.min(report.globalPassRate, 100)}%` }}
-                      ></div>
-                    </div>
+                  <div className="tele-item-card">
+                    <span className="tele-lbl">Global Exam Pass Rate</span>
+                    <span className="tele-val-pill pass">{report.globalPassRate}% Pass Rate</span>
                   </div>
                 </div>
               </div>

@@ -26,16 +26,12 @@ import {
   validatePhone,
   validateUsername
 } from "../utils/validation.js";
-import { dispatchFirebasePasswordReset } from "../services/firebaseMailService.js";
-import FirebaseMailTesterModal from "../components/common/FirebaseMailTesterModal.jsx";
 import "./Profile.css";
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get("tab");
-  const [showFirebaseModal, setShowFirebaseModal] = useState(false);
-  const [firebaseResetLoading, setFirebaseResetLoading] = useState(false);
 
   const [activeTab, setActiveTab] = useState(
     requestedTab || "overview"
@@ -138,21 +134,77 @@ const Profile = () => {
     }
   };
 
-  const handleAvatarFileSelect = (e) => {
+  const compressImage = (file, maxWidth = 400, maxHeight = 400, quality = 0.85) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Get optimized base64
+          const optimizedBase64 = canvas.toDataURL("image/jpeg", quality);
+          resolve(optimizedBase64);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleAvatarFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setProfileAlert({ text: "Please select a valid image file (JPG, PNG, or WEBP).", type: "error" });
+      return;
+    }
 
     if (file.size > 2 * 1024 * 1024) {
       setProfileAlert({ text: "Profile image must be smaller than 2MB.", type: "error" });
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatar(reader.result);
-      setAvatarPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const optimizedBase64 = await compressImage(file, 400, 400, 0.85);
+      setAvatar(optimizedBase64);
+      setAvatarPreview(optimizedBase64);
+      setProfileAlert({
+        text: "Photo loaded and optimized successfully. Click 'Save Profile Details' to persist.",
+        type: "success"
+      });
+    } catch (err) {
+      console.error("Avatar compression error:", err);
+      // Fallback to raw data url
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatar(reader.result);
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleUpdateProfile = async (e) => {
@@ -206,27 +258,6 @@ const Profile = () => {
       setSecurityAlert({ text: err.response?.data?.message || "Failed to dispatch reset code.", type: "error" });
     } finally {
       setOtpLoading(false);
-    }
-  };
-
-  const handleSendFirebaseReset = async () => {
-    const targetEmail = profileData?.email || user?.email;
-    if (!targetEmail) return;
-    try {
-      setFirebaseResetLoading(true);
-      setSecurityAlert({ text: "", type: "" });
-      await dispatchFirebasePasswordReset(targetEmail);
-      setSecurityAlert({
-        text: `✓ Official Firebase Password Reset link dispatched to ${targetEmail}! Please check your inbox and spam folder.`,
-        type: "success"
-      });
-    } catch (err) {
-      setSecurityAlert({
-        text: err.message || "Failed to dispatch Firebase reset link.",
-        type: "error"
-      });
-    } finally {
-      setFirebaseResetLoading(false);
     }
   };
 
@@ -701,7 +732,9 @@ const Profile = () => {
                         Remove Photo
                       </button>
                     )}
-                    <span className="avatar-upload-hint">Upload JPG, PNG, or WEBP (Max 2MB)</span>
+                    <span className="avatar-upload-hint">
+                      <strong>Recommended Dimensions:</strong> 400 × 400 px (Square) • Max 2MB (JPG, PNG, WEBP)
+                    </span>
                   </div>
                 </div>
               </div>
@@ -742,69 +775,16 @@ const Profile = () => {
               {otpStep === 1 ? (
                 <div className="otp-step-1">
                   <p className="otp-instruction">
-                    Choose how you want to update your password for <strong>{profileData?.email || user?.email}</strong>:
+                    Click the button below to dispatch a single-use verification code to your registered email address ({profileData?.email || user?.email}).
                   </p>
-                  
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxWidth: "420px", margin: "1rem 0" }}>
-                    <button
-                      type="button"
-                      style={{
-                        background: "linear-gradient(135deg, #f57c00 0%, #e65100 100%)",
-                        color: "#ffffff",
-                        border: "none",
-                        borderRadius: "10px",
-                        padding: "0.85rem 1.25rem",
-                        fontWeight: "700",
-                        fontSize: "0.925rem",
-                        cursor: firebaseResetLoading ? "not-allowed" : "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "0.5rem",
-                        boxShadow: "0 4px 12px rgba(230, 81, 0, 0.25)"
-                      }}
-                      onClick={handleSendFirebaseReset}
-                      disabled={firebaseResetLoading}
-                    >
-                      {firebaseResetLoading ? "Dispatching..." : "🔥 Send Firebase Password Reset Link"}
-                    </button>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }}></div>
-                      <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: "600" }}>OR</span>
-                      <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }}></div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="btn-primary-otp"
-                      onClick={handleSendOtp}
-                      disabled={otpLoading}
-                      style={{ margin: 0 }}
-                    >
-                      {otpLoading ? "Dispatching Code..." : "✉️ Send 6-Digit OTP Code →"}
-                    </button>
-                  </div>
-
-                  <div style={{ marginTop: "1rem" }}>
-                    <button
-                      type="button"
-                      onClick={() => setShowFirebaseModal(true)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#e65100",
-                        fontSize: "0.825rem",
-                        fontWeight: "600",
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.35rem"
-                      }}
-                    >
-                      🔥 Open Firebase Mailing Diagnostic & Tester
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="btn-primary-otp"
+                    onClick={handleSendOtp}
+                    disabled={otpLoading}
+                  >
+                    {otpLoading ? "Dispatching Code..." : "Send Verification OTP to My Email →"}
+                  </button>
                 </div>
               ) : (
                 <form onSubmit={handleVerifyOtpAndReset} className="otp-step-2-form">
@@ -913,13 +893,6 @@ const Profile = () => {
             </div>
           </div>
         )}
-
-        {/* Firebase Mailing Diagnostic Modal */}
-        <FirebaseMailTesterModal
-          isOpen={showFirebaseModal}
-          onClose={() => setShowFirebaseModal(false)}
-          defaultEmail={profileData?.email || user?.email}
-        />
       </div>
     </DashboardLayout>
   );

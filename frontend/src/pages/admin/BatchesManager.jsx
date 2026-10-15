@@ -17,7 +17,7 @@ import {
   ShieldIcon,
   UploadCloudIcon
 } from "../../components/common/Icons.jsx";
-import BatchAutoAllocationModal from "../../components/admin/BatchAutoAllocationModal.jsx";
+import * as XLSX from "xlsx";
 import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import "./BatchesManager.css";
 
@@ -36,10 +36,13 @@ const BatchesManager = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
-  const [showAutoAllocModal, setShowAutoAllocModal] = useState(false);
   const [activeBatch, setActiveBatch] = useState(null);
   const [deleteBatchTarget, setDeleteBatchTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Roster Excel Upload state & filter
+  const [rosterUploadFeedback, setRosterUploadFeedback] = useState(null);
+  const [whitelistStatusFilter, setWhitelistStatusFilter] = useState("all"); // "all" | "whitelisted" | "excluded"
 
   // Form states
   const [formData, setFormData] = useState({
@@ -309,8 +312,88 @@ const BatchesManager = () => {
       (s.email || "").toLowerCase().includes(studentSearch.toLowerCase())
   );
 
+  const handleDownloadRosterTemplate = () => {
+    const sampleData = [
+      { "Student Name": "Aarav Sharma", "Email Address": "aarav.sharma@institution.edu", "Roll Number": "CS2026-001" },
+      { "Student Name": "Diya Patel", "Email Address": "diya.patel@institution.edu", "Roll Number": "CS2026-002" },
+      { "Student Name": "Rohan Verma", "Email Address": "rohan.verma@institution.edu", "Roll Number": "CS2026-003" }
+    ];
+    const ws = XLSX.utils.json_to_sheet(sampleData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Students");
+    XLSX.writeFile(wb, "AssessIQ_Student_Roster_Template.xlsx");
+  };
+
+  const handleRosterExcelUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+        if (!json || json.length === 0) {
+          setRosterUploadFeedback({ type: "error", message: "The uploaded file contains no student data rows." });
+          return;
+        }
+
+        let matchedIds = new Set(formData.selectiveStudentIds || []);
+        let matchedCount = 0;
+        let skippedCount = 0;
+
+        json.forEach((row) => {
+          const emailKey = Object.keys(row).find((k) => /email|mail/i.test(k));
+          const nameKey = Object.keys(row).find((k) => /name|student/i.test(k));
+          const rollKey = Object.keys(row).find((k) => /roll|reg|student.*id/i.test(k));
+
+          const rawEmail = emailKey ? String(row[emailKey]).trim().toLowerCase() : "";
+          const rawName = nameKey ? String(row[nameKey]).trim().toLowerCase() : "";
+          const rawRoll = rollKey ? String(row[rollKey]).trim().toLowerCase() : "";
+
+          const match = orgStudents.find((s) => {
+            const sEmail = (s.email || "").toLowerCase();
+            const sName = (s.name || "").toLowerCase();
+            const sRoll = (s.rollNumber || s.registrationNumber || "").toLowerCase();
+            if (rawEmail && sEmail === rawEmail) return true;
+            if (rawRoll && sRoll === rawRoll) return true;
+            if (!rawEmail && rawName && sName === rawName) return true;
+            return false;
+          });
+
+          if (match) {
+            matchedIds.add(match._id);
+            matchedCount++;
+          } else {
+            skippedCount++;
+          }
+        });
+
+        const updatedList = Array.from(matchedIds);
+        setFormData((prev) => ({ ...prev, selectiveStudentIds: updatedList }));
+        setRosterUploadFeedback({
+          type: "success",
+          message: `Successfully matched and whitelisted ${matchedCount} student(s) from "${file.name}". ${skippedCount > 0 ? `(${skippedCount} unrecognized rows skipped)` : ""}`
+        });
+      } catch (err) {
+        console.error("Excel parse error:", err);
+        setRosterUploadFeedback({ type: "error", message: "Failed to parse file. Please upload a valid .xlsx or .csv file." });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = "";
+  };
+
   const processedWhitelistStudents = orgStudents
     .filter((s) => {
+      const isSelected = formData.selectiveStudentIds?.includes(s._id);
+      if (whitelistStatusFilter === "whitelisted" && !isSelected) return false;
+      if (whitelistStatusFilter === "excluded" && isSelected) return false;
+
       const q = whitelistSearch.trim().toLowerCase();
       if (!q) return true;
       return (
@@ -325,14 +408,17 @@ const BatchesManager = () => {
       if (whitelistSort === "name-desc") {
         return (b.name || "").localeCompare(a.name || "", undefined, { sensitivity: "base" });
       }
+      if (whitelistSort === "email-asc") {
+        return (a.email || "").localeCompare(b.email || "", undefined, { sensitivity: "base" });
+      }
+      if (whitelistSort === "email-desc") {
+        return (b.email || "").localeCompare(a.email || "", undefined, { sensitivity: "base" });
+      }
       if (whitelistSort === "selected-first") {
         const aSelected = formData.selectiveStudentIds?.includes(a._id) ? 1 : 0;
         const bSelected = formData.selectiveStudentIds?.includes(b._id) ? 1 : 0;
         if (bSelected !== aSelected) return bSelected - aSelected;
         return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
-      }
-      if (whitelistSort === "email-asc") {
-        return (a.email || "").localeCompare(b.email || "", undefined, { sensitivity: "base" });
       }
       return 0;
     });
@@ -346,8 +432,16 @@ const BatchesManager = () => {
     });
   };
 
+  const handleInvertWhitelist = () => {
+    const currentSet = new Set(formData.selectiveStudentIds || []);
+    const inverted = processedWhitelistStudents
+      .filter((s) => !currentSet.has(s._id))
+      .map((s) => s._id);
+    setFormData((prev) => ({ ...prev, selectiveStudentIds: inverted }));
+  };
+
   const handleClearAllWhitelist = () => {
-    if (whitelistSearch.trim()) {
+    if (whitelistSearch.trim() || whitelistStatusFilter !== "all") {
       const visibleSet = new Set(processedWhitelistStudents.map((s) => s._id));
       setFormData({
         ...formData,
@@ -441,15 +535,6 @@ const BatchesManager = () => {
             />
           </div>
           <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-            <button
-              type="button"
-              className="btn-auto-allocate-batch"
-              onClick={() => setShowAutoAllocModal(true)}
-              title="Automatically match students from Excel or CSV and allocate cohorts"
-            >
-              <UploadCloudIcon size={16} />
-              <span>Auto-Allocate (Excel / CSV)</span>
-            </button>
             <button className="btn-primary-batch" onClick={openCreate}>
               <PlusIcon size={16} />
               <span>Create New Batch</span>
@@ -723,6 +808,75 @@ const BatchesManager = () => {
                       </div>
                     </div>
 
+                    {/* Bulk Excel / CSV Roster Upload Area */}
+                    <div className="whitelist-roster-upload-card">
+                      <div className="wruc-left">
+                        <span className="wruc-icon">📁</span>
+                        <div>
+                          <strong>Bulk Whitelist via Excel / CSV Roster</strong>
+                          <p>Upload a spreadsheet to match and select students by Email, Name, or Roll Number.</p>
+                        </div>
+                      </div>
+                      <div className="wruc-actions">
+                        <button
+                          type="button"
+                          className="btn-download-roster-template"
+                          onClick={handleDownloadRosterTemplate}
+                          title="Download sample student roster template"
+                        >
+                          ⬇️ Sample Template
+                        </button>
+                        <label className="btn-upload-roster-label">
+                          <span>⬆️ Upload Roster</span>
+                          <input
+                            type="file"
+                            accept=".xlsx, .xls, .csv"
+                            onChange={handleRosterExcelUpload}
+                            style={{ display: "none" }}
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Upload Feedback Toast / Banner */}
+                    {rosterUploadFeedback && (
+                      <div className={`roster-feedback-banner ${rosterUploadFeedback.type}`}>
+                        <span>{rosterUploadFeedback.message}</span>
+                        <button
+                          type="button"
+                          className="btn-close-feedback"
+                          onClick={() => setRosterUploadFeedback(null)}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Status Filter Tabs (All / Whitelisted / Excluded) */}
+                    <div className="whitelist-status-tabs">
+                      <button
+                        type="button"
+                        className={`status-tab ${whitelistStatusFilter === "all" ? "active" : ""}`}
+                        onClick={() => setWhitelistStatusFilter("all")}
+                      >
+                        All Students ({orgStudents.length})
+                      </button>
+                      <button
+                        type="button"
+                        className={`status-tab ${whitelistStatusFilter === "whitelisted" ? "active" : ""}`}
+                        onClick={() => setWhitelistStatusFilter("whitelisted")}
+                      >
+                        Whitelisted ({(formData.selectiveStudentIds || []).length})
+                      </button>
+                      <button
+                        type="button"
+                        className={`status-tab ${whitelistStatusFilter === "excluded" ? "active" : ""}`}
+                        onClick={() => setWhitelistStatusFilter("excluded")}
+                      >
+                        Excluded ({orgStudents.length - (formData.selectiveStudentIds || []).length})
+                      </button>
+                    </div>
+
                     {/* Filter, Sort & Bulk Selection Bar */}
                     <div className="whitelist-controls-bar">
                       <div className="whitelist-search-box">
@@ -755,8 +909,9 @@ const BatchesManager = () => {
                         >
                           <option value="name-asc">Name (A → Z)</option>
                           <option value="name-desc">Name (Z → A)</option>
-                          <option value="selected-first">Selected First</option>
                           <option value="email-asc">Email (A → Z)</option>
+                          <option value="email-desc">Email (Z → A)</option>
+                          <option value="selected-first">Whitelisted First</option>
                         </select>
                       </div>
 
@@ -768,6 +923,14 @@ const BatchesManager = () => {
                           title="Select all displayed students"
                         >
                           Select All
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-whitelist-action"
+                          onClick={handleInvertWhitelist}
+                          title="Invert selection of displayed students"
+                        >
+                          Invert
                         </button>
                         <button
                           type="button"
@@ -956,19 +1119,6 @@ const BatchesManager = () => {
             </div>
           </div>
         )}
-
-        {/* ========================================================= */}
-        {/* AUTOMATIC STUDENT MATCHING & BATCH ALLOCATION MODAL       */}
-        {/* ========================================================= */}
-        <BatchAutoAllocationModal
-          isOpen={showAutoAllocModal}
-          onClose={() => setShowAutoAllocModal(false)}
-          existingBatches={batches}
-          onSuccess={() => {
-            fetchBatches();
-            loadPrerequisites();
-          }}
-        />
 
         {/* Centered Modern Delete Confirmation Modal */}
         <ConfirmModal

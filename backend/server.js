@@ -53,8 +53,9 @@ app.use(cors({
 }));
 
 
-// Allow JSON request data
-app.use(express.json());
+// Allow JSON request data with 15MB limit for rich media, profile avatars and roster uploads
+app.use(express.json({ limit: "15mb" }));
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
 // Root API route
 app.get(["/", "/api"], (req, res) => {

@@ -15,7 +15,6 @@ import {
   XIcon,
   FileTextIcon
 } from "../../components/common/Icons.jsx";
-import FirebaseMailTesterModal from "../../components/common/FirebaseMailTesterModal.jsx";
 import "./SuperAdminDashboard.css";
 
 const SuperAdminDashboard = () => {
@@ -50,7 +49,6 @@ const SuperAdminDashboard = () => {
 
   // Add Organization Modal State
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showFirebaseModal, setShowFirebaseModal] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
   const [pendingOrgCount, setPendingOrgCount] = useState(0);
@@ -218,27 +216,6 @@ const SuperAdminDashboard = () => {
             )}
             <button
               type="button"
-              className="btn-sad-secondary"
-              style={{
-                background: "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
-                border: "1.5px solid #fed7aa",
-                color: "#c2410c",
-                fontWeight: "700",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                padding: "0.6rem 1.1rem",
-                borderRadius: "8px",
-                cursor: "pointer",
-                boxShadow: "0 2px 6px rgba(194, 65, 12, 0.1)"
-              }}
-              onClick={() => setShowFirebaseModal(true)}
-              title="Test & Diagnose Firebase & SMTP Mailing Systems"
-            >
-              🔥 Test Mailing System
-            </button>
-            <button
-              type="button"
               className="btn-sad-primary"
               onClick={() => {
                 setCreatedCredentials(null);
@@ -396,26 +373,19 @@ const SuperAdminDashboard = () => {
                 <p>No teacher subject records found yet.</p>
               </div>
             ) : (
-              <div className="subject-bars-list">
-                {metrics.teachers.bySubject?.map((item) => {
-                  const maxCount = Math.max(...metrics.teachers.bySubject.map((s) => s.teachersCount), 1);
-                  const pct = Math.round((item.teachersCount / maxCount) * 100);
-
-                  return (
-                    <div className="subject-bar-row" key={item.subject}>
-                      <div className="bar-labels">
-                        <span className="subj-name">{item.subject}</span>
-                        <strong className="subj-count">{item.teachersCount} Teachers</strong>
-                      </div>
-                      <div className="bar-track">
-                        <div
-                          className="bar-fill fill-blue"
-                          style={{ width: `${pct}%` }}
-                        ></div>
-                      </div>
+              <div className="subject-cards-list">
+                {metrics.teachers.bySubject?.map((item) => (
+                  <div className="subject-count-card" key={item.subject}>
+                    <div className="scc-left">
+                      <span className="scc-icon">👨‍🏫</span>
+                      <span className="scc-name">{item.subject}</span>
                     </div>
-                  );
-                })}
+                    <div className="scc-count-badge teacher">
+                      <strong>{item.teachersCount}</strong>
+                      <span>Teacher{item.teachersCount > 1 ? "s" : ""}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -435,29 +405,24 @@ const SuperAdminDashboard = () => {
                 <p>No tests created in the database yet.</p>
               </div>
             ) : (
-              <div className="subject-bars-list">
-                {metrics.tests.bySubject?.map((item) => {
-                  const maxCount = Math.max(...metrics.tests.bySubject.map((s) => s.totalTests), 1);
-                  const pct = Math.round((item.totalTests / maxCount) * 100);
-
-                  return (
-                    <div className="subject-bar-row" key={item.subject}>
-                      <div className="bar-labels">
-                        <span className="subj-name">{item.subject}</span>
-                        <div className="subj-count-duo">
-                          <strong>{item.totalTests} Tests</strong>
-                          <small>({item.publishedTests} Published)</small>
-                        </div>
-                      </div>
-                      <div className="bar-track">
-                        <div
-                          className="bar-fill fill-indigo"
-                          style={{ width: `${pct}%` }}
-                        ></div>
-                      </div>
+              <div className="subject-cards-list">
+                {metrics.tests.bySubject?.map((item) => (
+                  <div className="subject-count-card" key={item.subject}>
+                    <div className="scc-left">
+                      <span className="scc-icon">📝</span>
+                      <span className="scc-name">{item.subject}</span>
                     </div>
-                  );
-                })}
+                    <div className="scc-count-group">
+                      <span className="scc-count-badge test">
+                        <strong>{item.totalTests}</strong>
+                        <span>Test{item.totalTests > 1 ? "s" : ""}</span>
+                      </span>
+                      <span className="scc-sub-badge published">
+                        {item.publishedTests} Published
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -815,12 +780,6 @@ const SuperAdminDashboard = () => {
             </div>
           </div>
         )}
-
-        {/* Firebase & SMTP Mailing Diagnostic Modal */}
-        <FirebaseMailTesterModal
-          isOpen={showFirebaseModal}
-          onClose={() => setShowFirebaseModal(false)}
-        />
       </div>
     </DashboardLayout>
   );

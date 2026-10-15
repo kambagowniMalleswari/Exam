@@ -341,54 +341,92 @@
   gap: 14px;
 }
 
-.subject-bar-row {
+/* ========================================================================== */
+/* Clean Modern Subject Count Cards (No thick colored lines)                  */
+/* ========================================================================== */
+.subject-cards-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
-.bar-labels {
+.subject-count-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.88rem;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
 }
 
-.subj-name {
-  font-weight: 600;
-  color: #1e293b;
+.subject-count-card:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transform: translateX(3px);
 }
 
-.subj-count {
+.scc-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.scc-icon {
+  font-size: 1.1rem;
+}
+
+.scc-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 700;
+  font-size: 0.92rem;
   color: #0f172a;
+  text-transform: capitalize;
 }
 
-.subj-count-duo small {
-  color: #64748b;
-  margin-left: 4px;
+.scc-count-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.bar-track {
-  width: 100%;
-  height: 8px;
-  background: #f1f5f9;
-  border-radius: 999px;
-  overflow: hidden;
+.scc-count-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
 }
 
-.bar-fill {
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+.scc-count-badge strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-.fill-blue {
-  background: #2563eb;
+.scc-count-badge.teacher {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
 }
 
-.fill-indigo {
-  background: #4f46e5;
+.scc-count-badge.test {
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+
+.scc-sub-badge.published {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 3px 8px;
+  border-radius: 6px;
 }
 
 /* Student Metrics Quad */

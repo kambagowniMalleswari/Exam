@@ -220,28 +220,35 @@ const AdminReports = () => {
                 </div>
               </div>
 
-              {/* Subject Breakdown */}
+              {/* Subject Mastery Breakdown - Clean Count & Metric Cards (No horizontal color lines) */}
               <div className="rep-panel">
-                <h3>Subject Mastery Breakdown</h3>
-                <p className="panel-desc">Average percentage performance per subject area.</p>
+                <div className="panel-title-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
+                  <div>
+                    <h3>Subject Mastery Breakdown</h3>
+                    <p className="panel-desc">Academic performance distribution per subject area.</p>
+                  </div>
+                  <span className="rep-badge-pill">{report.subjectBreakdown?.length || 0} Subjects</span>
+                </div>
 
                 {(!report.subjectBreakdown || report.subjectBreakdown.length === 0) ? (
                   <p className="no-sub-data">No subject performance data available yet.</p>
                 ) : (
-                  <div className="subject-bars-list">
+                  <div className="subject-cards-grid">
                     {report.subjectBreakdown.map((subj, idx) => (
-                      <div className="subject-bar-row" key={idx}>
-                        <div className="subj-info">
-                          <span className="subj-title">{subj.subject}</span>
-                          <span className="subj-meta">
-                            {subj.attempts} attempts • {subj.averagePercentage}% avg
-                          </span>
+                      <div className="subject-metric-card" key={idx}>
+                        <div className="smc-header">
+                          <span className="smc-title">{subj.subject}</span>
+                          <span className="smc-attempts-badge">{subj.attempts} Attempt{subj.attempts > 1 ? "s" : ""}</span>
                         </div>
-                        <div className="subj-track">
-                          <div
-                            className="subj-fill"
-                            style={{ width: `${Math.min(subj.averagePercentage, 100)}%` }}
-                          ></div>
+                        <div className="smc-stats">
+                          <div className="smc-stat-item">
+                            <span className="smc-stat-label">Average Score</span>
+                            <span className="smc-stat-value">{subj.averagePercentage}%</span>
+                          </div>
+                          <div className="smc-stat-item">
+                            <span className="smc-stat-label">Pass Rate</span>
+                            <span className="smc-stat-value pass">{subj.passRate || 100}%</span>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -250,17 +257,20 @@ const AdminReports = () => {
               </div>
             </div>
 
-            {/* Recent Exam Submissions */}
+            {/* Recent Exam Submissions - Real Application Grade Table */}
             <div className="rep-panel recent-panel">
-              <div className="panel-title-row">
+              <div className="panel-title-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
                 <div>
                   <h3>Recent Examination Attempts</h3>
                   <p className="panel-desc">Latest student completions in real-time.</p>
                 </div>
+                <span className="rep-badge-pill">Live Submissions</span>
               </div>
 
               {(!report.recentAttempts || report.recentAttempts.length === 0) ? (
-                <p className="no-sub-data">No recent attempts logged.</p>
+                <div className="rep-empty-state">
+                  <p>No recent attempts logged yet.</p>
+                </div>
               ) : (
                 <div className="rep-table-wrap">
                   <table className="rep-table">
@@ -271,37 +281,60 @@ const AdminReports = () => {
                         <th>Score</th>
                         <th>Percentage</th>
                         <th>Result</th>
-                        <th>Date</th>
+                        <th>Submission Date</th>
                       </tr>
                     </thead>
                     <tbody>
                       {report.recentAttempts.map((att) => {
                         const isPass = att.passed || att.result === "pass";
+                        const studentName = att.studentId?.name || "Student Scholar";
+                        const initials = studentName
+                          .split(" ")
+                          .filter(Boolean)
+                          .map((p) => p[0])
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase();
+
                         return (
                           <tr key={att._id}>
                             <td>
-                              <div className="student-info">
-                                <span className="s-name">{att.studentId?.name || "Student"}</span>
-                                <span className="s-email">{att.studentId?.email || "—"}</span>
+                              <div className="student-profile-cell">
+                                <div className="student-avatar-badge">{initials}</div>
+                                <div className="student-info-text">
+                                  <span className="s-name">{studentName}</span>
+                                  <span className="s-email">{att.studentId?.email || "—"}</span>
+                                </div>
                               </div>
                             </td>
                             <td>
-                              <span className="t-title">{att.testId?.title || "Test"}</span>
-                              <span className="t-sub">{att.testId?.subject || "General"}</span>
+                              <div className="test-info-cell">
+                                <span className="t-title">{att.testId?.title || "Assessment"}</span>
+                                <span className="t-subject-pill">{att.testId?.subject || "General"}</span>
+                              </div>
                             </td>
                             <td>
-                              <span className="score-val">{att.score ?? att.obtainedMarks ?? 0}</span>
-                              <span className="score-max">/{att.totalMarks ?? 100}</span>
+                              <div className="score-cell-wrap">
+                                <span className="score-val">{att.score ?? att.obtainedMarks ?? 0}</span>
+                                <span className="score-max">/{att.totalMarks ?? 100}</span>
+                              </div>
                             </td>
                             <td>
-                              <span className="perc-highlight">{att.percentage ?? 0}%</span>
+                              <span className={`perc-pill ${att.percentage >= 60 ? "high" : att.percentage >= 40 ? "mid" : "low"}`}>
+                                {att.percentage ?? 0}%
+                              </span>
                             </td>
                             <td>
-                              <span className={`pill ${isPass ? "pass" : "fail"}`}>
+                              <span className={`pill-badge ${isPass ? "pass" : "fail"}`}>
+                                <span className="pill-dot"></span>
                                 {isPass ? "Passed" : "Failed"}
                               </span>
                             </td>
-                            <td className="date-cell">{formatDate(att.createdAt)}</td>
+                            <td>
+                              <div className="date-cell-wrap">
+                                <span className="date-main">{formatDate(att.createdAt)}</span>
+                              </div>
+                            </td>
                           </tr>
                         );
                       })}

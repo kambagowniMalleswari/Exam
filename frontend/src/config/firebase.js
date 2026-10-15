@@ -1,13 +1,5 @@
-// Firebase Client Configuration with Google Authentication
 import { initializeApp, getApps, getApp } from "firebase/app";
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  sendPasswordResetEmail,
-  sendEmailVerification,
-  sendSignInLinkToEmail
-} from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDummyKeyForAssessmentPlatform2026",
@@ -39,12 +31,6 @@ export const isFirebaseConfigured = () => {
   );
 };
 
-export {
-  signInWithPopup,
-  sendPasswordResetEmail,
-  sendEmailVerification,
-  sendSignInLinkToEmail,
-  firebaseConfig
-};
+export { signInWithPopup };
 export default app;
 

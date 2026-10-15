@@ -233,18 +233,12 @@ const AdminDashboard = () => {
                 {stats.subjectBreakdown.map((subj) => (
                   <div className="panel-subject-item" key={subj.subject}>
                     <div className="subj-title-row">
-                      <strong>{subj.subject}</strong>
+                      <strong className="subj-name-text">{subj.subject}</strong>
                       <span className="subj-pct">{subj.averagePercentage}% Avg</span>
                     </div>
-                    <div className="subj-detail-bar">
-                      <div
-                        className="subj-bar-inner"
-                        style={{ width: `${Math.min(subj.averagePercentage, 100)}%` }}
-                      ></div>
-                    </div>
                     <div className="subj-footer-row">
-                      <small>{subj.attempts} attempts completed</small>
-                      <small className="pass-pill">{subj.passRate}% pass rate</small>
+                      <span className="subj-attempts-pill">{subj.attempts} Attempt{subj.attempts > 1 ? "s" : ""}</span>
+                      <span className="pass-pill">{subj.passRate}% Pass Rate</span>
                     </div>
                   </div>
                 ))}

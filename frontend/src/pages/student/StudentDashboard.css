@@ -387,17 +387,31 @@
   color: #0369a1;
 }
 
-.progress-track {
-  height: 8px;
-  background: #e2e8f0;
-  border-radius: 9999px;
-  overflow: hidden;
+.subject-score-pill {
+  font-weight: 800;
+  font-size: 0.8rem;
+  color: #0369a1;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 3px 8px;
+  border-radius: 6px;
 }
 
-.progress-fill {
-  height: 100%;
-  border-radius: 9999px;
-  transition: width 0.4s ease;
+.student-count-pill {
+  color: #475569;
+  background: #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.student-pass-pill {
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
 }
 
 .subject-card-bottom {

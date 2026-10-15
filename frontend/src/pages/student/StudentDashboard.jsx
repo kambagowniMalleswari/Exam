@@ -233,21 +233,12 @@ const StudentDashboard = () => {
               {report.subjectPerformance.map((subj) => (
                 <div key={subj.subject} className="subject-bar-card">
                   <div className="subject-card-top">
-                    <span className="subject-name">{subj.subject}</span>
-                    <span className="subject-score">{subj.avgPercentage}% Avg</span>
-                  </div>
-                  <div className="progress-track">
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${Math.min(100, Math.max(0, subj.avgPercentage))}%`,
-                        backgroundColor: subj.avgPercentage >= 70 ? "#059669" : subj.avgPercentage >= 40 ? "#d97706" : "#dc2626"
-                      }}
-                    ></div>
+                    <strong className="subject-name">{subj.subject}</strong>
+                    <span className="subject-score-pill">{subj.avgPercentage}% Avg Score</span>
                   </div>
                   <div className="subject-card-bottom">
-                    <span>{subj.testsTaken} {subj.testsTaken === 1 ? "Exam" : "Exams"} taken</span>
-                    <span>{subj.passRate}% Pass rate</span>
+                    <span className="student-count-pill">{subj.testsTaken} {subj.testsTaken === 1 ? "Exam" : "Exams"} taken</span>
+                    <span className="student-pass-pill">{subj.passRate}% Pass Rate</span>
                   </div>
                 </div>
               ))}
