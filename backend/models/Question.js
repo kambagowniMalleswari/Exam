@@ -71,10 +71,10 @@ const questionSchema = new mongoose.Schema(
       trim: true
     },
 
-    // Optional section: 'Section A', 'Section B', 'Section C', etc.
+    // Optional section: 'General', 'Coding', 'Aptitude', 'Technical', or custom section
     section: {
       type: String,
-      default: "Section A",
+      default: "General",
       trim: true
     }
   },

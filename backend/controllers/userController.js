@@ -240,7 +240,7 @@ export const createUser = async (req, res) => {
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        message: "A user with this email address already exists in the system"
+        message: `An account with email "${cleanEmail}" already exists in the portal. Please use a different email address.`
       });
     }
 
@@ -248,7 +248,7 @@ export const createUser = async (req, res) => {
     if (pendingOrg) {
       return res.status(409).json({
         success: false,
-        message: "An institutional application with this email address is pending review"
+        message: `An institutional application with email "${cleanEmail}" is currently pending review.`
       });
     }
 
@@ -256,7 +256,7 @@ export const createUser = async (req, res) => {
     if (pendingTeacher) {
       return res.status(409).json({
         success: false,
-        message: "A faculty application with this email address is pending review"
+        message: `A faculty application with email "${cleanEmail}" is currently pending review.`
       });
     }
 
@@ -342,7 +342,7 @@ export const createUser = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to create user",
+      message: error.message || "Failed to create user",
       error: error.message
     });
   }

@@ -136,9 +136,15 @@ const Teachers = () => {
 
       await fetchTeachers();
     } catch (err) {
-      setModalError(
-        err.response?.data?.message || "Failed to create teacher account."
-      );
+      const errorMsg =
+        err.response?.data?.message ||
+        (typeof err.response?.data?.error === "string" ? err.response.data.error : err.response?.data?.error?.message) ||
+        (typeof err.response?.data === "string" && !err.response.data.includes("<html") && err.response.data.length < 250 ? err.response.data : null) ||
+        (err.code === "ECONNABORTED" ? "The server took too long to respond (Render free-tier cold start). Please click Create Faculty again." : null) ||
+        (err.message === "Network Error" ? "Network error: Server is currently unreachable. Please wait 10 seconds for the backend to wake up and try again." : null) ||
+        err.message ||
+        "Failed to create teacher account.";
+      setModalError(errorMsg);
     } finally {
       setModalLoading(false);
     }

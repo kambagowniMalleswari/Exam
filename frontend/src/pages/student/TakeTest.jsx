@@ -239,7 +239,7 @@ const TakeTest = () => {
     if (hasCustomSections) {
       const secMap = new Map();
       questions.forEach((q, idx) => {
-        const secName = q.section?.trim() || "Section A";
+        const secName = q.section?.trim() || "General";
         if (!secMap.has(secName)) {
           secMap.set(secName, []);
         }

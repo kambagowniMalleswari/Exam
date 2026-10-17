@@ -121,7 +121,8 @@ export const createTest = async (req, res) => {
         maxPriorScore: targetCriteria?.maxPriorScore !== undefined && targetCriteria.maxPriorScore !== "" ? Number(targetCriteria.maxPriorScore) : null,
         meritListTopN: targetCriteria?.meritListTopN !== undefined && targetCriteria.meritListTopN !== "" ? Number(targetCriteria.meritListTopN) : null
       },
-      selectedStudentIds: Array.isArray(selectedStudentIds) ? selectedStudentIds : []
+      selectedStudentIds: Array.isArray(selectedStudentIds) ? selectedStudentIds : [],
+      sections: Array.isArray(req.body.sections) && req.body.sections.length > 0 ? req.body.sections : ["General", "Coding"]
     });
 
     res.status(201).json({
@@ -459,6 +460,7 @@ export const updateTest = async (req, res) => {
       };
     }
     if (selectedStudentIds !== undefined) test.selectedStudentIds = Array.isArray(selectedStudentIds) ? selectedStudentIds : [];
+    if (req.body.sections !== undefined) test.sections = Array.isArray(req.body.sections) ? req.body.sections : test.sections;
 
     await test.save();
 

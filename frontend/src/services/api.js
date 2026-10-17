@@ -40,7 +40,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json"
   },
-  timeout: 30000
+  timeout: 60000
 });
 
 // Fast Client-Side In-Memory Cache for GET queries (TTL = 8 seconds)

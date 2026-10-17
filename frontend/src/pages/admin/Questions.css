@@ -112,8 +112,465 @@
   box-shadow: 0 8px 20px rgba(2, 132, 199, 0.45);
 }
 
+.btn-add-section-toolbar {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  color: #334155;
+  padding: 0.65rem 1.3rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.btn-add-section-toolbar:hover {
+  background: #f8fafc;
+  border-color: #0284c7;
+  color: #0284c7;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Sections Navigation & Filter Bar
+   ========================================================================== */
+
+.aq-sections-bar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.02);
+}
+
+.aq-sections-scroll {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+
+.aq-sec-tab {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 0.5rem 1.1rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.aq-sec-tab:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.aq-sec-tab.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.28);
+}
+
+.aq-sec-badge {
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+}
+
+.aq-sec-tab.active .aq-sec-badge {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.aq-sec-tab.add-new {
+  background: transparent;
+  border: 1.5px dashed #0284c7;
+  color: #0284c7;
+}
+
+.aq-sec-tab.add-new:hover {
+  background: #f0f9ff;
+  border-color: #0369a1;
+  color: #0369a1;
+}
+
+/* ==========================================================================
+   Section Grouped Block
+   ========================================================================== */
+
+.aq-section-block {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.aq-section-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+
+.aq-section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.aq-section-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #e0f2fe;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.15);
+}
+
+.aq-section-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.015em;
+}
+
+.aq-section-meta {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.btn-add-in-section {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0284c7;
+  padding: 0.45rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.18s ease;
+}
+
+.btn-add-in-section:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+  transform: translateY(-1px);
+}
+
+.aq-section-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+/* ==========================================================================
+   Question Card Styling & REDESIGNED Edit/Delete Buttons
+   ========================================================================== */
+
+.aq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.aq-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  padding: 1.6rem 1.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.aq-card:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.09);
+}
+
+.aq-card.is-coding-card {
+  border-left: 4px solid #0284c7;
+}
+
+.aq-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.85rem;
+}
+
+.aq-number {
+  font-weight: 800;
+  color: #0284c7;
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #f0f9ff;
+  padding: 0.3rem 0.85rem;
+  border-radius: 9999px;
+  border: 1px solid #e0f2fe;
+}
+
+.aq-section-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  padding: 0.28rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.aq-section-pill.coding {
+  background: #ecfeff;
+  color: #0891b2;
+  border-color: #a5f3fc;
+}
+
+.aq-card-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.aq-marks-pill,
+.aq-marks {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  letter-spacing: 0.01em;
+}
+
+/* --------------------------------------------------------------------------
+   STUNNING REDESIGNED EDIT & DELETE ACTION BUTTONS
+   -------------------------------------------------------------------------- */
+
+.aq-btn-edit,
+.btn-action.edit,
+.aq-action-btn.edit {
+  background: #f0f9ff;
+  color: #0284c7;
+  border: 1.5px solid #bae6fd;
+  padding: 0.42rem 1.05rem;
+  border-radius: 9999px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.08);
+  user-select: none;
+}
+
+.aq-btn-edit:hover,
+.btn-action.edit:hover,
+.aq-action-btn.edit:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+}
+
+.aq-btn-edit:active,
+.btn-action.edit:active,
+.aq-action-btn.edit:active {
+  transform: translateY(0);
+}
+
+.aq-btn-delete,
+.btn-action.delete,
+.aq-action-btn.delete {
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1.5px solid #fecdd3;
+  padding: 0.42rem 1.05rem;
+  border-radius: 9999px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(225, 29, 72, 0.08);
+  user-select: none;
+}
+
+.aq-btn-delete:hover,
+.btn-action.delete:hover,
+.aq-action-btn.delete:hover {
+  background: #e11d48;
+  color: #ffffff;
+  border-color: #e11d48;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35);
+}
+
+.aq-btn-delete:active,
+.btn-action.delete:active,
+.aq-action-btn.delete:active {
+  transform: translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+   Question Text & Options
+   -------------------------------------------------------------------------- */
+
+.aq-question-text {
+  font-size: 1.06rem;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.aq-question-text.code-text {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  background: #f8fafc;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.95rem;
+  color: #1e293b;
+  overflow-x: auto;
+}
+
+.aq-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.85rem;
+}
+
+.aq-option {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  padding: 0.85rem 1.15rem;
+  border-radius: 16px;
+  font-size: 0.93rem;
+  color: #0f172a;
+  transition: all 0.15s ease;
+}
+
+.aq-option:hover {
+  background: #f1f5f9;
+}
+
+.aq-option.correct {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #065f46;
+}
+
+.opt-key-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.aq-option.correct .opt-key-circle {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.opt-text {
+  flex: 1;
+  font-weight: 500;
+}
+
+.correct-badge {
+  color: #059669;
+  font-weight: 700;
+  font-size: 0.76rem;
+  background: rgba(16, 185, 129, 0.16);
+  padding: 3px 10px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.aq-explanation {
+  background: #f0f9ff;
+  border-left: 3.5px solid #0284c7;
+  padding: 0.85rem 1.15rem;
+  border-radius: 0 14px 14px 0;
+  font-size: 0.9rem;
+  color: #0369a1;
+  line-height: 1.5;
+}
+
+.exp-icon {
+  font-weight: 700;
+}
+
 /* Empty State */
-.aq-empty {
+.aq-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -126,196 +583,21 @@
   border-radius: 20px;
 }
 
-.aq-empty span {
-  font-size: 2.5rem;
-}
-
-.aq-empty h3 {
+.aq-state h3 {
   font-size: 1.25rem;
   color: #0f172a;
   margin: 0;
   font-weight: 700;
 }
 
-.aq-empty p {
+.aq-state p {
   color: #64748b;
   margin: 0;
-}
-
-/* Question List */
-.aq-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.aq-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 24px;
-  padding: 1.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.aq-card:hover {
-  border-color: #38bdf8;
-  box-shadow: 0 8px 25px rgba(2, 132, 199, 0.08);
-}
-
-.aq-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 0.75rem;
-}
-
-.aq-number {
-  font-weight: 800;
-  color: #0284c7;
-  font-size: 0.88rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: #f0f9ff;
-  padding: 0.25rem 0.8rem;
-  border-radius: 9999px;
-  border: 1px solid #e0f2fe;
-}
-
-.aq-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.aq-marks {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  color: #475569;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.aq-action-btn {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  color: #475569;
-  padding: 0.35rem 0.85rem;
-  border-radius: 9999px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.15s ease;
-}
-
-.aq-action-btn.edit:hover {
-  background: #f0f9ff;
-  color: #0284c7;
-  border-color: #38bdf8;
-}
-
-.aq-action-btn.delete:hover {
-  background: #fef2f2;
-  color: #dc2626;
-  border-color: #fecaca;
-}
-
-.aq-text {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #0f172a;
-  line-height: 1.55;
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-.aq-options-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 0.85rem;
-}
-
-.aq-option {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  padding: 0.85rem 1.15rem;
-  border-radius: 16px;
-  font-size: 0.92rem;
-  color: #0f172a;
-  transition: all 0.15s ease;
-}
-
-.aq-option:hover {
-  background: #f1f5f9;
-}
-
-.aq-option.correct {
-  background: #ecfdf5;
-  border-color: #a7f3d0;
-  color: #065f46;
-}
-
-.aq-opt-marker {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background: #e2e8f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: #475569;
-  flex-shrink: 0;
-}
-
-.aq-option.correct .aq-opt-marker {
-  background: #10b981;
-  color: #ffffff;
-}
-
-.aq-opt-text {
-  flex: 1;
-  font-weight: 500;
-}
-
-.aq-correct-badge {
-  color: #059669;
-  font-weight: 700;
-  font-size: 0.75rem;
-  background: rgba(16, 185, 129, 0.15);
-  padding: 2px 8px;
-  border-radius: 9999px;
-}
-
-.aq-explanation {
-  background: #f0f9ff;
-  border-left: 3px solid #0284c7;
-  padding: 0.75rem 1.1rem;
-  border-radius: 0 12px 12px 0;
-  font-size: 0.88rem;
-  color: #0369a1;
-}
-
-.aq-explanation strong {
-  display: block;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 2px;
+  max-width: 480px;
 }
 
 /* ==========================================================================
-   Question Modal & Form Styling (Image 2 Fix)
+   Question Modal & Form Styling
    ========================================================================== */
 
 .modal-overlay {
@@ -335,7 +617,7 @@
   border-radius: 24px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
-  max-width: 700px;
+  max-width: 720px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
@@ -406,6 +688,54 @@
   border-color: #0284c7;
   background: #ffffff;
   box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+}
+
+/* Section Selector Chips */
+.aq-section-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.aq-section-chip {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  color: #475569;
+  padding: 0.45rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.aq-section-chip:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.aq-section-chip.selected {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+}
+
+.aq-coding-tip-banner {
+  background: #ecfeff;
+  border: 1px solid #a5f3fc;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.83rem;
+  color: #0e7490;
+  line-height: 1.45;
+  margin-top: 4px;
 }
 
 /* MCQ Options Form */

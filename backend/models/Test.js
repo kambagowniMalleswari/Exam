@@ -169,7 +169,12 @@ const testSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
       }
-    ]
+    ],
+    // Test Defined Sections (e.g. General, Coding, etc.)
+    sections: {
+      type: [String],
+      default: ["General", "Coding"]
+    }
   },
   {
     timestamps: true

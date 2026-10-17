@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout.jsx";
 import api from "../../services/api.js";
@@ -9,10 +9,32 @@ import {
   AwardIcon,
   AlertTriangleIcon,
   HelpCircleIcon,
-  SparklesIcon
+  SparklesIcon,
+  EditIcon,
+  TrashIcon,
+  CodeIcon,
+  LayersIcon,
+  PlusIcon,
+  CpuIcon,
+  CheckIcon
 } from "../../components/common/Icons.jsx";
 import ConfirmModal from "../../components/common/ConfirmModal.jsx";
 import "./Questions.css";
+
+const PRESET_SECTIONS = [
+  { name: "General", icon: BookOpenIcon, desc: "Multiple-choice & aptitude" },
+  { name: "Coding", icon: CodeIcon, desc: "Programming & algorithmic questions" },
+  { name: "Aptitude", icon: BookOpenIcon, desc: "Quantitative & logical reasoning" },
+  { name: "Technical", icon: CpuIcon, desc: "Core technical concepts & theory" }
+];
+
+const getSectionIcon = (secName = "") => {
+  const lower = secName.toLowerCase();
+  if (lower.includes("code") || lower.includes("coding") || lower.includes("program")) return CodeIcon;
+  if (lower.includes("tech") || lower.includes("core") || lower.includes("system")) return CpuIcon;
+  if (lower.includes("general") || lower.includes("aptitude") || lower.includes("verbal")) return BookOpenIcon;
+  return LayersIcon;
+};
 
 const Questions = () => {
   const { testId } = useParams();
@@ -26,8 +48,18 @@ const Questions = () => {
   const [submitting, setSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Section State
+  const [selectedSectionFilter, setSelectedSectionFilter] = useState("all");
+  const [showAddSectionModal, setShowAddSectionModal] = useState(false);
+  const [newSectionInput, setNewSectionInput] = useState("");
+  const [sectionError, setSectionError] = useState("");
+  const [savingSection, setSavingSection] = useState(false);
+
   const [form, setForm] = useState({
     questionText: "",
+    section: "General",
+    customSection: "",
     options: [
       { key: "A", text: "" },
       { key: "B", text: "" },
@@ -60,9 +92,47 @@ const Questions = () => {
     }
   };
 
-  const resetForm = () =>
+  // Dynamically resolve all available sections for this test
+  const availableSections = useMemo(() => {
+    const list = ["General", "Coding"];
+    if (test?.sections && Array.isArray(test.sections)) {
+      test.sections.forEach((s) => {
+        if (s && s.trim() && !list.includes(s.trim())) {
+          list.push(s.trim());
+        }
+      });
+    }
+    questions.forEach((q) => {
+      const s = q.section?.trim();
+      if (s && !list.includes(s)) {
+        list.push(s);
+      }
+    });
+    return list;
+  }, [test, questions]);
+
+  // Section summary statistics
+  const sectionStats = useMemo(() => {
+    const stats = {};
+    availableSections.forEach((s) => {
+      stats[s] = { count: 0, marks: 0 };
+    });
+    questions.forEach((q) => {
+      const s = q.section?.trim() || "General";
+      if (!stats[s]) {
+        stats[s] = { count: 0, marks: 0 };
+      }
+      stats[s].count += 1;
+      stats[s].marks += Number(q.marks) || 1;
+    });
+    return stats;
+  }, [availableSections, questions]);
+
+  const resetForm = (targetSection = "General") =>
     setForm({
       questionText: "",
+      section: targetSection,
+      customSection: "",
       options: [
         { key: "A", text: "" },
         { key: "B", text: "" },
@@ -75,9 +145,10 @@ const Questions = () => {
       explanation: ""
     });
 
-  const openCreate = () => {
+  const openCreate = (preselectedSection = null) => {
     setEditQ(null);
-    resetForm();
+    const sec = preselectedSection || (selectedSectionFilter !== "all" ? selectedSectionFilter : "General");
+    resetForm(sec);
     setShowModal(true);
   };
 
@@ -86,8 +157,13 @@ const Questions = () => {
     const opts = (q.options || []).map((o, i) =>
       typeof o === "object" ? o : { key: String.fromCharCode(65 + i), text: o }
     );
+    const currentSec = q.section?.trim() || "General";
+    const isCustom = !availableSections.includes(currentSec);
+
     setForm({
       questionText: q.questionText || q.text || "",
+      section: isCustom ? "__custom__" : currentSec,
+      customSection: isCustom ? currentSec : "",
       options: opts.length === 4 ? opts : [
         { key: "A", text: opts[0]?.text || "" },
         { key: "B", text: opts[1]?.text || "" },
@@ -102,6 +178,34 @@ const Questions = () => {
     setShowModal(true);
   };
 
+  const handleCreateSection = async (e) => {
+    if (e) e.preventDefault();
+    const name = newSectionInput.trim();
+    if (!name) {
+      setSectionError("Please enter a section name.");
+      return;
+    }
+    if (availableSections.some((s) => s.toLowerCase() === name.toLowerCase())) {
+      setSectionError("A section with this name already exists.");
+      return;
+    }
+
+    try {
+      setSavingSection(true);
+      const updatedSections = [...availableSections, name];
+      await api.put(`/tests/${testId}`, { sections: updatedSections });
+      setTest((prev) => (prev ? { ...prev, sections: updatedSections } : prev));
+      setSelectedSectionFilter(name);
+      setShowAddSectionModal(false);
+      setNewSectionInput("");
+      setSectionError("");
+    } catch (err) {
+      setSectionError(err.response?.data?.message || "Failed to create section.");
+    } finally {
+      setSavingSection(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!form.questionText.trim()) {
       alert("Question text is required.");
@@ -113,9 +217,28 @@ const Questions = () => {
       return;
     }
 
+    let finalSection = form.section;
+    if (form.section === "__custom__") {
+      if (!form.customSection.trim()) {
+        alert("Please enter the custom section name.");
+        return;
+      }
+      finalSection = form.customSection.trim();
+    }
+
     try {
       setSubmitting(true);
-      const payload = { ...form, testId };
+      const payload = {
+        questionText: form.questionText.trim(),
+        options: form.options,
+        correctAnswer: form.correctAnswer,
+        marks: Number(form.marks) || 1,
+        negativeMarks: Number(form.negativeMarks) || 0,
+        explanation: form.explanation.trim(),
+        section: finalSection || "General",
+        testId
+      };
+
       if (editQ) {
         await api.put(`/questions/${editQ._id}`, payload);
       } else {
@@ -150,6 +273,30 @@ const Questions = () => {
     setForm({ ...form, options: opts });
   };
 
+  // Filtered questions based on selected section tab
+  const filteredQuestions = useMemo(() => {
+    if (selectedSectionFilter === "all") return questions;
+    return questions.filter((q) => (q.section?.trim() || "General") === selectedSectionFilter);
+  }, [questions, selectedSectionFilter]);
+
+  // Questions grouped by section for structured view
+  const groupedQuestions = useMemo(() => {
+    const map = new Map();
+    availableSections.forEach((sec) => map.set(sec, []));
+    questions.forEach((q) => {
+      const sec = q.section?.trim() || "General";
+      if (!map.has(sec)) {
+        map.set(sec, []);
+      }
+      map.get(sec).push(q);
+    });
+    return Array.from(map.entries()).map(([sectionName, qs]) => ({
+      sectionName,
+      questions: qs,
+      totalMarks: qs.reduce((acc, curr) => acc + (Number(curr.marks) || 1), 0)
+    }));
+  }, [availableSections, questions]);
+
   return (
     <DashboardLayout title="Manage Test Questions">
       <div className="admin-questions-page">
@@ -163,19 +310,84 @@ const Questions = () => {
               <div>
                 <h2>{test.title}</h2>
                 <div className="aq-meta-tags">
-                  <span className="aq-tag" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><FileTextIcon size={14} /> {questions.length} Questions</span>
-                  {test.subject && <span className="aq-tag" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><BookOpenIcon size={14} /> {test.subject}</span>}
-                  <span className="aq-tag" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><ClockIcon size={14} /> {test.duration} min</span>
-                  <span className="aq-tag" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><AwardIcon size={14} /> {test.totalMarks} Marks</span>
+                  <span className="aq-tag" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                    <FileTextIcon size={14} /> {questions.length} Questions
+                  </span>
+                  {test.subject && (
+                    <span className="aq-tag" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                      <BookOpenIcon size={14} /> {test.subject}
+                    </span>
+                  )}
+                  <span className="aq-tag" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                    <ClockIcon size={14} /> {test.duration} min
+                  </span>
+                  <span className="aq-tag" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                    <AwardIcon size={14} /> {test.totalMarks} Marks
+                  </span>
                   <span className={`status-pill ${test.status}`}>{test.status}</span>
                 </div>
               </div>
-              <button className="btn-add-question" onClick={openCreate}>
-                + Add Question
-              </button>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <button
+                  className="btn-add-section-toolbar"
+                  onClick={() => setShowAddSectionModal(true)}
+                  title="Create custom section for this test"
+                >
+                  <PlusIcon size={15} />
+                  <span>New Section</span>
+                </button>
+                <button className="btn-add-question" onClick={() => openCreate()}>
+                  <PlusIcon size={16} />
+                  <span>Add Question</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Sections Navigation & Filter Tabs */}
+        {!loading && !error && (
+          <div className="aq-sections-bar">
+            <div className="aq-sections-scroll">
+              <button
+                className={`aq-sec-tab ${selectedSectionFilter === "all" ? "active" : ""}`}
+                onClick={() => setSelectedSectionFilter("all")}
+              >
+                <LayersIcon size={15} />
+                <span>All Sections</span>
+                <span className="aq-sec-badge">{questions.length}</span>
+              </button>
+
+              {availableSections.map((secName) => {
+                const SecIcon = getSectionIcon(secName);
+                const count = sectionStats[secName]?.count || 0;
+                const marks = sectionStats[secName]?.marks || 0;
+                return (
+                  <button
+                    key={secName}
+                    className={`aq-sec-tab ${selectedSectionFilter === secName ? "active" : ""}`}
+                    onClick={() => setSelectedSectionFilter(secName)}
+                  >
+                    <SecIcon size={15} />
+                    <span>{secName}</span>
+                    <span className="aq-sec-badge" title={`${count} Questions • ${marks} Marks`}>
+                      {count} Qs
+                    </span>
+                  </button>
+                );
+              })}
+
+              <button
+                className="aq-sec-tab add-new"
+                onClick={() => setShowAddSectionModal(true)}
+                title="Create a new section like Coding, Technical, etc."
+              >
+                <PlusIcon size={14} />
+                <span>+ Section</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* State */}
         {loading && (
@@ -187,80 +399,112 @@ const Questions = () => {
 
         {!loading && error && (
           <div className="aq-state">
-            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><AlertTriangleIcon size={28} /></span>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+              <AlertTriangleIcon size={28} />
+            </span>
             <p>{error}</p>
           </div>
         )}
 
         {!loading && !error && questions.length === 0 && (
           <div className="aq-state">
-            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}><HelpCircleIcon size={28} /></span>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+              <HelpCircleIcon size={28} />
+            </span>
             <h3>No questions in this test yet</h3>
-            <p>Add questions to enable students to take this assessment.</p>
-            <button className="btn-add-question" onClick={openCreate}>
-              + Add First Question
-            </button>
+            <p>Add sections like Coding, General Aptitude, or Technical to organize your test questions.</p>
+            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+              <button className="btn-add-section-toolbar" onClick={() => setShowAddSectionModal(true)}>
+                <PlusIcon size={15} />
+                <span>Create Section</span>
+              </button>
+              <button className="btn-add-question" onClick={() => openCreate("General")}>
+                <PlusIcon size={16} />
+                <span>Add First Question</span>
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Questions List */}
+        {/* Questions List (Grouped or Filtered View) */}
         {!loading && !error && questions.length > 0 && (
           <div className="aq-list">
-            {questions.map((q, idx) => (
-              <div className="aq-card" key={q._id}>
-                <div className="aq-card-top">
-                  <span className="aq-num">Question {idx + 1}</span>
-                  <div className="aq-card-actions">
-                    <span className="aq-marks-pill">
-                      +{q.marks || 1} / -{q.negativeMarks || 0} marks
-                    </span>
-                    <button className="btn-action edit" onClick={() => openEdit(q)}>
-                      Edit
-                    </button>
-                    <button className="btn-action delete" onClick={() => setDeleteTarget(q)}>
-                      Delete
-                    </button>
-                  </div>
-                </div>
+            {selectedSectionFilter === "all" ? (
+              // Grouped Section Display
+              groupedQuestions.map((group) => {
+                const SecIcon = getSectionIcon(group.sectionName);
+                if (group.questions.length === 0) return null;
 
-                <p className="aq-question-text">{q.questionText || q.text}</p>
-
-                <div className="aq-options-grid">
-                  {(q.options || []).map((opt, oi) => {
-                    const key = typeof opt === "object" ? opt.key : String.fromCharCode(65 + oi);
-                    const text = typeof opt === "object" ? opt.text : opt;
-                    const isCorrect = q.correctAnswer === key;
-                    return (
-                      <div key={oi} className={`aq-option ${isCorrect ? "correct" : ""}`}>
-                        <span className="opt-key-circle">{key}</span>
-                        <span className="opt-text">{text}</span>
-                        {isCorrect && <span className="correct-badge">✓ Correct</span>}
+                return (
+                  <div className="aq-section-block" key={group.sectionName}>
+                    <div className="aq-section-block-header">
+                      <div className="aq-section-title-wrap">
+                        <span className="aq-section-icon-box">
+                          <SecIcon size={18} />
+                        </span>
+                        <div>
+                          <h3 className="aq-section-title">{group.sectionName} Section</h3>
+                          <span className="aq-section-meta">
+                            {group.questions.length} Question{group.questions.length > 1 ? "s" : ""} • {group.totalMarks} Total Marks
+                          </span>
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
+                      <button
+                        className="btn-add-in-section"
+                        onClick={() => openCreate(group.sectionName)}
+                        title={`Add question to ${group.sectionName}`}
+                      >
+                        <PlusIcon size={14} />
+                        <span>Add Question</span>
+                      </button>
+                    </div>
 
-                {q.explanation && (
-                  <div className="aq-explanation" style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
-                    <span className="exp-icon" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                      <SparklesIcon size={14} /> Explanation:
-                    </span>
-                    <span>{q.explanation}</span>
+                    <div className="aq-section-cards-grid">
+                      {group.questions.map((q, idx) => {
+                        const globalIdx = questions.findIndex((x) => x._id === q._id);
+                        return renderQuestionCard(q, globalIdx !== -1 ? globalIdx : idx);
+                      })}
+                    </div>
                   </div>
-                )}
+                );
+              })
+            ) : filteredQuestions.length === 0 ? (
+              <div className="aq-state" style={{ padding: "3rem 1.5rem" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                  <HelpCircleIcon size={26} />
+                </span>
+                <h3>No questions in {selectedSectionFilter} section</h3>
+                <p>Add the first question to this section to enable candidates to take it.</p>
+                <button
+                  className="btn-add-question"
+                  onClick={() => openCreate(selectedSectionFilter)}
+                >
+                  <PlusIcon size={15} />
+                  <span>Add Question to {selectedSectionFilter}</span>
+                </button>
               </div>
-            ))}
+            ) : (
+              // Single Section View
+              filteredQuestions.map((q, idx) => renderQuestionCard(q, idx))
+            )}
           </div>
         )}
 
-        {/* Modal */}
+        {/* Question Modal */}
         {showModal && (
           <div
             className="modal-overlay"
             onClick={(e) => e.target.classList.contains("modal-overlay") && setShowModal(false)}
           >
             <div className="aq-modal" onClick={(e) => e.stopPropagation()}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "1.25rem"
+                }}
+              >
                 <h2 style={{ margin: 0 }}>
                   <HelpCircleIcon size={22} color="#0284c7" />
                   <span>{editQ ? "Edit Question" : "Add New Question"}</span>
@@ -282,25 +526,99 @@ const Questions = () => {
                     color: "#64748b",
                     transition: "all 0.15s ease"
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#e2e8f0"; e.currentTarget.style.color = "#0f172a"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.color = "#64748b"; }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#e2e8f0";
+                    e.currentTarget.style.color = "#0f172a";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#f1f5f9";
+                    e.currentTarget.style.color = "#64748b";
+                  }}
                 >
                   ✕
                 </button>
               </div>
+
               <div className="aq-modal-form">
+                {/* Section Selection */}
+                <div className="aq-form-group">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <label>Test Section *</label>
+                    <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                      Organize by Coding, General, Aptitude, etc.
+                    </span>
+                  </div>
+
+                  <div className="aq-section-chips-row">
+                    {availableSections.map((secName) => {
+                      const SecIcon = getSectionIcon(secName);
+                      const isSelected = form.section === secName;
+                      return (
+                        <button
+                          key={secName}
+                          type="button"
+                          className={`aq-section-chip ${isSelected ? "selected" : ""}`}
+                          onClick={() => setForm({ ...form, section: secName, customSection: "" })}
+                        >
+                          <SecIcon size={14} />
+                          <span>{secName}</span>
+                          {isSelected && <CheckIcon size={13} />}
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      className={`aq-section-chip ${form.section === "__custom__" ? "selected" : ""}`}
+                      onClick={() => setForm({ ...form, section: "__custom__" })}
+                    >
+                      <PlusIcon size={14} />
+                      <span>+ Custom Section</span>
+                    </button>
+                  </div>
+
+                  {form.section === "__custom__" && (
+                    <div style={{ marginTop: "8px" }}>
+                      <input
+                        type="text"
+                        placeholder="Type custom section name (e.g. Data Structures, SQL, Verbal)..."
+                        value={form.customSection}
+                        onChange={(e) => setForm({ ...form, customSection: e.target.value })}
+                        style={{
+                          width: "100%",
+                          padding: "8px 12px",
+                          borderRadius: "10px",
+                          border: "1.5px solid #0284c7"
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Coding Section Tip */}
+                  {(form.section === "Coding" || form.customSection.toLowerCase().includes("code")) && (
+                    <div className="aq-coding-tip-banner">
+                      <CodeIcon size={16} />
+                      <div>
+                        <strong>Coding Section Question:</strong> Code snippets, monospace indentation, and logic specifications will be formatted with high-readability developer styling.
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="aq-form-group">
                   <label>Question Statement *</label>
                   <textarea
-                    rows={3}
+                    rows={4}
                     value={form.questionText}
                     onChange={(e) => setForm({ ...form, questionText: e.target.value })}
-                    placeholder="Enter the question clearly..."
+                    placeholder="Enter the question clearly (code snippets or problem statements supported)..."
+                    style={{
+                      fontFamily: (form.section === "Coding" || form.questionText.includes("function") || form.questionText.includes("class")) ? "'JetBrains Mono', 'Fira Code', monospace" : "inherit"
+                    }}
                   />
                 </div>
 
                 <div className="aq-options-form">
-                  <label>Multiple Choice Options *</label>
+                  <label>Multiple Choice Options (Mark Correct Answer) *</label>
                   {form.options.map((opt, idx) => (
                     <div key={idx} className="opt-input-row">
                       <span className="opt-label">{opt.key}</span>
@@ -347,12 +665,12 @@ const Questions = () => {
                 </div>
 
                 <div className="aq-form-group">
-                  <label>Explanation (Optional)</label>
+                  <label>Explanation & Solution Guide (Optional)</label>
                   <input
                     type="text"
                     value={form.explanation}
                     onChange={(e) => setForm({ ...form, explanation: e.target.value })}
-                    placeholder="Provide reasoning or working for the correct answer"
+                    placeholder="Provide reasoning, working, or code logic for the correct answer"
                   />
                 </div>
 
@@ -379,6 +697,123 @@ const Questions = () => {
           </div>
         )}
 
+        {/* Add Section Modal */}
+        {showAddSectionModal && (
+          <div
+            className="modal-overlay"
+            onClick={(e) => e.target.classList.contains("modal-overlay") && setShowAddSectionModal(false)}
+          >
+            <div className="aq-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "480px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "1.25rem"
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <LayersIcon size={20} color="#0284c7" />
+                  <span>Create Test Section</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowAddSectionModal(false)}
+                  style={{
+                    background: "#f1f5f9",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "32px",
+                    height: "32px",
+                    cursor: "pointer",
+                    color: "#64748b"
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {sectionError && (
+                <div style={{ background: "#fef2f2", color: "#991b1b", padding: "10px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "12px", border: "1px solid #fecaca" }}>
+                  ⚠️ {sectionError}
+                </div>
+              )}
+
+              <form onSubmit={handleCreateSection}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <div>
+                    <label style={{ fontSize: "0.86rem", fontWeight: 700, color: "#1e293b", display: "block", marginBottom: "6px" }}>
+                      Section Name *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Coding, Aptitude, System Design, SQL..."
+                      value={newSectionInput}
+                      onChange={(e) => {
+                        setNewSectionInput(e.target.value);
+                        setSectionError("");
+                      }}
+                      autoFocus
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: "10px",
+                        border: "1.5px solid #cbd5e1",
+                        fontSize: "0.95rem"
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "#64748b", display: "block", marginBottom: "6px" }}>
+                      Quick Preset Suggestions:
+                    </label>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                      {PRESET_SECTIONS.map((p) => (
+                        <button
+                          key={p.name}
+                          type="button"
+                          onClick={() => setNewSectionInput(p.name)}
+                          style={{
+                            background: "#f8fafc",
+                            border: "1px solid #e2e8f0",
+                            borderRadius: "9999px",
+                            padding: "4px 10px",
+                            fontSize: "0.78rem",
+                            fontWeight: 600,
+                            color: "#475569",
+                            cursor: "pointer"
+                          }}
+                        >
+                          + {p.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "24px" }}>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={() => setShowAddSectionModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-submit"
+                    disabled={savingSection}
+                  >
+                    {savingSection ? "Creating..." : "Create Section"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* Centered Modern Delete Confirmation Modal */}
         <ConfirmModal
           isOpen={!!deleteTarget}
@@ -393,6 +828,83 @@ const Questions = () => {
       </div>
     </DashboardLayout>
   );
+
+  // Helper renderer for Question Card with Enhanced Edit & Delete UI
+  function renderQuestionCard(q, idx) {
+    const secName = q.section?.trim() || "General";
+    const SecIcon = getSectionIcon(secName);
+    const isCoding = secName.toLowerCase().includes("code");
+
+    return (
+      <div className={`aq-card ${isCoding ? "is-coding-card" : ""}`} key={q._id}>
+        <div className="aq-card-top">
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <span className="aq-number">Question {idx + 1}</span>
+            <span className={`aq-section-pill ${isCoding ? "coding" : ""}`}>
+              <SecIcon size={13} />
+              <span>{secName}</span>
+            </span>
+          </div>
+
+          <div className="aq-card-actions">
+            <span className="aq-marks-pill">
+              +{q.marks || 1} / -{q.negativeMarks || 0} marks
+            </span>
+
+            {/* Redesigned, High-End Edit Button */}
+            <button
+              type="button"
+              className="aq-btn-edit"
+              onClick={() => openEdit(q)}
+              title="Edit question text, options, and marks"
+            >
+              <EditIcon size={14} />
+              <span>Edit</span>
+            </button>
+
+            {/* Redesigned, High-End Delete Button */}
+            <button
+              type="button"
+              className="aq-btn-delete"
+              onClick={() => setDeleteTarget(q)}
+              title="Permanently remove question"
+            >
+              <TrashIcon size={14} />
+              <span>Delete</span>
+            </button>
+          </div>
+        </div>
+
+        <p className={`aq-question-text ${isCoding ? "code-text" : ""}`}>
+          {q.questionText || q.text}
+        </p>
+
+        <div className="aq-options-grid">
+          {(q.options || []).map((opt, oi) => {
+            const key = typeof opt === "object" ? opt.key : String.fromCharCode(65 + oi);
+            const text = typeof opt === "object" ? opt.text : opt;
+            const isCorrect = q.correctAnswer === key;
+            return (
+              <div key={oi} className={`aq-option ${isCorrect ? "correct" : ""}`}>
+                <span className="opt-key-circle">{key}</span>
+                <span className="opt-text">{text}</span>
+                {isCorrect && <span className="correct-badge">✓ Correct</span>}
+              </div>
+            );
+          })}
+        </div>
+
+        {q.explanation && (
+          <div className="aq-explanation" style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+            <span className="exp-icon" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+              <SparklesIcon size={14} /> Explanation:
+            </span>
+            <span>{q.explanation}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
 };
 
 export default Questions;
