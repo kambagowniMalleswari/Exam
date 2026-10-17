@@ -295,26 +295,59 @@ const AttemptResult = () => {
                         <p className="review-question">
                           {item.questionText || item.question || "Question"}
                         </p>
-                        <div className="review-answers">
-                          <div className="review-answer-row">
-                            <strong>Your answer:</strong>{" "}
-                            <span className={`review-answer ${isCorrect ? "your-correct" : isUnanswered ? "unanswered-label" : "your-wrong"}`}>
-                              {studentAnsDisplay}
-                            </span>
+                        {item.questionType === "coding" || item.testCasesPassed !== undefined ? (
+                          <div className="review-coding-details">
+                            <div className="review-coding-header">
+                              <span className="coding-lang-chip">
+                                {item.codingLanguage === "python" ? "🐍 Python" : "⚡ JavaScript"}
+                              </span>
+                              <span className={`coding-cases-chip ${isCorrect ? "c" : item.isPartial ? "p" : "w"}`}>
+                                🧪 {item.testCasesPassed ?? 0}/{item.totalTestCases ?? 0} Test Cases Passed
+                              </span>
+                            </div>
+
+                            <div className="review-answer-row">
+                              <strong>Submitted Code:</strong>
+                              <pre className="review-code-block">
+                                {studentAnsDisplay}
+                              </pre>
+                            </div>
+
+                            <div className="review-answer-row">
+                              <strong>Evaluation:</strong>{" "}
+                              <span className={`status-pill ${item.isPartial ? "warning" : statusClass}`}>
+                                {isCorrect
+                                  ? "All Test Cases Passed (Full Marks)"
+                                  : item.isPartial
+                                  ? `Partial Pass (${item.testCasesPassed}/${item.totalTestCases} Passed)`
+                                  : isUnanswered
+                                  ? "No Code Submitted"
+                                  : "Failed Test Cases"}
+                              </span>
+                            </div>
                           </div>
-                          <div className="review-answer-row">
-                            <strong>Correct answer:</strong>{" "}
-                            <span className="review-answer correct-answer">
-                              {item.correctAnswer || "—"}
-                            </span>
+                        ) : (
+                          <div className="review-answers">
+                            <div className="review-answer-row">
+                              <strong>Your answer:</strong>{" "}
+                              <span className={`review-answer ${isCorrect ? "your-correct" : isUnanswered ? "unanswered-label" : "your-wrong"}`}>
+                                {studentAnsDisplay}
+                              </span>
+                            </div>
+                            <div className="review-answer-row">
+                              <strong>Correct answer:</strong>{" "}
+                              <span className="review-answer correct-answer">
+                                {item.correctAnswer || "—"}
+                              </span>
+                            </div>
+                            <div className="review-answer-row">
+                              <strong>Status:</strong>{" "}
+                              <span className={`status-pill ${statusClass}`}>
+                                {itemStatus}
+                              </span>
+                            </div>
                           </div>
-                          <div className="review-answer-row">
-                            <strong>Status:</strong>{" "}
-                            <span className={`status-pill ${statusClass}`}>
-                              {itemStatus}
-                            </span>
-                          </div>
-                        </div>
+                        )}
                         {item.explanation && (
                           <p className="review-explanation" style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
                             <SparklesIcon size={14} style={{ marginTop: "2px", flexShrink: 0 }} />

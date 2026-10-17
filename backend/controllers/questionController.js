@@ -2,6 +2,7 @@
 import mongoose from "mongoose";
 import Question from "../models/Question.js";
 import Test from "../models/Test.js";
+import { runCodeAgainstTestCases } from "../utils/codeExecutor.js";
 
 // Helper to recalculate test total marks
 const updateTestTotalMarks = async (testId) => {
@@ -22,14 +23,27 @@ export const createQuestion = async (req, res) => {
       negativeMarks = 0,
       order,
       explanation = "",
-      section = "Section A"
+      section = "General",
+      questionType = "mcq",
+      codingLanguage = "javascript",
+      starterCode = "",
+      testCases = []
     } = req.body;
 
+    const isCoding = questionType === "coding";
+
     // Check required fields
-    if (!questionText || !testId || !options || !correctAnswer) {
+    if (!questionText || !testId) {
       return res.status(400).json({
         success: false,
-        message: "Question text, test ID, options, and correct answer are required"
+        message: "Question text and test ID are required"
+      });
+    }
+
+    if (!isCoding && (!options || !correctAnswer)) {
+      return res.status(400).json({
+        success: false,
+        message: "Options and correct answer are required for multiple-choice questions"
       });
     }
 
@@ -65,11 +79,11 @@ export const createQuestion = async (req, res) => {
       }
     }
 
-    // Check options
-    if (!Array.isArray(options) || options.length < 2) {
+    // Check options if MCQ
+    if (!isCoding && (!Array.isArray(options) || options.length < 2)) {
       return res.status(400).json({
         success: false,
-        message: "At least 2 options are required"
+        message: "At least 2 options are required for multiple-choice questions"
       });
     }
 
@@ -85,13 +99,17 @@ export const createQuestion = async (req, res) => {
       questionText: questionText.trim(),
       testId,
       organizationId: test.organizationId,
-      options,
-      correctAnswer: correctAnswer.trim(),
+      questionType: isCoding ? "coding" : "mcq",
+      codingLanguage: isCoding ? (codingLanguage || "javascript") : "javascript",
+      starterCode: isCoding ? (starterCode || "") : "",
+      testCases: isCoding && Array.isArray(testCases) ? testCases : [],
+      options: isCoding ? (Array.isArray(options) ? options : []) : options,
+      correctAnswer: isCoding ? (correctAnswer || "Passing Test Cases") : (correctAnswer ? correctAnswer.trim() : ""),
       marks: Number(marks) || 1,
       negativeMarks: Number(negativeMarks) || 0,
       order: questionOrder,
       explanation: explanation || "",
-      section: section ? section.trim() : "Section A"
+      section: section ? section.trim() : "General"
     });
 
     // Update test total marks
@@ -194,10 +212,22 @@ export const getQuestionsForStudent = async (req, res) => {
       }
     }
 
-    // Exclude correctAnswer and explanation to prevent cheating
-    const questions = await Question.find({ testId })
+    // Exclude correctAnswer and explanation to prevent cheating, and provide sample test cases for coding questions
+    const rawQuestions = await Question.find({ testId })
       .select("-correctAnswer -explanation")
-      .sort({ order: 1 });
+      .sort({ order: 1 })
+      .lean();
+
+    const questions = rawQuestions.map((q) => {
+      if (q.questionType === "coding") {
+        return {
+          ...q,
+          // Only show sample test cases to candidate
+          testCases: (q.testCases || []).filter((tc) => tc.isSample !== false)
+        };
+      }
+      return q;
+    });
 
     res.status(200).json({
       success: true,
@@ -299,15 +329,27 @@ export const updateQuestion = async (req, res) => {
       negativeMarks,
       order,
       explanation,
-      section
+      section,
+      questionType,
+      codingLanguage,
+      starterCode,
+      testCases
     } = req.body;
 
+    const targetType = questionType !== undefined ? questionType : question.questionType;
+    const isCoding = targetType === "coding";
+
     if (questionText !== undefined) question.questionText = questionText.trim();
+    if (questionType !== undefined) question.questionType = questionType;
+    if (codingLanguage !== undefined) question.codingLanguage = codingLanguage;
+    if (starterCode !== undefined) question.starterCode = starterCode;
+    if (testCases !== undefined && Array.isArray(testCases)) question.testCases = testCases;
+
     if (options !== undefined) {
-      if (!Array.isArray(options) || options.length < 2) {
+      if (!isCoding && (!Array.isArray(options) || options.length < 2)) {
         return res.status(400).json({
           success: false,
-          message: "At least 2 options are required"
+          message: "At least 2 options are required for multiple-choice questions"
         });
       }
       question.options = options;
@@ -317,7 +359,7 @@ export const updateQuestion = async (req, res) => {
     if (negativeMarks !== undefined) question.negativeMarks = Number(negativeMarks) || 0;
     if (order !== undefined) question.order = Number(order) || 1;
     if (explanation !== undefined) question.explanation = explanation;
-    if (section !== undefined) question.section = section ? section.trim() : "Section A";
+    if (section !== undefined) question.section = section ? section.trim() : "General";
 
     await question.save();
 
@@ -334,6 +376,47 @@ export const updateQuestion = async (req, res) => {
       success: false,
       message: "Failed to update question",
       error: error.message
+    });
+  }
+};
+
+// Real-time Candidate Code Execution / Test Runner
+export const runCandidateCode = async (req, res) => {
+  try {
+    const { code, language = "javascript", testCases = [], questionId } = req.body;
+
+    let targetTestCases = Array.isArray(testCases) ? testCases : [];
+
+    // If questionId is provided without testCases, fetch sample test cases from question
+    if (questionId && targetTestCases.length === 0) {
+      const q = await Question.findById(questionId);
+      if (q && q.testCases) {
+        targetTestCases = q.testCases.filter((tc) => tc.isSample !== false);
+      }
+    }
+
+    if (!targetTestCases || targetTestCases.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No test cases provided for execution"
+      });
+    }
+
+    const results = runCodeAgainstTestCases(code, language, targetTestCases);
+    const passedCount = results.filter((r) => r.passed).length;
+
+    res.status(200).json({
+      success: true,
+      totalTestCases: results.length,
+      passedCount,
+      allPassed: passedCount === results.length,
+      results
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Code execution error",
+      error: err.message
     });
   }
 };

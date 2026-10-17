@@ -8,7 +8,8 @@ import {
   getQuestionsForStudent,
   getQuestionById,
   updateQuestion,
-  deleteQuestion
+  deleteQuestion,
+  runCandidateCode
 } from "../controllers/questionController.js";
 
 // Import middleware
@@ -25,6 +26,9 @@ router.use(tenantMiddleware);
 
 // Endpoint for students to get questions without correct answers
 router.get("/test/:testId/student", getQuestionsForStudent);
+
+// Endpoint for candidates/teachers to execute code against test cases in real-time
+router.post("/run-code", runCandidateCode);
 
 // Management roles
 const managerRoles = authorize("admin", "org_admin", "teacher", "super_admin");

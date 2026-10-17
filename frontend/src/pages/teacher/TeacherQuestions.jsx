@@ -140,11 +140,66 @@ const TeacherQuestions = () => {
     return stats;
   }, [availableSections, questions]);
 
-  const resetForm = (targetSection = "General") =>
+const DEFAULT_STARTER_CODE_JS = `function solution(input) {
+  // Write your code here
+  return input * 2;
+}`;
+
+const DEFAULT_STARTER_CODE_PY = `def solution(input):
+    # Write your code here
+    return input * 2`;
+
+const CODING_PRESETS = [
+  {
+    name: "Double a Number",
+    statement: "Write a function `solution(n)` that takes a number `n` and returns its double (`n * 2`).",
+    language: "javascript",
+    starter: `function solution(n) {\n  // Write your code here\n  return n * 2;\n}`,
+    testCases: [
+      { input: "5", expectedOutput: "10", isSample: true, explanation: "5 * 2 = 10" },
+      { input: "12", expectedOutput: "24", isSample: true, explanation: "12 * 2 = 24" },
+      { input: "0", expectedOutput: "0", isSample: false, explanation: "Edge case: 0" },
+      { input: "-4", expectedOutput: "-8", isSample: false, explanation: "Negative number" }
+    ]
+  },
+  {
+    name: "Reverse a String",
+    statement: "Write a function `solution(str)` that takes a string and returns it reversed.",
+    language: "javascript",
+    starter: `function solution(str) {\n  // Write your code here\n  return str.split('').reverse().join('');\n}`,
+    testCases: [
+      { input: '"hello"', expectedOutput: '"olleh"', isSample: true, explanation: 'Reversed hello is olleh' },
+      { input: '"world"', expectedOutput: '"dlrow"', isSample: true, explanation: 'Reversed world is dlrow' },
+      { input: '"racecar"', expectedOutput: '"racecar"', isSample: false, explanation: 'Palindrome string' }
+    ]
+  },
+  {
+    name: "Array Sum",
+    statement: "Write a function `solution(arr)` that computes and returns the sum of all elements in the given array.",
+    language: "javascript",
+    starter: `function solution(arr) {\n  // Write your code here\n  return arr.reduce((sum, x) => sum + x, 0);\n}`,
+    testCases: [
+      { input: "[1, 2, 3, 4]", expectedOutput: "10", isSample: true, explanation: "1+2+3+4 = 10" },
+      { input: "[5, 10, 15]", expectedOutput: "30", isSample: true, explanation: "5+10+15 = 30" },
+      { input: "[]", expectedOutput: "0", isSample: false, explanation: "Empty array sum is 0" }
+    ]
+  }
+];
+
+  const resetForm = (targetSection = "General") => {
+    const isCodingSec = targetSection.toLowerCase().includes("code");
     setForm({
-      questionText: "",
+      questionText: isCodingSec ? "Write a function solution(n) that takes an input and returns its double." : "",
       section: targetSection,
       customSection: "",
+      questionType: isCodingSec ? "coding" : "mcq",
+      codingLanguage: "javascript",
+      starterCode: DEFAULT_STARTER_CODE_JS,
+      testCases: [
+        { input: "5", expectedOutput: "10", isSample: true, explanation: "5 * 2 = 10" },
+        { input: "12", expectedOutput: "24", isSample: true, explanation: "12 * 2 = 24" },
+        { input: "100", expectedOutput: "200", isSample: false, explanation: "100 * 2 = 200 (Hidden test case)" }
+      ],
       options: [
         { key: "A", text: "" },
         { key: "B", text: "" },
@@ -152,10 +207,11 @@ const TeacherQuestions = () => {
         { key: "D", text: "" }
       ],
       correctAnswer: "A",
-      marks: 1,
+      marks: isCodingSec ? 5 : 1,
       negativeMarks: 0,
       explanation: ""
     });
+  };
 
   const openCreate = (preselectedSection = null) => {
     setEditQ(null);
@@ -171,11 +227,19 @@ const TeacherQuestions = () => {
     );
     const currentSec = q.section?.trim() || "General";
     const isCustom = !availableSections.includes(currentSec);
+    const isCoding = q.questionType === "coding" || (Array.isArray(q.testCases) && q.testCases.length > 0);
 
     setForm({
       questionText: q.questionText || q.text || "",
       section: isCustom ? "__custom__" : currentSec,
       customSection: isCustom ? currentSec : "",
+      questionType: isCoding ? "coding" : "mcq",
+      codingLanguage: q.codingLanguage || "javascript",
+      starterCode: q.starterCode || (q.codingLanguage === "python" ? DEFAULT_STARTER_CODE_PY : DEFAULT_STARTER_CODE_JS),
+      testCases: Array.isArray(q.testCases) && q.testCases.length > 0 ? q.testCases : [
+        { input: "5", expectedOutput: "10", isSample: true, explanation: "" },
+        { input: "12", expectedOutput: "24", isSample: true, explanation: "" }
+      ],
       options: opts.length === 4 ? opts : [
         { key: "A", text: opts[0]?.text || "" },
         { key: "B", text: opts[1]?.text || "" },
@@ -183,11 +247,47 @@ const TeacherQuestions = () => {
         { key: "D", text: opts[3]?.text || "" }
       ],
       correctAnswer: q.correctAnswer || "A",
-      marks: q.marks || 1,
+      marks: q.marks || (isCoding ? 5 : 1),
       negativeMarks: q.negativeMarks || 0,
       explanation: q.explanation || ""
     });
     setShowModal(true);
+  };
+
+  const addTestCase = () => {
+    setForm((prev) => ({
+      ...prev,
+      testCases: [
+        ...prev.testCases,
+        { input: "", expectedOutput: "", isSample: true, explanation: "" }
+      ]
+    }));
+  };
+
+  const updateTestCase = (idx, field, value) => {
+    setForm((prev) => {
+      const updated = [...prev.testCases];
+      updated[idx] = { ...updated[idx], [field]: value };
+      return { ...prev, testCases: updated };
+    });
+  };
+
+  const deleteTestCase = (idx) => {
+    setForm((prev) => ({
+      ...prev,
+      testCases: prev.testCases.filter((_, i) => i !== idx)
+    }));
+  };
+
+  const applyPreset = (preset) => {
+    setForm((prev) => ({
+      ...prev,
+      questionText: preset.statement,
+      questionType: "coding",
+      codingLanguage: preset.language,
+      starterCode: preset.starter,
+      testCases: preset.testCases
+    }));
   };
 
   // Section CRUD 1: CREATE Section
@@ -355,13 +455,28 @@ const TeacherQuestions = () => {
 
   const handleSubmit = async () => {
     if (!form.questionText.trim()) {
-      alert("Question text is required.");
+      alert("Question statement is required.");
       return;
     }
-    const emptyOpt = form.options.some((o) => !o.text.trim());
-    if (emptyOpt) {
-      alert("All 4 options must be filled.");
-      return;
+
+    const isCoding = form.questionType === "coding";
+
+    if (isCoding) {
+      if (!form.testCases || form.testCases.length === 0) {
+        alert("Please provide at least 1 test case for automated evaluation.");
+        return;
+      }
+      const missingOutput = form.testCases.some((tc) => !tc.expectedOutput || !tc.expectedOutput.trim());
+      if (missingOutput) {
+        alert("All test cases must have an Expected Output specified.");
+        return;
+      }
+    } else {
+      const emptyOpt = form.options.some((o) => !o.text.trim());
+      if (emptyOpt) {
+        alert("All 4 options must be filled for multiple-choice questions.");
+        return;
+      }
     }
 
     let finalSection = form.section;
@@ -377,9 +492,13 @@ const TeacherQuestions = () => {
       setSubmitting(true);
       const payload = {
         questionText: form.questionText.trim(),
-        options: form.options,
-        correctAnswer: form.correctAnswer,
-        marks: Number(form.marks) || 1,
+        questionType: isCoding ? "coding" : "mcq",
+        codingLanguage: form.codingLanguage || "javascript",
+        starterCode: form.starterCode || "",
+        testCases: form.testCases || [],
+        options: isCoding ? form.options : form.options,
+        correctAnswer: isCoding ? "Passes Test Cases" : form.correctAnswer,
+        marks: Number(form.marks) || (isCoding ? 5 : 1),
         negativeMarks: Number(form.negativeMarks) || 0,
         explanation: form.explanation.trim(),
         section: finalSection || "General",
@@ -801,32 +920,221 @@ const TeacherQuestions = () => {
                   />
                 </div>
 
+                {/* Question Type: MCQ vs Coding */}
                 <div className="form-row">
-                  <label>Options & Correct Answer *</label>
-                  <div className="tq-options-builder">
-                    {form.options.map((opt, idx) => (
-                      <div key={idx} className="tq-opt-input-row">
-                        <span className="tq-opt-key">{opt.key}</span>
-                        <input
-                          type="text"
-                          placeholder={`Option ${opt.key}`}
-                          value={opt.text}
-                          onChange={(e) => updateOption(idx, e.target.value)}
-                        />
-                        <input
-                          type="radio"
-                          name="teacherCorrectAnswer"
-                          id={`t-radio-${opt.key}`}
-                          checked={form.correctAnswer === opt.key}
-                          onChange={() => setForm({ ...form, correctAnswer: opt.key })}
-                        />
-                        <label htmlFor={`t-radio-${opt.key}`} className="tq-radio-label">
-                          Correct
-                        </label>
-                      </div>
-                    ))}
+                  <label>Question Type *</label>
+                  <div className="aq-qtype-toggle">
+                    <button
+                      type="button"
+                      className={`aq-qtype-btn ${form.questionType === "mcq" ? "active" : ""}`}
+                      onClick={() => setForm({ ...form, questionType: "mcq" })}
+                    >
+                      <LayersIcon size={15} />
+                      <span>Multiple Choice (MCQ)</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`aq-qtype-btn ${form.questionType === "coding" ? "active" : ""}`}
+                      onClick={() => setForm({ ...form, questionType: "coding" })}
+                    >
+                      <CodeIcon size={15} />
+                      <span>Coding Question (Live Code & Automated Evaluation)</span>
+                    </button>
                   </div>
                 </div>
+
+                {/* CODING QUESTION BUILDER */}
+                {form.questionType === "coding" && (
+                  <div className="aq-coding-builder-box">
+                    {/* Quick Presets */}
+                    <div style={{ marginBottom: "14px" }}>
+                      <label style={{ fontSize: "0.8rem", fontWeight: 700, color: "#475569", display: "block", marginBottom: "6px" }}>
+                        ⚡ Quick Coding Problem Presets:
+                      </label>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                        {CODING_PRESETS.map((preset) => (
+                          <button
+                            key={preset.name}
+                            type="button"
+                            className="aq-preset-pill"
+                            onClick={() => applyPreset(preset)}
+                          >
+                            + {preset.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="form-grid-2">
+                      <div className="form-row">
+                        <label>Programming Language *</label>
+                        <select
+                          value={form.codingLanguage}
+                          onChange={(e) => {
+                            const lang = e.target.value;
+                            setForm({
+                              ...form,
+                              codingLanguage: lang,
+                              starterCode: lang === "python" ? DEFAULT_STARTER_CODE_PY : DEFAULT_STARTER_CODE_JS
+                            });
+                          }}
+                          style={{
+                            width: "100%",
+                            padding: "9px 12px",
+                            borderRadius: "10px",
+                            border: "1.5px solid #cbd5e1",
+                            fontWeight: 600
+                          }}
+                        >
+                          <option value="javascript">JavaScript (Node.js ES6)</option>
+                          <option value="python">Python 3</option>
+                        </select>
+                      </div>
+
+                      <div className="form-row">
+                        <label>Evaluation Method</label>
+                        <div style={{ padding: "9px 12px", background: "#f8fafc", borderRadius: "10px", fontSize: "0.82rem", color: "#0284c7", fontWeight: 700, border: "1px solid #e2e8f0" }}>
+                          ✓ Live Sandboxed Test Case Runner
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Starter Code Editor */}
+                    <div className="form-row">
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <label>Starter / Solution Function Template *</label>
+                        <button
+                          type="button"
+                          onClick={() => setForm({
+                            ...form,
+                            starterCode: form.codingLanguage === "python" ? DEFAULT_STARTER_CODE_PY : DEFAULT_STARTER_CODE_JS
+                          })}
+                          style={{ background: "none", border: "none", color: "#0284c7", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}
+                        >
+                          Reset Boilerplate
+                        </button>
+                      </div>
+                      <textarea
+                        rows={5}
+                        value={form.starterCode}
+                        onChange={(e) => setForm({ ...form, starterCode: e.target.value })}
+                        placeholder="function solution(input) { ... }"
+                        className="aq-code-textarea"
+                      />
+                      <span style={{ fontSize: "0.76rem", color: "#64748b" }}>
+                        💡 Candidates will see this code in their code editor when taking the test. The function should accept input and return the result.
+                      </span>
+                    </div>
+
+                    {/* Test Cases Editor */}
+                    <div className="form-row">
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                        <label style={{ margin: 0 }}>Automated Test Cases &amp; Expected Outputs *</label>
+                        <button
+                          type="button"
+                          className="btn-add-tc"
+                          onClick={addTestCase}
+                        >
+                          <PlusIcon size={13} />
+                          <span>Add Test Case</span>
+                        </button>
+                      </div>
+
+                      <div className="aq-tc-list">
+                        {form.testCases.map((tc, idx) => (
+                          <div key={idx} className="aq-tc-card">
+                            <div className="aq-tc-card-header">
+                              <span className="aq-tc-num">Test Case #{idx + 1}</span>
+                              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <label className="aq-tc-sample-toggle">
+                                  <input
+                                    type="checkbox"
+                                    checked={tc.isSample}
+                                    onChange={(e) => updateTestCase(idx, "isSample", e.target.checked)}
+                                  />
+                                  <span>{tc.isSample ? "Sample (Visible in test)" : "Hidden (Used for scoring)"}</span>
+                                </label>
+                                {form.testCases.length > 1 && (
+                                  <button
+                                    type="button"
+                                    className="aq-btn-tc-delete"
+                                    onClick={() => deleteTestCase(idx)}
+                                    title="Delete test case"
+                                  >
+                                    ✕
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="aq-tc-grid">
+                              <div>
+                                <span className="tc-field-label">Input / Argument:</span>
+                                <input
+                                  type="text"
+                                  placeholder='e.g. 5, or [1,2,3], or "hello"'
+                                  value={tc.input}
+                                  onChange={(e) => updateTestCase(idx, "input", e.target.value)}
+                                  className="aq-tc-input"
+                                />
+                              </div>
+                              <div>
+                                <span className="tc-field-label">Expected Output (return value) *:</span>
+                                <input
+                                  type="text"
+                                  placeholder='e.g. 10, or 6, or "olleh"'
+                                  value={tc.expectedOutput}
+                                  onChange={(e) => updateTestCase(idx, "expectedOutput", e.target.value)}
+                                  className="aq-tc-input expected"
+                                  required
+                                />
+                              </div>
+                            </div>
+                            <div style={{ marginTop: "6px" }}>
+                              <input
+                                type="text"
+                                placeholder="Explanation / note (optional)"
+                                value={tc.explanation || ""}
+                                onChange={(e) => updateTestCase(idx, "explanation", e.target.value)}
+                                style={{ width: "100%", padding: "5px 8px", fontSize: "0.78rem", border: "1px solid #e2e8f0", borderRadius: "6px" }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* MCQ Options */}
+                {form.questionType !== "coding" && (
+                  <div className="form-row">
+                    <label>Options &amp; Correct Answer *</label>
+                    <div className="tq-options-builder">
+                      {form.options.map((opt, idx) => (
+                        <div key={idx} className="tq-opt-input-row">
+                          <span className="tq-opt-key">{opt.key}</span>
+                          <input
+                            type="text"
+                            placeholder={`Option ${opt.key}`}
+                            value={opt.text}
+                            onChange={(e) => updateOption(idx, e.target.value)}
+                          />
+                          <input
+                            type="radio"
+                            name="teacherCorrectAnswer"
+                            id={`t-radio-${opt.key}`}
+                            checked={form.correctAnswer === opt.key}
+                            onChange={() => setForm({ ...form, correctAnswer: opt.key })}
+                          />
+                          <label htmlFor={`t-radio-${opt.key}`} className="tq-radio-label">
+                            Correct
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="form-grid-2">
                   <div className="form-row">
@@ -1272,20 +1580,60 @@ const TeacherQuestions = () => {
           {q.questionText || q.text}
         </p>
 
-        <div className="q-options">
-          {(q.options || []).map((opt, oi) => {
-            const key = typeof opt === "object" ? opt.key : String.fromCharCode(65 + oi);
-            const text = typeof opt === "object" ? opt.text : opt;
-            const isCorrect = q.correctAnswer === key;
-            return (
-              <div key={oi} className={`q-option ${isCorrect ? "correct" : ""}`}>
-                <span className="q-opt-key">{key}</span>
-                <span style={{ flex: 1 }}>{text}</span>
-                {isCorrect && <span className="correct-tick">✓ Correct</span>}
+        {isCoding || q.questionType === "coding" || (q.testCases && q.testCases.length > 0) ? (
+          <div className="aq-coding-card-details">
+            <div className="aq-code-meta-bar">
+              <span className="aq-code-lang-tag">
+                <CodeIcon size={13} /> {q.codingLanguage || "javascript"}
+              </span>
+              <span className="aq-code-tc-count">
+                {(q.testCases || []).length} Automated Test Cases
+              </span>
+            </div>
+
+            {q.starterCode && (
+              <div className="aq-starter-preview-box">
+                <span className="aq-starter-label">Starter Code:</span>
+                <pre><code>{q.starterCode}</code></pre>
               </div>
-            );
-          })}
-        </div>
+            )}
+
+            {(q.testCases || []).length > 0 && (
+              <div className="aq-test-cases-preview">
+                <span className="tc-header">Sample Test Cases:</span>
+                <div className="tc-chips-row">
+                  {q.testCases.map((tc, tci) => (
+                    <div key={tci} className="tc-chip">
+                      <span className="tc-in">In: <code>{tc.input || "∅"}</code></span>
+                      <span className="tc-arrow">→</span>
+                      <span className="tc-out">Out: <code>{tc.expectedOutput}</code></span>
+                      {tc.isSample !== false ? (
+                        <span className="sample-badge">Sample</span>
+                      ) : (
+                        <span className="sample-badge hidden">Hidden</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="q-options">
+            {(q.options || []).map((opt, oi) => {
+              const key = typeof opt === "object" ? opt.key : String.fromCharCode(65 + oi);
+              const text = typeof opt === "object" ? opt.text : opt;
+              const isCorrect = q.correctAnswer === key;
+              return (
+                <div key={oi} className={`q-option ${isCorrect ? "correct" : ""}`}>
+                  <span className="q-opt-key">{key}</span>
+                  <span style={{ flex: 1 }}>{text}</span>
+                  {isCorrect && <span className="correct-tick">✓ Correct</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {q.explanation && (
           <div className="q-explanation" style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>

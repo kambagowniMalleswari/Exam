@@ -19,6 +19,13 @@ const TakeTest = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [autoSubmitted, setAutoSubmitted] = useState(false);
 
+  // Live Coding & Evaluation State
+  const [codeOutputs, setCodeOutputs] = useState({});
+  const [codeLanguages, setCodeLanguages] = useState({});
+  const [runningCode, setRunningCode] = useState(false);
+  const [activeTestCaseTab, setActiveTestCaseTab] = useState(0);
+  const codeSaveTimeoutRef = useRef(null);
+
   // Proctoring tab-switch state
   const [tabSwitches, setTabSwitches] = useState(0);
   const [showProctorWarning, setShowProctorWarning] = useState(false);
@@ -103,18 +110,27 @@ const TakeTest = () => {
       setQuestions(Array.isArray(qs) ? qs : []);
 
       // Restore saved answers from attempt
+      const restored = {};
       if (Array.isArray(attemptData.answers)) {
-        const restored = {};
         attemptData.answers.forEach((a) => {
           if (a && a.questionId) {
             const qId = a.questionId._id ? a.questionId._id : a.questionId;
             restored[qId] = a.selectedAnswer;
           }
         });
-        setAnswers(restored);
       } else if (attemptData.answers && typeof attemptData.answers === "object") {
-        setAnswers(attemptData.answers);
+        Object.assign(restored, attemptData.answers);
       }
+
+      // Pre-fill starter code for coding questions if unanswered
+      (Array.isArray(qs) ? qs : []).forEach((q) => {
+        if (q.questionType === "coding" || (q.testCases && q.testCases.length > 0)) {
+          if (!restored[q._id] && q.starterCode) {
+            restored[q._id] = q.starterCode;
+          }
+        }
+      });
+      setAnswers(restored);
 
       // Calculate time left
       const duration = attemptData.testId?.duration || attemptData.duration || 30;
@@ -206,6 +222,81 @@ const TakeTest = () => {
 
   const toggleFlag = (questionId) => {
     setFlagged((prev) => ({ ...prev, [questionId]: !prev[questionId] }));
+  };
+
+  const handleCodeChange = (qId, val) => {
+    setAnswers((prev) => ({ ...prev, [qId]: val }));
+    if (codeSaveTimeoutRef.current) clearTimeout(codeSaveTimeoutRef.current);
+    codeSaveTimeoutRef.current = setTimeout(() => {
+      api.patch(`/attempts/${attemptId}/answer`, {
+        questionId: qId,
+        selectedAnswer: val
+      }).catch((err) => {
+        console.warn("Background code save:", err?.response?.data?.message || err.message);
+      });
+    }, 800);
+  };
+
+  const handleResetCode = (q) => {
+    if (!q) return;
+    const defaultCode =
+      q.starterCode ||
+      (q.codingLanguage === "python"
+        ? "# Write your Python solution below\ndef solution():\n    pass\n"
+        : "// Write your JavaScript solution below\nfunction solution() {\n  // Write code here\n}\n");
+    handleCodeChange(q._id, defaultCode);
+  };
+
+  const handleRunCode = async (q) => {
+    if (!q) return;
+    const qId = q._id;
+    const currentCode = answers[qId] ?? q.starterCode ?? "";
+    const language = q.codingLanguage || "javascript";
+    const sampleCases = (q.testCases || []).filter((tc) => tc.isSample !== false);
+
+    try {
+      setRunningCode(true);
+      const res = await api.post("/questions/run-code", {
+        questionId: qId,
+        code: currentCode,
+        language,
+        testCases: sampleCases
+      });
+      setCodeOutputs((prev) => ({
+        ...prev,
+        [qId]: {
+          success: true,
+          totalTestCases: res.data.totalTestCases,
+          passedCount: res.data.passedCount,
+          allPassed: res.data.allPassed,
+          results: res.data.results
+        }
+      }));
+    } catch (err) {
+      setCodeOutputs((prev) => ({
+        ...prev,
+        [qId]: {
+          success: false,
+          error: err.response?.data?.message || err.message || "Failed to execute code"
+        }
+      }));
+    } finally {
+      setRunningCode(false);
+    }
+  };
+
+  const handleCodeKeyDown = (e, qId) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const start = e.target.selectionStart;
+      const end = e.target.selectionEnd;
+      const val = e.target.value;
+      const newVal = val.substring(0, start) + "  " + val.substring(end);
+      handleCodeChange(qId, newVal);
+      setTimeout(() => {
+        e.target.selectionStart = e.target.selectionEnd = start + 2;
+      }, 0);
+    }
   };
 
   const formatTime = (secs) => {
@@ -598,25 +689,189 @@ const TakeTest = () => {
                 <p>{currentQuestion.questionText || currentQuestion.text}</p>
               </div>
 
-              <div className="options-list">
-                {(currentQuestion.options || []).map((option, oi) => {
-                  const optionKey = typeof option === "object" ? option.key : String.fromCharCode(65 + oi);
-                  const optionText = typeof option === "object" ? option.text : option;
-                  const isSelected = answers[currentQuestion._id] === optionKey;
+              {/* Question Body: Coding Workbench or MCQ Options */}
+              {currentQuestion.questionType === "coding" || (currentQuestion.testCases && currentQuestion.testCases.length > 0) ? (
+                <div className="coding-workbench">
+                  <div className="coding-workbench-header">
+                    <div className="coding-lang-badge">
+                      <span className="lang-icon">
+                        {currentQuestion.codingLanguage === "python" ? "🐍" : "⚡"}
+                      </span>
+                      <span className="lang-name">
+                        {currentQuestion.codingLanguage === "python" ? "Python 3.14" : "JavaScript (Node.js)"}
+                      </span>
+                    </div>
 
-                  return (
-                    <button
-                      key={oi}
-                      className={`option-btn ${isSelected ? "selected" : ""}`}
-                      onClick={() => handleAnswer(currentQuestion._id, optionKey)}
-                    >
-                      <span className="option-key">{optionKey}</span>
-                      <span className="option-text">{optionText}</span>
-                      {isSelected && <span className="option-check">✓</span>}
-                    </button>
-                  );
-                })}
-              </div>
+                    <div className="coding-workbench-actions">
+                      <button
+                        type="button"
+                        className="btn-code-reset"
+                        onClick={() => handleResetCode(currentQuestion)}
+                        title="Reset code to default template"
+                      >
+                        ↺ Reset Template
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-code-run"
+                        onClick={() => handleRunCode(currentQuestion)}
+                        disabled={runningCode}
+                      >
+                        {runningCode ? (
+                          <>
+                            <span className="code-spinner"></span>
+                            <span>Executing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>▶</span>
+                            <span>Run &amp; Test</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Code Editor Area */}
+                  <div className="coding-editor-container">
+                    <div className="coding-editor-gutter">
+                      {((answers[currentQuestion._id] ?? currentQuestion.starterCode ?? "").split("\n")).map((_, lineIdx) => (
+                        <span key={lineIdx}>{lineIdx + 1}</span>
+                      ))}
+                    </div>
+                    <textarea
+                      className="coding-editor-textarea"
+                      value={answers[currentQuestion._id] ?? currentQuestion.starterCode ?? ""}
+                      onChange={(e) => handleCodeChange(currentQuestion._id, e.target.value)}
+                      onKeyDown={(e) => handleCodeKeyDown(e, currentQuestion._id)}
+                      placeholder={
+                        currentQuestion.codingLanguage === "python"
+                          ? "# Write your Python code here\ndef solution():\n    pass"
+                          : "// Write your JavaScript code here\nfunction solution() {\n  \n}"
+                      }
+                      spellCheck="false"
+                      autoCapitalize="off"
+                      autoComplete="off"
+                      autoCorrect="off"
+                    />
+                  </div>
+
+                  {/* Sample Test Cases & Execution Results */}
+                  <div className="coding-results-panel">
+                    <div className="results-panel-header">
+                      <div className="results-title">
+                        <span>🧪</span>
+                        <strong>Sample Test Cases &amp; Output</strong>
+                      </div>
+                      {codeOutputs[currentQuestion._id] && (
+                        <div className={`results-status-badge ${codeOutputs[currentQuestion._id].allPassed ? "all-pass" : codeOutputs[currentQuestion._id].passedCount > 0 ? "partial-pass" : "fail"}`}>
+                          {codeOutputs[currentQuestion._id].allPassed
+                            ? `✓ All ${codeOutputs[currentQuestion._id].totalTestCases} Test Cases Passed`
+                            : codeOutputs[currentQuestion._id].error
+                            ? "❌ Execution Error"
+                            : `⚠️ Passed ${codeOutputs[currentQuestion._id].passedCount} of ${codeOutputs[currentQuestion._id].totalTestCases} Test Cases`}
+                        </div>
+                      )}
+                    </div>
+
+                    {codeOutputs[currentQuestion._id]?.error && (
+                      <div className="coding-error-banner">
+                        <span className="error-icon">⚠️</span>
+                        <code>{codeOutputs[currentQuestion._id].error}</code>
+                      </div>
+                    )}
+
+                    {/* Test Cases Tab List */}
+                    <div className="test-cases-display">
+                      {(() => {
+                        const runResults = codeOutputs[currentQuestion._id]?.results;
+                        const sampleCases = (currentQuestion.testCases || []).filter((tc) => tc.isSample !== false);
+                        const displayList = runResults && runResults.length > 0 ? runResults : sampleCases;
+
+                        if (displayList.length === 0) {
+                          return (
+                            <div className="no-test-cases-msg">
+                              No sample test cases provided for this question. Your code will be evaluated against hidden test cases when you submit the test.
+                            </div>
+                          );
+                        }
+
+                        const currentCase = displayList[activeTestCaseTab] || displayList[0];
+
+                        return (
+                          <div className="test-case-tabs-wrapper">
+                            <div className="test-case-tab-buttons">
+                              {displayList.map((tc, tcIdx) => {
+                                const hasPassed = runResults ? tc.passed : null;
+                                return (
+                                  <button
+                                    key={tcIdx}
+                                    type="button"
+                                    className={`tc-tab-btn ${activeTestCaseTab === tcIdx ? "active" : ""} ${hasPassed === true ? "passed" : hasPassed === false ? "failed" : ""}`}
+                                    onClick={() => setActiveTestCaseTab(tcIdx)}
+                                  >
+                                    <span>Case {tcIdx + 1}</span>
+                                    {hasPassed === true && <span className="tc-badge-pass">✓</span>}
+                                    {hasPassed === false && <span className="tc-badge-fail">✗</span>}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {currentCase && (
+                              <div className="tc-detail-box">
+                                <div className="tc-field-group">
+                                  <label>Input</label>
+                                  <pre className="tc-code-block">{currentCase.input || "(No input / empty)"}</pre>
+                                </div>
+                                <div className="tc-field-group">
+                                  <label>Expected Output</label>
+                                  <pre className="tc-code-block expected">{currentCase.expectedOutput}</pre>
+                                </div>
+                                {runResults && (
+                                  <div className="tc-field-group">
+                                    <label>Your Actual Output</label>
+                                    <pre className={`tc-code-block ${runResults[activeTestCaseTab]?.passed ? "actual-pass" : "actual-fail"}`}>
+                                      {runResults[activeTestCaseTab]?.actualOutput !== undefined
+                                        ? String(runResults[activeTestCaseTab]?.actualOutput)
+                                        : runResults[activeTestCaseTab]?.error || "(No output)"}
+                                    </pre>
+                                  </div>
+                                )}
+                                {currentCase.explanation && (
+                                  <div className="tc-explanation">
+                                    <strong>Explanation:</strong> {currentCase.explanation}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="options-list">
+                  {(currentQuestion.options || []).map((option, oi) => {
+                    const optionKey = typeof option === "object" ? option.key : String.fromCharCode(65 + oi);
+                    const optionText = typeof option === "object" ? option.text : option;
+                    const isSelected = answers[currentQuestion._id] === optionKey;
+
+                    return (
+                      <button
+                        key={oi}
+                        className={`option-btn ${isSelected ? "selected" : ""}`}
+                        onClick={() => handleAnswer(currentQuestion._id, optionKey)}
+                      >
+                        <span className="option-key">{optionKey}</span>
+                        <span className="option-text">{optionText}</span>
+                        {isSelected && <span className="option-check">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Question Navigation Buttons */}
               <div className="question-nav-btns">

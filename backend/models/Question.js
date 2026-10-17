@@ -27,21 +27,74 @@ const questionSchema = new mongoose.Schema(
       index: true
     },
 
+    // Question type: Multiple Choice ('mcq') or Coding ('coding')
+    questionType: {
+      type: String,
+      enum: ["mcq", "coding"],
+      default: "mcq",
+      index: true
+    },
+
+    // Programming language for coding questions
+    codingLanguage: {
+      type: String,
+      enum: ["javascript", "python", "java", "cpp", "c"],
+      default: "javascript"
+    },
+
+    // Boilerplate / starter code provided to the candidate
+    starterCode: {
+      type: String,
+      default: ""
+    },
+
+    // Test cases for automated code evaluation
+    testCases: [
+      {
+        input: {
+          type: String,
+          default: ""
+        },
+        expectedOutput: {
+          type: String,
+          required: true
+        },
+        isSample: {
+          type: Boolean,
+          default: true
+        },
+        explanation: {
+          type: String,
+          default: ""
+        }
+      }
+    ],
+
     // Multiple-choice options: array of { key: 'A', text: '...' } or array of strings
     options: {
       type: mongoose.Schema.Types.Mixed,
-      required: [true, "Options are required"],
       validate: {
-        validator: (opts) => Array.isArray(opts) && opts.length >= 2,
-        message: "At least 2 options are required"
-      }
+        validator: function (opts) {
+          if (this.questionType === "coding") return true;
+          return Array.isArray(opts) && opts.length >= 2;
+        },
+        message: "At least 2 options are required for multiple-choice questions"
+      },
+      default: []
     },
 
     // Correct answer matching the option text or key
     correctAnswer: {
       type: String,
-      required: [true, "Correct answer is required"],
-      trim: true
+      validate: {
+        validator: function (ans) {
+          if (this.questionType === "coding") return true;
+          return ans && ans.trim().length > 0;
+        },
+        message: "Correct answer is required for multiple-choice questions"
+      },
+      trim: true,
+      default: ""
     },
 
     // Marks awarded for correct answer

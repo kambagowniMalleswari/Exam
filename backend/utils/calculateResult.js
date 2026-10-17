@@ -1,3 +1,5 @@
+import { runCodeAgainstTestCases } from "./codeExecutor.js";
+
 // Helper to evaluate an attempt and compute score, negative marks, pass/fail status, and detailed breakdown
 export const evaluateAttempt = (
   questions = [],
@@ -78,12 +80,98 @@ export const evaluateAttempt = (
 
     const canonicalCorrectAnswer = correctOpt.text || correctOpt.key || rawCorrect;
 
-    // Check if unanswered
+    // Handle Coding Questions
+    if (question.questionType === "coding" || (question.testCases && question.testCases.length > 0)) {
+      if (!studentChoice || !studentChoice.trim()) {
+        unanswered++;
+        questionBreakdown.push({
+          questionId: question._id,
+          questionText: question.questionText || question.text || "",
+          questionType: "coding",
+          codingLanguage: question.codingLanguage || "javascript",
+          options: question.options,
+          selectedAnswer: "No code submitted",
+          yourAnswer: "No code submitted",
+          correctAnswer: `${(question.testCases || []).length}/${(question.testCases || []).length} test cases passing`,
+          isCorrect: false,
+          isUnanswered: true,
+          status: "unanswered",
+          marksAwarded: 0,
+          marksObtained: 0,
+          testCasesPassed: 0,
+          totalTestCases: (question.testCases || []).length,
+          testCasesResults: [],
+          explanation: question.explanation || ""
+        });
+        return;
+      }
+
+      const testCases = question.testCases || [];
+      const totalTestCases = testCases.length;
+      let passedCount = 0;
+      let testCaseResults = [];
+
+      if (totalTestCases > 0) {
+        testCaseResults = runCodeAgainstTestCases(
+          studentChoice,
+          question.codingLanguage || "javascript",
+          testCases
+        );
+        passedCount = testCaseResults.filter((r) => r.passed).length;
+      }
+
+      const allPassed = totalTestCases > 0 && passedCount === totalTestCases;
+      const partialPassed = passedCount > 0 && !allPassed;
+
+      let marksEarned = 0;
+      let qStatus = "incorrect";
+
+      if (allPassed) {
+        correctAnswers++;
+        marksEarned = qMarks;
+        rawScore += qMarks;
+        qStatus = "correct";
+      } else if (partialPassed) {
+        // Award proportional marks for passed test cases
+        marksEarned = Number(((passedCount / totalTestCases) * qMarks).toFixed(2));
+        rawScore += marksEarned;
+        qStatus = "partial";
+      } else {
+        wrongAnswers++;
+        marksEarned = -qNegMarks;
+        rawScore -= qNegMarks;
+        qStatus = "incorrect";
+      }
+
+      questionBreakdown.push({
+        questionId: question._id,
+        questionText: question.questionText || question.text || "",
+        questionType: "coding",
+        codingLanguage: question.codingLanguage || "javascript",
+        options: question.options,
+        selectedAnswer: studentChoice,
+        yourAnswer: studentChoice,
+        correctAnswer: `${totalTestCases}/${totalTestCases} test cases passing`,
+        isCorrect: allPassed,
+        isUnanswered: false,
+        status: qStatus,
+        marksAwarded: marksEarned,
+        marksObtained: Math.max(0, marksEarned),
+        testCasesPassed: passedCount,
+        totalTestCases,
+        testCasesResults: testCaseResults,
+        explanation: question.explanation || ""
+      });
+      return;
+    }
+
+    // Check if unanswered (for MCQ)
     if (!studentChoice) {
       unanswered++;
       questionBreakdown.push({
         questionId: question._id,
         questionText: question.questionText || question.text || "",
+        questionType: "mcq",
         options: question.options,
         selectedAnswer: "Not answered",
         yourAnswer: "Not answered",
@@ -131,6 +219,7 @@ export const evaluateAttempt = (
       questionBreakdown.push({
         questionId: question._id,
         questionText: question.questionText || question.text || "",
+        questionType: "mcq",
         options: question.options,
         selectedAnswer: canonicalStudentAnswer,
         yourAnswer: canonicalStudentAnswer,
@@ -148,6 +237,7 @@ export const evaluateAttempt = (
       questionBreakdown.push({
         questionId: question._id,
         questionText: question.questionText || question.text || "",
+        questionType: "mcq",
         options: question.options,
         selectedAnswer: canonicalStudentAnswer,
         yourAnswer: canonicalStudentAnswer,
