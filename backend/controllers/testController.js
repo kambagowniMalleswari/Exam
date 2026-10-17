@@ -793,3 +793,136 @@ export const toggleTestStatus = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Add section to test
+export const addSection = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: "Section name is required" });
+    }
+
+    const test = await Test.findById(id);
+    if (!test) {
+      return res.status(404).json({ success: false, message: "Test not found" });
+    }
+
+    const trimmed = name.trim();
+    const currentSections = Array.isArray(test.sections) && test.sections.length > 0 ? test.sections : ["General", "Coding"];
+    if (currentSections.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+      return res.status(400).json({ success: false, message: `Section "${trimmed}" already exists` });
+    }
+
+    test.sections = [...currentSections, trimmed];
+    await test.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Section "${trimmed}" added successfully`,
+      sections: test.sections
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Failed to add section" });
+  }
+};
+
+// Rename section in test and update all assigned questions
+export const renameSection = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { oldName, newName } = req.body;
+
+    if (!oldName || !newName || !newName.trim()) {
+      return res.status(400).json({ success: false, message: "Both old and new section names are required" });
+    }
+
+    const test = await Test.findById(id);
+    if (!test) {
+      return res.status(404).json({ success: false, message: "Test not found" });
+    }
+
+    const oldTrimmed = oldName.trim();
+    const newTrimmed = newName.trim();
+
+    if (oldTrimmed === newTrimmed) {
+      return res.status(200).json({ success: true, message: "Section name unchanged", sections: test.sections });
+    }
+
+    // Update section list on test
+    const currentSections = Array.isArray(test.sections) && test.sections.length > 0 ? test.sections : ["General", "Coding"];
+    const updatedSections = currentSections.map((s) => (s === oldTrimmed ? newTrimmed : s));
+    if (!updatedSections.includes(newTrimmed)) {
+      updatedSections.push(newTrimmed);
+    }
+    test.sections = updatedSections;
+    await test.save();
+
+    // Update all questions that had the old section name
+    const updateResult = await Question.updateMany(
+      { testId: id, section: oldTrimmed },
+      { $set: { section: newTrimmed } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Section renamed from "${oldTrimmed}" to "${newTrimmed}" successfully`,
+      updatedQuestionsCount: updateResult.modifiedCount,
+      sections: test.sections
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Failed to rename section" });
+  }
+};
+
+// Delete section from test (and reassign or delete questions)
+export const deleteSection = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, deleteQuestions = false } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: "Section name is required" });
+    }
+
+    const test = await Test.findById(id);
+    if (!test) {
+      return res.status(404).json({ success: false, message: "Test not found" });
+    }
+
+    const trimmed = name.trim();
+
+    // Remove from sections list
+    const currentSections = Array.isArray(test.sections) && test.sections.length > 0 ? test.sections : ["General", "Coding"];
+    test.sections = currentSections.filter((s) => s !== trimmed);
+    if (test.sections.length === 0) {
+      test.sections = ["General"];
+    }
+    await test.save();
+
+    let affectedQuestionsCount = 0;
+    if (deleteQuestions) {
+      const delResult = await Question.deleteMany({ testId: id, section: trimmed });
+      affectedQuestionsCount = delResult.deletedCount;
+      const remainingQuestions = await Question.find({ testId: id });
+      const totalMarks = remainingQuestions.reduce((sum, q) => sum + (Number(q.marks) || 1), 0);
+      test.totalMarks = totalMarks;
+      await test.save();
+    } else {
+      const updateResult = await Question.updateMany(
+        { testId: id, section: trimmed },
+        { $set: { section: "General" } }
+      );
+      affectedQuestionsCount = updateResult.modifiedCount;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Section "${trimmed}" removed successfully`,
+      affectedQuestionsCount,
+      sections: test.sections
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || "Failed to delete section" });
+  }
+};

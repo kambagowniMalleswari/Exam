@@ -49,12 +49,25 @@ const Questions = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Section State
+  // Section CRUD State
   const [selectedSectionFilter, setSelectedSectionFilter] = useState("all");
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
   const [newSectionInput, setNewSectionInput] = useState("");
   const [sectionError, setSectionError] = useState("");
   const [savingSection, setSavingSection] = useState(false);
+
+  // Section Rename State
+  const [showRenameSectionModal, setShowRenameSectionModal] = useState(false);
+  const [sectionToRename, setSectionToRename] = useState("");
+  const [renamedSectionInput, setRenamedSectionInput] = useState("");
+  const [renameError, setRenameError] = useState("");
+  const [renamingLoading, setRenamingLoading] = useState(false);
+
+  // Section Delete State
+  const [showDeleteSectionModal, setShowDeleteSectionModal] = useState(false);
+  const [sectionToDelete, setSectionToDelete] = useState("");
+  const [deleteQuestionsOption, setDeleteQuestionsOption] = useState("reassign"); // "reassign" or "delete"
+  const [deletingSectionLoading, setDeletingSectionLoading] = useState(false);
 
   const [form, setForm] = useState({
     questionText: "",
@@ -178,6 +191,7 @@ const Questions = () => {
     setShowModal(true);
   };
 
+  // Section CRUD 1: CREATE Section
   const handleCreateSection = async (e) => {
     if (e) e.preventDefault();
     const name = newSectionInput.trim();
@@ -192,9 +206,17 @@ const Questions = () => {
 
     try {
       setSavingSection(true);
-      const updatedSections = [...availableSections, name];
-      await api.put(`/tests/${testId}`, { sections: updatedSections });
-      setTest((prev) => (prev ? { ...prev, sections: updatedSections } : prev));
+      try {
+        await api.post(`/tests/${testId}/sections`, { name });
+      } catch {
+        const updatedSections = [...availableSections, name];
+        await api.put(`/tests/${testId}`, { sections: updatedSections });
+      }
+
+      setTest((prev) => ({
+        ...prev,
+        sections: [...(prev?.sections || availableSections), name]
+      }));
       setSelectedSectionFilter(name);
       setShowAddSectionModal(false);
       setNewSectionInput("");
@@ -203,6 +225,138 @@ const Questions = () => {
       setSectionError(err.response?.data?.message || "Failed to create section.");
     } finally {
       setSavingSection(false);
+    }
+  };
+
+  // Section CRUD 2: RENAME Section (e.g. section-1 -> section-4)
+  const openRenameSectionModal = (secName, e) => {
+    if (e) e.stopPropagation();
+    setSectionToRename(secName);
+    setRenamedSectionInput(secName);
+    setRenameError("");
+    setShowRenameSectionModal(true);
+  };
+
+  const handleRenameSectionSubmit = async (e) => {
+    if (e) e.preventDefault();
+    const oldName = sectionToRename.trim();
+    const newName = renamedSectionInput.trim();
+
+    if (!newName) {
+      setRenameError("Section name cannot be empty.");
+      return;
+    }
+    if (oldName.toLowerCase() === newName.toLowerCase()) {
+      setShowRenameSectionModal(false);
+      return;
+    }
+    if (availableSections.some((s) => s.toLowerCase() === newName.toLowerCase() && s.toLowerCase() !== oldName.toLowerCase())) {
+      setRenameError(`A section named "${newName}" already exists.`);
+      return;
+    }
+
+    try {
+      setRenamingLoading(true);
+      // Try dedicated backend endpoint
+      try {
+        await api.put(`/tests/${testId}/sections/rename`, {
+          oldName,
+          newName
+        });
+      } catch {
+        // Fallback: update test sections + matching questions
+        const updatedSections = availableSections.map((s) => (s === oldName ? newName : s));
+        await api.put(`/tests/${testId}`, { sections: updatedSections });
+        const matching = questions.filter((q) => (q.section?.trim() || "General") === oldName);
+        await Promise.all(
+          matching.map((q) => api.put(`/questions/${q._id}`, { section: newName }))
+        );
+      }
+
+      // Update state in memory
+      setTest((prev) => ({
+        ...prev,
+        sections: (prev?.sections || availableSections).map((s) => (s === oldName ? newName : s))
+      }));
+      setQuestions((prev) =>
+        prev.map((q) => ((q.section?.trim() || "General") === oldName ? { ...q, section: newName } : q))
+      );
+      if (selectedSectionFilter === oldName) {
+        setSelectedSectionFilter(newName);
+      }
+
+      setShowRenameSectionModal(false);
+      setSectionToRename("");
+      setRenamedSectionInput("");
+    } catch (err) {
+      setRenameError(err.response?.data?.message || "Failed to rename section.");
+    } finally {
+      setRenamingLoading(false);
+    }
+  };
+
+  // Section CRUD 3: DELETE Section
+  const openDeleteSectionModal = (secName, e) => {
+    if (e) e.stopPropagation();
+    setSectionToDelete(secName);
+    setDeleteQuestionsOption("reassign");
+    setShowDeleteSectionModal(true);
+  };
+
+  const handleDeleteSectionSubmit = async () => {
+    if (!sectionToDelete) return;
+    const secName = sectionToDelete.trim();
+    const deleteQuestions = deleteQuestionsOption === "delete";
+
+    try {
+      setDeletingSectionLoading(true);
+      // Try dedicated endpoint
+      try {
+        await api.delete(`/tests/${testId}/sections`, {
+          data: { name: secName, deleteQuestions }
+        });
+      } catch {
+        // Fallback: update test sections + reassign or delete questions
+        const updatedSections = availableSections.filter((s) => s !== secName);
+        await api.put(`/tests/${testId}`, {
+          sections: updatedSections.length ? updatedSections : ["General"]
+        });
+
+        const matching = questions.filter((q) => (q.section?.trim() || "General") === secName);
+        if (deleteQuestions) {
+          await Promise.all(matching.map((q) => api.delete(`/questions/${q._id}`)));
+        } else {
+          await Promise.all(matching.map((q) => api.put(`/questions/${q._id}`, { section: "General" })));
+        }
+      }
+
+      // Update in-memory state
+      setTest((prev) => ({
+        ...prev,
+        sections: (prev?.sections || availableSections).filter((s) => s !== secName)
+      }));
+
+      if (deleteQuestions) {
+        setQuestions((prev) => prev.filter((q) => (q.section?.trim() || "General") !== secName));
+      } else {
+        setQuestions((prev) =>
+          prev.map((q) =>
+            (q.section?.trim() || "General") === secName ? { ...q, section: "General" } : q
+          )
+        );
+      }
+
+      if (selectedSectionFilter === secName) {
+        setSelectedSectionFilter("all");
+      }
+
+      setShowDeleteSectionModal(false);
+      setSectionToDelete("");
+      await fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete section.");
+    } finally {
+      setDeletingSectionLoading(false);
     }
   };
 
@@ -331,7 +485,7 @@ const Questions = () => {
                 <button
                   className="btn-add-section-toolbar"
                   onClick={() => setShowAddSectionModal(true)}
-                  title="Create custom section for this test"
+                  title="Create new section (e.g. section-1, Coding)"
                 >
                   <PlusIcon size={15} />
                   <span>New Section</span>
@@ -345,7 +499,7 @@ const Questions = () => {
           )}
         </div>
 
-        {/* Sections Navigation & Filter Tabs */}
+        {/* Sections Navigation & Filter Tabs with Inline Edit & Delete */}
         {!loading && !error && (
           <div className="aq-sections-bar">
             <div className="aq-sections-scroll">
@@ -361,26 +515,50 @@ const Questions = () => {
               {availableSections.map((secName) => {
                 const SecIcon = getSectionIcon(secName);
                 const count = sectionStats[secName]?.count || 0;
-                const marks = sectionStats[secName]?.marks || 0;
+                const isSelected = selectedSectionFilter === secName;
+
                 return (
-                  <button
+                  <div
                     key={secName}
-                    className={`aq-sec-tab ${selectedSectionFilter === secName ? "active" : ""}`}
-                    onClick={() => setSelectedSectionFilter(secName)}
+                    className={`aq-sec-tab-wrapper ${isSelected ? "selected-wrap" : ""}`}
                   >
-                    <SecIcon size={15} />
-                    <span>{secName}</span>
-                    <span className="aq-sec-badge" title={`${count} Questions • ${marks} Marks`}>
-                      {count} Qs
-                    </span>
-                  </button>
+                    <button
+                      className={`aq-sec-tab ${isSelected ? "active" : ""}`}
+                      onClick={() => setSelectedSectionFilter(secName)}
+                      title={`Filter by ${secName} (${count} questions)`}
+                    >
+                      <SecIcon size={15} />
+                      <span>{secName}</span>
+                      <span className="aq-sec-badge">{count} Qs</span>
+                    </button>
+
+                    {/* Quick Edit & Delete icons for section */}
+                    <div className="aq-sec-quick-actions">
+                      <button
+                        type="button"
+                        className="aq-sec-mini-btn edit"
+                        onClick={(e) => openRenameSectionModal(secName, e)}
+                        title={`Rename section "${secName}"`}
+                      >
+                        <EditIcon size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        className="aq-sec-mini-btn delete"
+                        onClick={(e) => openDeleteSectionModal(secName, e)}
+                        title={`Delete section "${secName}"`}
+                      >
+                        <TrashIcon size={12} />
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
 
               <button
                 className="aq-sec-tab add-new"
                 onClick={() => setShowAddSectionModal(true)}
-                title="Create a new section like Coding, Technical, etc."
+                title="Create a new section like section-1, Coding, Technical, etc."
               >
                 <PlusIcon size={14} />
                 <span>+ Section</span>
@@ -412,7 +590,7 @@ const Questions = () => {
               <HelpCircleIcon size={28} />
             </span>
             <h3>No questions in this test yet</h3>
-            <p>Add sections like Coding, General Aptitude, or Technical to organize your test questions.</p>
+            <p>Add sections like section-1, Coding, General Aptitude, or Technical to organize your test questions.</p>
             <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
               <button className="btn-add-section-toolbar" onClick={() => setShowAddSectionModal(true)}>
                 <PlusIcon size={15} />
@@ -443,20 +621,44 @@ const Questions = () => {
                           <SecIcon size={18} />
                         </span>
                         <div>
-                          <h3 className="aq-section-title">{group.sectionName} Section</h3>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <h3 className="aq-section-title">{group.sectionName}</h3>
+                          </div>
                           <span className="aq-section-meta">
                             {group.questions.length} Question{group.questions.length > 1 ? "s" : ""} • {group.totalMarks} Total Marks
                           </span>
                         </div>
                       </div>
-                      <button
-                        className="btn-add-in-section"
-                        onClick={() => openCreate(group.sectionName)}
-                        title={`Add question to ${group.sectionName}`}
-                      >
-                        <PlusIcon size={14} />
-                        <span>Add Question</span>
-                      </button>
+
+                      {/* Section CRUD Actions in Header */}
+                      <div className="aq-section-header-actions">
+                        <button
+                          className="btn-sec-action rename"
+                          onClick={() => openRenameSectionModal(group.sectionName)}
+                          title={`Rename section "${group.sectionName}"`}
+                        >
+                          <EditIcon size={13} />
+                          <span>Rename</span>
+                        </button>
+
+                        <button
+                          className="btn-sec-action delete"
+                          onClick={() => openDeleteSectionModal(group.sectionName)}
+                          title={`Delete section "${group.sectionName}"`}
+                        >
+                          <TrashIcon size={13} />
+                          <span>Delete</span>
+                        </button>
+
+                        <button
+                          className="btn-add-in-section"
+                          onClick={() => openCreate(group.sectionName)}
+                          title={`Add question to ${group.sectionName}`}
+                        >
+                          <PlusIcon size={14} />
+                          <span>Add Question</span>
+                        </button>
+                      </div>
                     </div>
 
                     <div className="aq-section-cards-grid">
@@ -474,14 +676,30 @@ const Questions = () => {
                   <HelpCircleIcon size={26} />
                 </span>
                 <h3>No questions in {selectedSectionFilter} section</h3>
-                <p>Add the first question to this section to enable candidates to take it.</p>
-                <button
-                  className="btn-add-question"
-                  onClick={() => openCreate(selectedSectionFilter)}
-                >
-                  <PlusIcon size={15} />
-                  <span>Add Question to {selectedSectionFilter}</span>
-                </button>
+                <p>Add the first question to this section or rename/delete it.</p>
+                <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
+                  <button
+                    className="btn-sec-action rename"
+                    onClick={() => openRenameSectionModal(selectedSectionFilter)}
+                  >
+                    <EditIcon size={13} />
+                    <span>Rename Section</span>
+                  </button>
+                  <button
+                    className="btn-sec-action delete"
+                    onClick={() => openDeleteSectionModal(selectedSectionFilter)}
+                  >
+                    <TrashIcon size={13} />
+                    <span>Delete Section</span>
+                  </button>
+                  <button
+                    className="btn-add-question"
+                    onClick={() => openCreate(selectedSectionFilter)}
+                  >
+                    <PlusIcon size={15} />
+                    <span>Add Question to {selectedSectionFilter}</span>
+                  </button>
+                </div>
               </div>
             ) : (
               // Single Section View
@@ -490,7 +708,7 @@ const Questions = () => {
           </div>
         )}
 
-        {/* Question Modal */}
+        {/* Question Modal (Add / Edit) */}
         {showModal && (
           <div
             className="modal-overlay"
@@ -523,16 +741,7 @@ const Questions = () => {
                     justifyContent: "center",
                     fontSize: "1.1rem",
                     cursor: "pointer",
-                    color: "#64748b",
-                    transition: "all 0.15s ease"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#e2e8f0";
-                    e.currentTarget.style.color = "#0f172a";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#f1f5f9";
-                    e.currentTarget.style.color = "#64748b";
+                    color: "#64748b"
                   }}
                 >
                   ✕
@@ -545,7 +754,7 @@ const Questions = () => {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <label>Test Section *</label>
                     <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
-                      Organize by Coding, General, Aptitude, etc.
+                      Select section or type a custom section
                     </span>
                   </div>
 
@@ -580,7 +789,7 @@ const Questions = () => {
                     <div style={{ marginTop: "8px" }}>
                       <input
                         type="text"
-                        placeholder="Type custom section name (e.g. Data Structures, SQL, Verbal)..."
+                        placeholder="Type custom section name (e.g. section-1, Data Structures, SQL)..."
                         value={form.customSection}
                         onChange={(e) => setForm({ ...form, customSection: e.target.value })}
                         style={{
@@ -697,7 +906,7 @@ const Questions = () => {
           </div>
         )}
 
-        {/* Add Section Modal */}
+        {/* Modal 1: Add Section Modal (CREATE) */}
         {showAddSectionModal && (
           <div
             className="modal-overlay"
@@ -747,7 +956,7 @@ const Questions = () => {
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Coding, Aptitude, System Design, SQL..."
+                      placeholder="e.g. section-1, Coding, Aptitude, SQL..."
                       value={newSectionInput}
                       onChange={(e) => {
                         setNewSectionInput(e.target.value);
@@ -814,7 +1023,212 @@ const Questions = () => {
           </div>
         )}
 
-        {/* Centered Modern Delete Confirmation Modal */}
+        {/* Modal 2: Rename Section Modal (UPDATE e.g. section-1 to section-4) */}
+        {showRenameSectionModal && (
+          <div
+            className="modal-overlay"
+            onClick={(e) => e.target.classList.contains("modal-overlay") && setShowRenameSectionModal(false)}
+          >
+            <div className="aq-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "480px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "1.25rem"
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#0f172a", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <EditIcon size={20} color="#0284c7" />
+                  <span>Rename Section</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowRenameSectionModal(false)}
+                  style={{
+                    background: "#f1f5f9",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "32px",
+                    height: "32px",
+                    cursor: "pointer",
+                    color: "#64748b"
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {renameError && (
+                <div style={{ background: "#fef2f2", color: "#991b1b", padding: "10px", borderRadius: "8px", fontSize: "0.85rem", marginBottom: "12px", border: "1px solid #fecaca" }}>
+                  ⚠️ {renameError}
+                </div>
+              )}
+
+              <form onSubmit={handleRenameSectionSubmit}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <div>
+                    <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "#64748b", display: "block", marginBottom: "4px" }}>
+                      Current Section Name:
+                    </label>
+                    <div style={{ fontWeight: 800, fontSize: "1rem", color: "#0f172a", background: "#f1f5f9", padding: "8px 12px", borderRadius: "8px" }}>
+                      {sectionToRename}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: "0.86rem", fontWeight: 700, color: "#1e293b", display: "block", marginBottom: "6px" }}>
+                      New Section Name * (e.g. section-4)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. section-4, Advanced Coding, Aptitude..."
+                      value={renamedSectionInput}
+                      onChange={(e) => {
+                        setRenamedSectionInput(e.target.value);
+                        setRenameError("");
+                      }}
+                      autoFocus
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        borderRadius: "10px",
+                        border: "1.5px solid #0284c7",
+                        fontSize: "0.95rem"
+                      }}
+                    />
+                    <span style={{ fontSize: "0.78rem", color: "#64748b", marginTop: "6px", display: "block" }}>
+                      💡 All {sectionStats[sectionToRename]?.count || 0} question(s) currently in &quot;{sectionToRename}&quot; will automatically update to &quot;{renamedSectionInput || "new name"}&quot;.
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "24px" }}>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={() => setShowRenameSectionModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-submit"
+                    disabled={renamingLoading}
+                  >
+                    {renamingLoading ? "Renaming..." : "Save New Name"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal 3: Delete Section Modal (DELETE) */}
+        {showDeleteSectionModal && (
+          <div
+            className="modal-overlay"
+            onClick={(e) => e.target.classList.contains("modal-overlay") && setShowDeleteSectionModal(false)}
+          >
+            <div className="aq-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "480px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "1.25rem"
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#e11d48", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <TrashIcon size={20} color="#e11d48" />
+                  <span>Delete Section</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteSectionModal(false)}
+                  style={{
+                    background: "#f1f5f9",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "32px",
+                    height: "32px",
+                    cursor: "pointer",
+                    color: "#64748b"
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                <p style={{ margin: 0, fontSize: "0.95rem", color: "#334155", lineHeight: "1.5" }}>
+                  Are you sure you want to remove the section <strong>&quot;{sectionToDelete}&quot;</strong>?
+                </p>
+
+                {(sectionStats[sectionToDelete]?.count || 0) > 0 ? (
+                  <div style={{ background: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "12px", padding: "12px 14px" }}>
+                    <div style={{ fontWeight: 700, color: "#9f1239", fontSize: "0.85rem", marginBottom: "8px" }}>
+                      This section contains {sectionStats[sectionToDelete]?.count} question(s):
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "#475569", cursor: "pointer" }}>
+                        <input
+                          type="radio"
+                          name="deleteSecChoice"
+                          value="reassign"
+                          checked={deleteQuestionsOption === "reassign"}
+                          onChange={() => setDeleteQuestionsOption("reassign")}
+                        />
+                        <span>
+                          <strong>Move questions to &quot;General&quot;</strong> (Recommended & safe)
+                        </span>
+                      </label>
+
+                      <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "0.85rem", color: "#e11d48", cursor: "pointer" }}>
+                        <input
+                          type="radio"
+                          name="deleteSecChoice"
+                          value="delete"
+                          checked={deleteQuestionsOption === "delete"}
+                          onChange={() => setDeleteQuestionsOption("delete")}
+                        />
+                        <span>
+                          <strong>Permanently delete all {sectionStats[sectionToDelete]?.count} question(s)</strong>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "10px 12px", fontSize: "0.82rem", color: "#64748b" }}>
+                    ✓ This section currently has 0 questions. It will be safely removed.
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "24px" }}>
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={() => setShowDeleteSectionModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="aq-btn-delete"
+                  onClick={handleDeleteSectionSubmit}
+                  disabled={deletingSectionLoading}
+                >
+                  {deletingSectionLoading ? "Removing..." : "Delete Section"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Centered Modern Delete Confirmation Modal for Single Question */}
         <ConfirmModal
           isOpen={!!deleteTarget}
           title="Delete Assessment Question?"

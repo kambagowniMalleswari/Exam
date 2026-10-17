@@ -191,6 +191,78 @@
   color: #0369a1;
 }
 
+/* Section Tab Wrapper & Quick Actions (Rename / Delete) */
+.tq-sec-tab-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.tq-sec-tab-wrapper .tq-sec-tab {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding-right: 0.6rem;
+}
+
+.tq-sec-tab-wrapper.selected-wrap {
+  background: #0284c7;
+  border-color: #0284c7;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.28);
+}
+
+.tq-sec-tab-wrapper.selected-wrap .tq-sec-tab {
+  color: #ffffff;
+}
+
+.tq-sec-quick-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding-right: 0.55rem;
+}
+
+.tq-sec-mini-btn {
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.tq-sec-tab-wrapper.selected-wrap .tq-sec-mini-btn {
+  color: #e0f2fe;
+}
+
+.tq-sec-mini-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  transform: scale(1.15);
+}
+
+.tq-sec-mini-btn.edit:hover {
+  color: #0284c7;
+}
+
+.tq-sec-mini-btn.delete:hover {
+  color: #e11d48;
+}
+
+.tq-sec-tab-wrapper.selected-wrap .tq-sec-mini-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
 /* ==========================================================================
    Teacher Section Grouped Block
    ========================================================================== */
@@ -246,6 +318,56 @@
   font-size: 0.8rem;
   font-weight: 600;
   color: #64748b;
+}
+
+.tq-section-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btn-sec-action {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 9999px;
+  padding: 0.42rem 0.95rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.btn-sec-action.rename {
+  color: #0284c7;
+  border-color: #bae6fd;
+  background: #f0f9ff;
+}
+
+.btn-sec-action.rename:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-sec-action.delete {
+  color: #e11d48;
+  border-color: #fecdd3;
+  background: #fff1f2;
+}
+
+.btn-sec-action.delete:hover {
+  background: #e11d48;
+  color: #ffffff;
+  border-color: #e11d48;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.25);
+  transform: translateY(-1px);
 }
 
 .tq-section-cards-grid {

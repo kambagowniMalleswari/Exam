@@ -13,7 +13,10 @@ import {
   unpublishTest,
   duplicateTest,
   previewTest,
-  toggleTestStatus
+  toggleTestStatus,
+  addSection,
+  renameSection,
+  deleteSection
 } from "../controllers/testController.js";
 
 // Import middleware
@@ -39,6 +42,11 @@ router.get("/", testManagerRoles, getTests);
 
 // Create test
 router.post("/", testManagerRoles, createTest);
+
+// Section CRUD operations
+router.post("/:id/sections", testManagerRoles, addSection);
+router.put("/:id/sections/rename", testManagerRoles, renameSection);
+router.delete("/:id/sections", testManagerRoles, deleteSection);
 
 // Preview test
 router.get("/:id/preview", testManagerRoles, previewTest);
