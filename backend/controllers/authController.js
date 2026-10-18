@@ -215,19 +215,45 @@ export const login = async (req, res) => {
       });
     }
 
-    // Find user by exact email, username/name, or email prefix
+    // Find user by exact email, student registration/ID, or unique name matching password
     const rawIdentifier = (email || "").trim();
     const cleanIdentifier = rawIdentifier.toLowerCase();
 
-    let user = await User.findOne({ email: cleanIdentifier });
+    let user = null;
 
-    if (!user) {
-      const escapedRaw = rawIdentifier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      user = await User.findOne({ name: new RegExp(`^${escapedRaw}$`, "i") });
-    }
+    if (cleanIdentifier.includes("@")) {
+      user = await User.findOne({ email: cleanIdentifier });
+    } else {
+      // 1. Check official student registration or student ID
+      user = await User.findOne({
+        $or: [
+          { registrationNumber: rawIdentifier.toUpperCase() },
+          { studentId: rawIdentifier.toUpperCase() }
+        ]
+      });
 
-    if (!user) {
-      if (!cleanIdentifier.includes("@")) {
+      // 2. If entered name or nickname, check candidate users and verify password match
+      if (!user) {
+        const escapedRaw = rawIdentifier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const candidates = await User.find({ name: new RegExp(`^${escapedRaw}$`, "i") });
+        if (candidates.length === 1) {
+          user = candidates[0];
+        } else if (candidates.length > 1) {
+          for (const cand of candidates) {
+            const isMatch = await bcrypt.compare(password, cand.password);
+            if (isMatch) {
+              user = cand;
+              break;
+            }
+          }
+          if (!user) {
+            user = candidates[0];
+          }
+        }
+      }
+
+      // 3. Fallback to @gmail.com prefix
+      if (!user) {
         user = await User.findOne({
           $or: [
             { email: `${cleanIdentifier}@gmail.com` },
@@ -240,7 +266,7 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email/username or password."
+        message: "Invalid email or password. Please use your full registered email."
       });
     }
 

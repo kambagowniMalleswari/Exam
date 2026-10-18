@@ -572,9 +572,12 @@ const Profile = () => {
                 <span className="field-value">{activeUser?.name}</span>
               </div>
 
-              <div className="overview-field-card">
+              <div className="overview-field-card email-card">
                 <span className="field-label">Official Email Address</span>
-                <span className="field-value">{activeUser?.email}</span>
+                <span className="field-value email-value" title={activeUser?.email}>
+                  <MailIcon size={16} />
+                  <span>{activeUser?.email}</span>
+                </span>
               </div>
 
               <div className="overview-field-card">

@@ -286,7 +286,7 @@ export const approveTeacherApplication = async (req, res) => {
 
     // 3. Send approval notification email with temporary password & credentials to teacher's Gmail
     const orgName = application.organizationId?.name || "the institution";
-    const portalLoginUrl = `${getClientUrl()}/admin/login`;
+    const portalLoginUrl = `${getClientUrl()}/login`;
 
     let emailDispatch = null;
     try {

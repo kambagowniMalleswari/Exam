@@ -331,7 +331,7 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="auth-form-fields">
             <div className="field-group">
-              <label htmlFor="email" className="field-label">Email or Username</label>
+              <label htmlFor="email" className="field-label">Official Email Address</label>
               <div className="field-input-box">
                 <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="2" y="4" width="20" height="16" rx="3"></rect>
@@ -341,10 +341,10 @@ const Login = () => {
                   id="email"
                   type="text"
                   className="field-input"
-                  placeholder="e.g. name@institution.edu or username"
+                  placeholder="e.g. name@institution.edu or student ID"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="username"
+                  autoComplete="email"
                   required
                 />
               </div>
@@ -444,15 +444,21 @@ const Login = () => {
           {/* Institutional Onboarding Card */}
           <div className="auth-advisory-card">
             <div className="advisory-icon-circle">
-              <BuildingIcon size={22} />
+              <BuildingIcon size={20} />
             </div>
             <div className="advisory-body">
-              <strong>Institution or Faculty Access?</strong>
-              <p>Sign in above using your assigned institutional credentials. New colleges, universities, or educators can apply for platform access below.</p>
-              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "8px" }}>
-                <Link to="/join-us" className="advisory-cta-link">Institutional Onboarding →</Link>
-                <Link to="/join-us?track=teacher" className="advisory-cta-link">Faculty Application →</Link>
-                <Link to="/contact" className="advisory-cta-link">Contact Support →</Link>
+              <strong>Institutional & Faculty Access</strong>
+              <p>Sign in using your assigned institutional email. Need to onboard your college or join as faculty?</p>
+              <div className="advisory-links-row">
+                <Link to="/join-us" className="advisory-pill-btn">
+                  Onboard Institution →
+                </Link>
+                <Link to="/join-us?track=teacher" className="advisory-pill-btn">
+                  Apply as Teacher →
+                </Link>
+                <Link to="/contact" className="advisory-pill-btn">
+                  Contact Support →
+                </Link>
               </div>
             </div>
           </div>

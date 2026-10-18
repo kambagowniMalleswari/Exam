@@ -191,12 +191,17 @@
   display: flex;
   align-items: center;
   width: 100%;
-  height: 48px;
-  background: #f8fafc;
+  height: 50px;
+  background: #ffffff;
   border: 1.5px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 12px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.field-input-box:hover {
+  border-color: #cbd5e1;
 }
 
 .field-icon {
@@ -217,7 +222,7 @@
   border: none;
   outline: none;
   padding: 0 16px 0 42px;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   color: #0f172a;
   box-sizing: border-box;
 }
@@ -229,12 +234,12 @@
 
 .field-input-box:focus-within {
   background: #ffffff;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
 }
 
 .field-input-box:focus-within .field-icon {
-  color: #2563eb;
+  color: #4f46e5;
 }
 
 /* Custom Select */
@@ -281,27 +286,27 @@
 /* Primary Submit Button */
 .auth-submit-btn {
   width: 100%;
-  height: 48px;
-  margin-top: 8px;
-  background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+  height: 50px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
   color: #ffffff;
   border: none;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  border-radius: 12px;
+  font-size: 0.98rem;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .auth-submit-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
-  background: linear-gradient(135deg, #1d4ed8 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
+  background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
 }
 
 .auth-submit-btn:disabled {
@@ -432,58 +437,75 @@
 /* Advisory Card */
 .auth-advisory-card {
   margin-top: 24px;
-  padding: 14px 18px;
+  padding: 16px 20px;
   background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
   display: flex;
   gap: 14px;
   align-items: flex-start;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
 }
 
 .advisory-icon-circle {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: #eff6ff;
-  border: 1px solid #dbeafe;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  color: #4f46e5;
   flex-shrink: 0;
 }
 
 .advisory-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  width: 100%;
 }
 
 .advisory-body strong {
-  font-size: 0.85rem;
-  color: #1e293b;
+  font-size: 0.88rem;
+  color: #0f172a;
   font-weight: 700;
 }
 
 .advisory-body p {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: #64748b;
   margin: 0;
   line-height: 1.45;
 }
 
-.advisory-cta-link {
-  display: inline-block;
-  margin-top: 4px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #2563eb;
-  text-decoration: none;
+.advisory-links-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
 }
 
-.advisory-cta-link:hover {
-  text-decoration: underline;
+.advisory-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #334155;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.advisory-pill-btn:hover {
+  background: #eef2ff;
+  border-color: #a5b4fc;
+  color: #4338ca;
+  transform: translateY(-1px);
 }
 
 /* Panel Bottom */
@@ -654,44 +676,56 @@
   margin: 0;
 }
 
-/* Trust Strip */
+/* Stats / Trust Row */
+.visual-stats-row,
 .visual-trust-strip {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 18px 24px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  backdrop-filter: blur(16px);
+  margin-top: 10px;
 }
 
+.visual-stat-item,
 .trust-metric {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  flex: 1;
 }
 
+.stat-number,
 .metric-val {
-  font-size: 1.15rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2;
 }
 
+.stat-caption,
 .metric-lbl {
   font-size: 0.72rem;
-  font-weight: 600;
-  color: #64748b;
+  font-weight: 700;
+  color: #94a3b8;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-top: 2px;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
 }
 
+.stat-sep,
 .trust-sep {
   width: 1px;
-  height: 28px;
-  background: rgba(255, 255, 255, 0.1);
+  height: 32px;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 /* ==========================================================================
