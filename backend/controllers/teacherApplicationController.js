@@ -227,7 +227,8 @@ export const approveTeacherApplication = async (req, res) => {
     }
 
     // Role check: Org Admin can only approve applications for their own org
-    if (!req.isSuperAdmin && req.organizationId.toString() !== application.organizationId._id.toString()) {
+    const appOrgId = (application.organizationId?._id || application.organizationId)?.toString();
+    if (!req.isSuperAdmin && (!req.organizationId || req.organizationId.toString() !== appOrgId)) {
       return res.status(403).json({
         success: false,
         message: "You can only approve applications for your own organization."
@@ -354,7 +355,8 @@ export const rejectTeacherApplication = async (req, res) => {
       });
     }
 
-    if (!req.isSuperAdmin && req.organizationId.toString() !== application.organizationId._id.toString()) {
+    const appOrgId = (application.organizationId?._id || application.organizationId)?.toString();
+    if (!req.isSuperAdmin && (!req.organizationId || req.organizationId.toString() !== appOrgId)) {
       return res.status(403).json({
         success: false,
         message: "You can only review applications for your own organization."

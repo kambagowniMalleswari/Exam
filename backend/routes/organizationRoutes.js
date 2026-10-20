@@ -26,13 +26,13 @@ router.get("/public", getPublicOrganizations);
 // Protect remaining organization routes
 router.use(protect);
 
-// Allow organization admin or super admin to get their specific org
+// Allow organization admin or super admin to get and update their specific org
 router.get("/:id", authorize("super_admin", "admin", "org_admin"), getOrganizationById);
+router.put("/:id", authorize("super_admin", "admin", "org_admin"), updateOrganization);
 
-// Super admin exclusive routes
+// Organization list routes
 router.post("/", authorize("super_admin"), createOrganization);
-router.get("/", authorize("super_admin"), getAllOrganizations);
-router.put("/:id", authorize("super_admin"), updateOrganization);
+router.get("/", authorize("super_admin", "admin", "org_admin"), getAllOrganizations);
 router.patch("/:id/status", authorize("super_admin"), toggleOrganizationStatus);
 router.post("/:id/resend-credentials", authorize("super_admin"), resendOrganizationCredentials);
 router.delete("/:id", authorize("super_admin"), deleteOrganization);

@@ -12,7 +12,7 @@ const generateToken = (user) => {
     },
     secret,
     {
-      expiresIn: "7d"
+      expiresIn: "30d"
     }
   );
 };

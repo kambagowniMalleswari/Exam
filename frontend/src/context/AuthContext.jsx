@@ -43,7 +43,8 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (err) {
         console.warn("Session sync notice:", err.message);
-        if ((err.response?.status === 401 || err.response?.status === 403) && isMounted) {
+        const errMsg = err.response?.data?.message?.toLowerCase() || "";
+        if (err.response?.status === 401 && (errMsg.includes("expired") || errMsg.includes("no longer exists")) && isMounted) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
           localStorage.removeItem("organizationId");
@@ -146,11 +147,11 @@ export const AuthProvider = ({ children }) => {
     window.location.href = "/login";
   };
 
-  const role = user?.role || "";
-  const isSuperAdmin = role === "super_admin" || role === "superadmin";
-  const isOrgAdmin = role === "org_admin" || role === "admin";
-  const isTeacher = role === "teacher";
-  const isStudent = role === "student";
+  const rawRole = (user?.role || "").toString().toLowerCase().trim().replace(/[-_\s]/g, "");
+  const isSuperAdmin = rawRole === "superadmin";
+  const isOrgAdmin = rawRole === "orgadmin" || rawRole === "admin" || rawRole === "organizationadmin";
+  const isTeacher = rawRole === "teacher";
+  const isStudent = rawRole === "student";
   const updateUser = (updatedUser) => {
     setUser(updatedUser);
     localStorage.setItem("user", JSON.stringify(updatedUser));

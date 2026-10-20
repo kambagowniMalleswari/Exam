@@ -27,13 +27,16 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    document.title = "Universal Sign In | AssessIQ";
-  }, []);
-
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loginWithGoogle } = useAuth();
+  const { user, login, loginWithGoogle } = useAuth();
+
+  useEffect(() => {
+    document.title = "Universal Sign In | AssessIQ";
+    if (user && user.role) {
+      navigate(getDefaultDashboard(user.role), { replace: true });
+    }
+  }, [user]);
 
   const handleRoleRedirect = (userRole) => {
     const normalized = normalizeRole(userRole);

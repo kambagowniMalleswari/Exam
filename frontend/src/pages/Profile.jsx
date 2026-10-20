@@ -26,6 +26,7 @@ import {
   validatePhone,
   validateUsername
 } from "../utils/validation.js";
+import { normalizeRole } from "../utils/roleUtils.js";
 import "./Profile.css";
 
 const Profile = () => {
@@ -333,7 +334,8 @@ const Profile = () => {
 
   const activeUser = user || profileData;
   const userActiveRole = activeUser?.role || "";
-  const isSuperAdmin = userActiveRole === "super_admin" || userActiveRole === "superadmin";
+  const normRole = normalizeRole(userActiveRole);
+  const isSuperAdmin = normRole === "super_admin";
   const uniqueBatches = Array.from(new Set(orgStudents.map((s) => s.batchNumber).filter(Boolean)));
   const orgName = isSuperAdmin
     ? "Platform Super Admin (Global Scope)"
@@ -342,9 +344,9 @@ const Profile = () => {
   let profileTitle = "Account & Faculty Profile";
   if (isSuperAdmin) {
     profileTitle = "Platform Super Admin Profile";
-  } else if (userActiveRole === "org_admin" || userActiveRole === "admin") {
+  } else if (normRole === "org_admin") {
     profileTitle = "Organization Admin Profile";
-  } else if (userActiveRole === "student") {
+  } else if (normRole === "student") {
     profileTitle = "Student Scholar Profile & Account";
   }
 

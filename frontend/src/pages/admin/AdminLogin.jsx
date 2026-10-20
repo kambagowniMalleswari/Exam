@@ -39,6 +39,10 @@ const AdminLogin = () => {
       navigate("/superadmin/dashboard", { replace: true });
       return;
     }
+    if (normalized === "org_admin") {
+      navigate("/admin/dashboard", { replace: true });
+      return;
+    }
     const from = location.state?.from?.pathname;
     if (from && isRoleAuthorizedForPath(userRole, from)) {
       navigate(from, { replace: true });

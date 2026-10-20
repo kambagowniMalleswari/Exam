@@ -43,6 +43,20 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
       hasAccess = true;
     }
 
+    // Org Admin has supervisory authority over Teacher and Student routes
+    if (!hasAccess && userRole === "org_admin") {
+      if (normalizedAllowed.includes("teacher") || normalizedAllowed.includes("student")) {
+        hasAccess = true;
+      }
+    }
+
+    // Teacher has supervisory authority over Student routes
+    if (!hasAccess && userRole === "teacher") {
+      if (normalizedAllowed.includes("student")) {
+        hasAccess = true;
+      }
+    }
+
     if (!hasAccess) {
       // Redirect unauthorized user strictly to their own role dashboard
       return <Navigate to={getDefaultDashboard(userRole)} replace />;

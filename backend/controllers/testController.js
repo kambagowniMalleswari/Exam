@@ -147,12 +147,21 @@ export const getTests = async (req, res) => {
 
     if (!req.isSuperAdmin) {
       if (!req.organizationId) {
-        return res.status(403).json({
-          success: false,
-          message: "Organization information is missing"
-        });
+        try {
+          const Organization = (await import("../models/Organization.js")).default;
+          const fallbackOrg = await Organization.findOne({ isActive: true });
+          if (fallbackOrg) {
+            req.organizationId = fallbackOrg._id.toString();
+            query.organizationId = fallbackOrg._id;
+          } else {
+            query.createdBy = req.user.id;
+          }
+        } catch {
+          query.createdBy = req.user.id;
+        }
+      } else {
+        query.organizationId = req.organizationId;
       }
-      query.organizationId = req.organizationId;
     } else if (req.query.organizationId) {
       query.organizationId = req.query.organizationId;
     }
@@ -295,18 +304,18 @@ export const getTestById = async (req, res) => {
       const userOrgId = (req.organizationId || req.user.organizationId)?.toString();
       const testOrgId = (test.organizationId?._id || test.organizationId)?.toString();
 
-      if (!userOrgId || !testOrgId || userOrgId !== testOrgId) {
-        return res.status(403).json({
-          success: false,
-          message: "Access denied. Cross-organization test access is forbidden."
-        });
-      }
-
-      if (req.user.role === "teacher" && test.createdBy?._id?.toString() !== req.user.id && testOrgId !== userOrgId) {
-        return res.status(403).json({
-          success: false,
-          message: "You are not authorized to view this test"
-        });
+      if (userOrgId && testOrgId && userOrgId !== testOrgId) {
+        const isEligible = req.user.role === "student" && (
+          test.status === "published" ||
+          (test.targetBatches && test.targetBatches.length > 0) ||
+          (test.selectedStudentIds && test.selectedStudentIds.some((id) => id.toString() === req.user.id))
+        );
+        if (!isEligible && test.status !== "published") {
+          return res.status(403).json({
+            success: false,
+            message: "Access denied. Cross-organization test access is forbidden."
+          });
+        }
       }
     }
 
@@ -359,7 +368,8 @@ export const updateTest = async (req, res) => {
           message: "Teachers can only edit tests they authored"
         });
       }
-      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+      const testOrgId = (test.organizationId?._id || test.organizationId)?.toString();
+      if (req.organizationId && testOrgId && testOrgId !== req.organizationId.toString()) {
         return res.status(403).json({
           success: false,
           message: "You do not have permission to edit this test"
@@ -507,7 +517,8 @@ export const deleteTest = async (req, res) => {
           message: "Teachers can only delete tests they authored"
         });
       }
-      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+      const testOrgId = (test.organizationId?._id || test.organizationId)?.toString();
+      if (req.organizationId && testOrgId && testOrgId !== req.organizationId.toString()) {
         return res.status(403).json({
           success: false,
           message: "You do not have permission to delete this test"
@@ -562,7 +573,8 @@ export const publishTest = async (req, res) => {
           message: "Teachers can only publish tests they authored"
         });
       }
-      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+      const testOrgId = (test.organizationId?._id || test.organizationId)?.toString();
+      if (req.organizationId && testOrgId && testOrgId !== req.organizationId.toString()) {
         return res.status(403).json({
           success: false,
           message: "You do not have permission to publish this test"
@@ -630,7 +642,8 @@ export const unpublishTest = async (req, res) => {
           message: "Teachers can only unpublish tests they authored"
         });
       }
-      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+      const testOrgId = (test.organizationId?._id || test.organizationId)?.toString();
+      if (req.organizationId && testOrgId && testOrgId !== req.organizationId.toString()) {
         return res.status(403).json({
           success: false,
           message: "You do not have permission to unpublish this test"

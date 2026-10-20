@@ -1,4 +1,6 @@
 // Check user role with support for role aliases and hierarchical access
+const normalizeRoleStr = (r) => (r || "").toString().toLowerCase().trim().replace(/[-_\s]/g, "");
+
 const authorize = (...roles) => {
   return (req, res, next) => {
     // Check if user is authenticated
@@ -9,34 +11,36 @@ const authorize = (...roles) => {
       });
     }
 
-    // Expand aliases (admin <=> org_admin, super_admin <=> superadmin)
-    const expandedRoles = roles.flatMap((role) => {
-      if (role === "admin" || role === "org_admin") {
-        return ["admin", "org_admin"];
-      }
-      if (role === "super_admin" || role === "superadmin") {
-        return ["super_admin", "superadmin"];
-      }
-      return [role];
-    });
+    const cleanUserRole = normalizeRoleStr(req.user.role);
+    const isSuperAdmin = cleanUserRole === "superadmin";
+    const isOrgAdmin = cleanUserRole === "orgadmin" || cleanUserRole === "admin" || cleanUserRole === "organizationadmin";
+    const isTeacher = cleanUserRole === "teacher";
 
-    const userRole = req.user.role;
-    const isSuperAdmin = userRole === "super_admin" || userRole === "superadmin";
+    // Clean and expand allowed roles
+    const normalizedAllowed = roles.map(normalizeRoleStr);
 
-    // Super Admin has global override unless strictly disallowed
-    let hasPermission = isSuperAdmin || expandedRoles.includes(userRole);
+    // Direct permission check or Super Admin global override
+    let hasPermission = isSuperAdmin;
+
+    if (!hasPermission) {
+      if (isOrgAdmin && (normalizedAllowed.includes("admin") || normalizedAllowed.includes("orgadmin") || normalizedAllowed.includes("organizationadmin"))) {
+        hasPermission = true;
+      } else if (normalizedAllowed.includes(cleanUserRole)) {
+        hasPermission = true;
+      }
+    }
 
     // Hierarchical permissions:
     // 1. Org Admin / Admin have supervisory authority over Teacher resources
-    if (!hasPermission && (userRole === "org_admin" || userRole === "admin")) {
-      if (expandedRoles.includes("teacher")) {
+    if (!hasPermission && isOrgAdmin) {
+      if (normalizedAllowed.includes("teacher")) {
         hasPermission = true;
       }
     }
 
     // 2. Educators and Admins have preview/supervisory authority over Student resources
-    if (!hasPermission && (userRole === "org_admin" || userRole === "admin" || userRole === "teacher")) {
-      if (expandedRoles.includes("student")) {
+    if (!hasPermission && (isOrgAdmin || isTeacher)) {
+      if (normalizedAllowed.includes("student")) {
         hasPermission = true;
       }
     }

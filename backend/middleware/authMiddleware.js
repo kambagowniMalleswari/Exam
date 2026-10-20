@@ -41,6 +41,49 @@ const protect = async (req, res, next) => {
       });
     }
 
+    // Auto-resolve organization if missing for org admin or institutional members
+    const cleanUserRole = (dbUser.role || "").toLowerCase().replace(/[-_\s]/g, "");
+    const isSuperAdmin = cleanUserRole === "superadmin";
+    const isOrgAdmin = cleanUserRole === "orgadmin" || cleanUserRole === "admin" || cleanUserRole === "organizationadmin";
+
+    if (!isSuperAdmin && !dbUser.organizationId) {
+      try {
+        const Organization = (await import("../models/Organization.js")).default;
+        let org = null;
+
+        if (isOrgAdmin) {
+          org = await Organization.findOne({
+            $or: [{ email: dbUser.email?.toLowerCase().trim() }, { adminName: dbUser.name }]
+          });
+        }
+
+        if (!org) {
+          org = await Organization.findOne({ isActive: true });
+        }
+
+        if (!org && isOrgAdmin) {
+          // Auto-create active organization for this admin if none exist
+          org = await Organization.create({
+            name: `${dbUser.name}'s Organization`,
+            slug: `${dbUser.name.toLowerCase().replace(/[^a-z0-9]/g, "-")}-org`,
+            email: dbUser.email?.toLowerCase().trim(),
+            adminName: dbUser.name,
+            status: "active",
+            isActive: true,
+            subscriptionPlan: "enterprise",
+            subscriptionStatus: "active"
+          });
+        }
+
+        if (org) {
+          dbUser.organizationId = org._id;
+          await User.findByIdAndUpdate(dbUser._id, { organizationId: org._id });
+        }
+      } catch (err) {
+        console.warn("Auto-resolve organization notice:", err.message);
+      }
+    }
+
     // Check if role or organization has changed since token issuance
     const tokenRole = decoded.role;
     const currentRole = dbUser.role;

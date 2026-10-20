@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
+import { getDefaultDashboard } from "../utils/roleUtils.js";
 import api from "../services/api.js";
 import { BrandCrest } from "../components/common/BrandLogo.jsx";
 import {
@@ -44,6 +46,7 @@ const LandingPage = () => {
   const [openFaq, setOpenFaq] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     document.title = "AssessIQ — Multi-Tenant Institutional Assessment & MCQ Portal";
@@ -144,12 +147,20 @@ const LandingPage = () => {
           </nav>
 
           <div className="lms-auth-actions">
-            <Link to="/login" className="btn btn-secondary lms-btn-login">
-              Sign In
-            </Link>
-            <Link to="/register" className="btn btn-primary lms-btn-signup">
-              Sign Up Free
-            </Link>
+            {user ? (
+              <Link to={getDefaultDashboard(user.role)} className="btn btn-primary lms-btn-signup">
+                My Dashboard →
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="btn btn-secondary lms-btn-login">
+                  Sign In
+                </Link>
+                <Link to="/register" className="btn btn-primary lms-btn-signup">
+                  Sign Up Free
+                </Link>
+              </>
+            )}
           </div>
 
           <button
@@ -169,8 +180,16 @@ const LandingPage = () => {
             <a href="#faq-section" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
             <Link to="/join-us" onClick={() => setMobileMenuOpen(false)}>For Institutions</Link>
             <div className="lms-mobile-drawer-auth">
-              <Link to="/login" className="btn btn-secondary" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
-              <Link to="/register" className="btn btn-primary" onClick={() => setMobileMenuOpen(false)}>Sign Up Free</Link>
+              {user ? (
+                <Link to={getDefaultDashboard(user.role)} className="btn btn-primary" onClick={() => setMobileMenuOpen(false)}>
+                  My Dashboard →
+                </Link>
+              ) : (
+                <>
+                  <Link to="/login" className="btn btn-secondary" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+                  <Link to="/register" className="btn btn-primary" onClick={() => setMobileMenuOpen(false)}>Sign Up Free</Link>
+                </>
+              )}
             </div>
           </div>
         )}

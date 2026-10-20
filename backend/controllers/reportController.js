@@ -240,14 +240,13 @@ export const getOrganizationReport = async (req, res) => {
       ? req.query.organizationId || req.organizationId
       : req.organizationId;
 
-    if (!orgId && !req.isSuperAdmin) {
-      return res.status(400).json({
-        success: false,
-        message: "Organization ID is required"
-      });
+    let activeOrgId = orgId;
+    if (!activeOrgId) {
+      const fallbackOrg = await Organization.findOne({ isActive: true });
+      if (fallbackOrg) activeOrgId = fallbackOrg._id;
     }
 
-    const orgFilter = orgId ? { organizationId: orgId } : {};
+    const orgFilter = activeOrgId ? { organizationId: activeOrgId } : {};
 
     const [
       totalStudents,

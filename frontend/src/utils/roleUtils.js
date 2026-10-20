@@ -1,9 +1,9 @@
 // Role utilities for authentication and route determination
 export const normalizeRole = (role) => {
   if (!role) return "";
-  const clean = String(role).toLowerCase().trim();
-  if (clean === "superadmin" || clean === "super_admin") return "super_admin";
-  if (clean === "org_admin" || clean === "admin") return "org_admin";
+  const clean = String(role).toLowerCase().trim().replace(/[-_\s]/g, "");
+  if (clean === "superadmin") return "super_admin";
+  if (clean === "orgadmin" || clean === "admin" || clean === "organizationadmin") return "org_admin";
   if (clean === "teacher") return "teacher";
   if (clean === "student") return "student";
   return clean;

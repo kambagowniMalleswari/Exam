@@ -16,6 +16,7 @@ import {
   ShieldIcon
 } from "./common/Icons.jsx";
 import { BrandCrest } from "./common/BrandLogo.jsx";
+import { normalizeRole } from "../utils/roleUtils.js";
 import "./Sidebar.css";
 
 const Sidebar = ({ isOpen = false, onClose }) => {
@@ -24,8 +25,8 @@ const Sidebar = ({ isOpen = false, onClose }) => {
   const location = useLocation();
   const [pendingOrgCount, setPendingOrgCount] = useState(0);
 
-  const userRole = user?.role || "";
-  const isAuthorizedSuperAdmin = userRole === "super_admin" || userRole === "superadmin";
+  const normalizedUserRole = normalizeRole(user?.role);
+  const isAuthorizedSuperAdmin = normalizedUserRole === "super_admin";
 
   // For Super Admin, poll pending organization onboarding applications with relaxed interval
   useEffect(() => {
@@ -96,7 +97,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
 
   const currentMenu = isAuthorizedSuperAdmin
     ? superAdminMenuItems
-    : (menuConfig[user.role] || []);
+    : (menuConfig[normalizedUserRole] || menuConfig[user?.role] || []);
   const orgName = isAuthorizedSuperAdmin
     ? null
     : user.organizationId?.name || (user.organizationId ? "Organization" : "");

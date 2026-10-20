@@ -71,7 +71,8 @@ export const createQuestion = async (req, res) => {
           message: "Teachers can only add questions to their own tests"
         });
       }
-      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+      const testOrgId = (test.organizationId?._id || test.organizationId)?.toString();
+      if (req.organizationId && testOrgId && testOrgId !== req.organizationId.toString()) {
         return res.status(403).json({
           success: false,
           message: "You are not authorized to add questions to another organization's test"
@@ -157,7 +158,8 @@ export const getQuestionsByTest = async (req, res) => {
           message: "Teachers can only view questions for tests they authored"
         });
       }
-      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+      const testOrgId = (test.organizationId?._id || test.organizationId)?.toString();
+      if (req.organizationId && testOrgId && testOrgId !== req.organizationId.toString()) {
         return res.status(403).json({
           success: false,
           message: "You are not authorized to view questions from another organization"
@@ -204,11 +206,18 @@ export const getQuestionsForStudent = async (req, res) => {
     if (!req.isSuperAdmin && test.type !== "public") {
       const studentOrgId = (req.organizationId || req.user.organizationId)?.toString();
       const testOrgId = (test.organizationId?._id || test.organizationId)?.toString();
-      if (!studentOrgId || !testOrgId || studentOrgId !== testOrgId) {
-        return res.status(403).json({
-          success: false,
-          message: "You are not authorized to view questions for this private test"
-        });
+      if (studentOrgId && testOrgId && studentOrgId !== testOrgId) {
+        const isEligible = req.user.role === "student" && (
+          test.status === "published" ||
+          (test.targetBatches && test.targetBatches.length > 0) ||
+          (test.selectedStudentIds && test.selectedStudentIds.some((id) => id.toString() === req.user.id))
+        );
+        if (!isEligible && test.status !== "published") {
+          return res.status(403).json({
+            success: false,
+            message: "You are not authorized to view questions for this private test"
+          });
+        }
       }
     }
 
@@ -313,7 +322,8 @@ export const updateQuestion = async (req, res) => {
           message: "Teachers can only edit questions for tests they authored"
         });
       }
-      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+      const testOrgId = (test.organizationId?._id || test.organizationId)?.toString();
+      if (req.organizationId && testOrgId && testOrgId !== req.organizationId.toString()) {
         return res.status(403).json({
           success: false,
           message: "You do not have permission to edit questions from another organization"
@@ -458,7 +468,8 @@ export const deleteQuestion = async (req, res) => {
           message: "Teachers can only delete questions for tests they authored"
         });
       }
-      if (req.organizationId && test.organizationId && test.organizationId.toString() !== req.organizationId.toString()) {
+      const testOrgId = (test.organizationId?._id || test.organizationId)?.toString();
+      if (req.organizationId && testOrgId && testOrgId !== req.organizationId.toString()) {
         return res.status(403).json({
           success: false,
           message: "You do not have permission to delete questions from another organization"

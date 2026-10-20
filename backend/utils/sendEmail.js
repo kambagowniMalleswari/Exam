@@ -1,4 +1,4 @@
-// Email notification utility with multi-provider HTTP API (Brevo, Resend, SendGrid) + Nodemailer SMTP fallback
+// Clean and Direct SMTP Email Dispatcher using Nodemailer
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 import path from "path";
@@ -7,217 +7,59 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure .env is loaded reliably regardless of current working directory
+// Ensure .env is loaded reliably
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 dotenv.config();
 
-// Helper to get client URL (defaults to production web app)
+// Helper to get client URL
 export const getClientUrl = () => {
   return (process.env.CLIENT_URL || "https://assess-iq.web.app").replace(/\/$/, "");
 };
 
-// Cached singleton transporter instance for connection pooling
+// Singleton transporter instance for SMTP connection
 let cachedTransporter = null;
-let cachedTransporterKey = "";
 
-const getTransporter = () => {
-  const service = (process.env.EMAIL_SERVICE || process.env.SMTP_SERVICE || "").trim().toLowerCase();
-  const host = (process.env.SMTP_HOST || process.env.EMAIL_HOST || "").trim();
-  const port = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT) || (host ? 587 : 465);
-  const user = (process.env.SMTP_USER || process.env.EMAIL_USER || "").trim();
-  const pass = (process.env.SMTP_PASSWORD || process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS || "").trim().replace(/\s+/g, "");
-  const secure = process.env.SMTP_SECURE === "true" || port === 465;
-
-  if (!user || !pass) {
-    return null;
-  }
-
-  const configKey = `${service}_${host}_${port}_${user}_${pass}_${secure}`;
-  if (cachedTransporter && cachedTransporterKey === configKey) {
+export const getTransporter = () => {
+  if (cachedTransporter) {
     return cachedTransporter;
   }
 
-  let transporterConfig = null;
+  const host = (process.env.SMTP_HOST || "smtp.gmail.com").trim();
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const secure = process.env.SMTP_SECURE === "true";
+  const user = (process.env.SMTP_USER || "admin@vmsclass.com").trim();
+  const pass = (process.env.SMTP_PASS || "qnqpynogbbmiaxhi").trim();
 
-  if (service === "gmail" || user.endsWith("@gmail.com") || (!host && pass)) {
-    transporterConfig = {
-      service: "gmail",
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
-      rateLimit: 14,
-      auth: {
-        user,
-        pass
-      },
-      tls: {
-        rejectUnauthorized: false
-      },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000
-    };
-  } else if (host) {
-    transporterConfig = {
-      host,
-      port,
-      secure,
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
-      auth: {
-        user,
-        pass
-      },
-      tls: {
-        rejectUnauthorized: false
-      },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000
-    };
-  }
-
-  if (transporterConfig) {
-    try {
-      cachedTransporter = nodemailer.createTransport(transporterConfig);
-      cachedTransporterKey = configKey;
-    } catch (createErr) {
-      console.error("[Email Transporter Creation Failed]:", createErr.message);
-      return null;
+  cachedTransporter = nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: {
+      user,
+      pass
+    },
+    tls: {
+      rejectUnauthorized: false
     }
-  }
+  });
 
   return cachedTransporter;
 };
 
 /**
- * Dispatch via Brevo (Sendinblue) HTTP API over HTTPS (Port 443).
- * Brevo free tier sends 300 emails/day to any recipient without domain configuration.
- * Never blocked on Render or any cloud host!
- */
-const sendViaBrevo = async ({ to, subject, cleanPlainText, html, senderEmail, senderName }) => {
-  const apiKey = (process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY || "").trim();
-  if (!apiKey) return null;
-
-  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-    method: "POST",
-    headers: {
-      "accept": "application/json",
-      "api-key": apiKey,
-      "content-type": "application/json"
-    },
-    body: JSON.stringify({
-      sender: {
-        name: senderName || "AssessIQ Platform",
-        email: senderEmail || "kambagownikmalleswari@gmail.com"
-      },
-      to: [{ email: to }],
-      subject,
-      htmlContent: html || cleanPlainText?.replace(/\n/g, "<br/>"),
-      textContent: cleanPlainText
-    })
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || `Brevo API HTTP Error ${response.status}`);
-  }
-
-  console.log(`[Brevo HTTP Email Sent] ID: ${data.messageId} to: ${to}`);
-  return { success: true, messageId: data.messageId, provider: "brevo", real: true };
-};
-
-/**
- * Dispatch via Resend HTTP API over HTTPS (Port 443).
- * Resend free tier sends 3,000 emails/month (100/day).
- * Never blocked on Render or any cloud host!
- */
-const sendViaResend = async ({ to, subject, cleanPlainText, html, fromAddress }) => {
-  const apiKey = (process.env.RESEND_API_KEY || "").trim();
-  if (!apiKey) return null;
-
-  // Use configured FROM or Resend onboarding sandbox address
-  const sender = fromAddress || process.env.EMAIL_FROM || "AssessIQ <onboarding@resend.dev>";
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      from: sender,
-      to: [to],
-      subject,
-      html: html || cleanPlainText?.replace(/\n/g, "<br/>"),
-      text: cleanPlainText
-    })
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || `Resend API HTTP Error ${response.status}`);
-  }
-
-  console.log(`[Resend HTTP Email Sent] ID: ${data.id} to: ${to}`);
-  return { success: true, messageId: data.id, provider: "resend", real: true };
-};
-
-/**
- * Dispatch via SendGrid HTTP API over HTTPS (Port 443).
- */
-const sendViaSendGrid = async ({ to, subject, cleanPlainText, html, senderEmail, senderName }) => {
-  const apiKey = (process.env.SENDGRID_API_KEY || "").trim();
-  if (!apiKey) return null;
-
-  const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      personalizations: [{ to: [{ email: to }] }],
-      from: {
-        email: senderEmail || "kambagownikmalleswari@gmail.com",
-        name: senderName || "AssessIQ Platform"
-      },
-      subject,
-      content: [
-        { type: "text/plain", value: cleanPlainText },
-        { type: "text/html", value: html || cleanPlainText?.replace(/\n/g, "<br/>") }
-      ]
-    })
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`SendGrid API HTTP Error ${response.status}: ${errorText}`);
-  }
-
-  console.log(`[SendGrid HTTP Email Sent] to: ${to}`);
-  return { success: true, provider: "sendgrid", real: true };
-};
-
-/**
- * Base email sending function with multi-provider support:
- * 1. Brevo HTTP API (Port 443 - zero block risk on Render)
- * 2. Resend HTTP API (Port 443 - zero block risk on Render)
- * 3. SendGrid HTTP API (Port 443)
- * 4. Nodemailer SMTP (Port 465/587 - Gmail/Custom SMTP) with fast fail detection
+ * Base email dispatcher using configured SMTP credentials
  */
 export const sendEmail = async ({ to, subject, text, html }) => {
   try {
-    const userEmail = (process.env.SMTP_USER || process.env.EMAIL_USER || "").trim();
-
     if (!to) {
       console.warn("[Email Notification] Skipped: No recipient provided.");
-      return { success: false, reason: "No recipient provided", real: false };
+      return { success: false, reason: "No recipient provided" };
     }
 
-    // Generate clean plain text from HTML to prevent spam flagging
+    const smtpUser = (process.env.SMTP_USER || "admin@vmsclass.com").trim();
+    const fromAddress = process.env.EMAIL_FROM || `"AssessIQ Platform" <${smtpUser}>`;
+
     const cleanPlainText =
       text ||
       html
@@ -227,101 +69,29 @@ export const sendEmail = async ({ to, subject, text, html }) => {
         ?.trim() ||
       "Notification from AssessIQ";
 
-    const senderEmail = userEmail || "kambagownikmalleswari@gmail.com";
-    const senderName = "AssessIQ Platform";
-    const fromAddress = process.env.EMAIL_FROM
-      ? process.env.EMAIL_FROM.replace(/^["']|["']$/g, "").trim()
-      : `"AssessIQ Platform" <${senderEmail}>`;
-
-    // 1. Try Brevo HTTP API if configured (HTTPS Port 443 - highly recommended for Render free tier)
-    if (process.env.BREVO_API_KEY) {
-      try {
-        const brevoResult = await sendViaBrevo({ to, subject, cleanPlainText, html, senderEmail, senderName });
-        if (brevoResult) return brevoResult;
-      } catch (brevoErr) {
-        console.warn("[Brevo HTTP Dispatch Error]:", brevoErr.message);
-      }
-    }
-
-    // 2. Try Resend HTTP API if configured (HTTPS Port 443)
-    if (process.env.RESEND_API_KEY) {
-      try {
-        const resendResult = await sendViaResend({ to, subject, cleanPlainText, html, fromAddress });
-        if (resendResult) return resendResult;
-      } catch (resendErr) {
-        console.warn("[Resend HTTP Dispatch Error]:", resendErr.message);
-      }
-    }
-
-    // 3. Try SendGrid HTTP API if configured
-    if (process.env.SENDGRID_API_KEY) {
-      try {
-        const sendgridResult = await sendViaSendGrid({ to, subject, cleanPlainText, html, senderEmail, senderName });
-        if (sendgridResult) return sendgridResult;
-      } catch (sgErr) {
-        console.warn("[SendGrid HTTP Dispatch Error]:", sgErr.message);
-      }
-    }
-
-    // 4. Try Nodemailer SMTP (Gmail / Custom SMTP)
     const transporter = getTransporter();
 
-    if (transporter && userEmail) {
-      try {
-        const info = await transporter.sendMail({
-          from: fromAddress,
-          to,
-          subject,
-          text: cleanPlainText,
-          html: html || text?.replace(/\n/g, "<br/>")
-        });
+    const info = await transporter.sendMail({
+      from: fromAddress,
+      to,
+      subject,
+      text: cleanPlainText,
+      html: html || text?.replace(/\n/g, "<br/>")
+    });
 
-        console.log(`[Real SMTP Email Sent] Message ID: ${info.messageId} to: ${to} (Subject: "${subject}")`);
-        return { success: true, messageId: info.messageId, real: true, provider: "smtp" };
-      } catch (nodemailerErr) {
-        const isTimeout = /timeout|etimedout|econnrefused/i.test(nodemailerErr.message);
-        const detailedError = isTimeout
-          ? "Connection timeout (Render free-tier blocks SMTP ports 465/587. Configure BREVO_API_KEY or RESEND_API_KEY in Render for instant delivery)."
-          : nodemailerErr.message;
-
-        console.error("[Real SMTP Email Dispatch Failed]:", detailedError);
-        return {
-          success: false,
-          error: detailedError,
-          real: false
-        };
-      }
-    }
-
-    // Graceful fallback when SMTP credentials are not configured in .env
-    console.log("==================================================");
-    console.log(`[EMAIL DISPATCH - SIMULATED / NOT CONFIGURED]`);
-    console.log(`Sender: ${userEmail || "not-configured"}`);
-    console.log(`To: ${to}`);
-    console.log(`Subject: ${subject}`);
-    console.log(`Content:\n${cleanPlainText}`);
-    console.log("==================================================");
-
-    return {
-      success: false,
-      real: false,
-      simulated: true,
-      error: "SMTP credentials not configured in environment (.env)"
-    };
+    console.log(`[SMTP Email Sent] Message ID: ${info.messageId} to: ${to} (Subject: "${subject}")`);
+    return { success: true, messageId: info.messageId, provider: "smtp" };
   } catch (error) {
-    console.error("[Email Notification Error]:", error.message);
-    return { success: false, error: error.message, real: false };
+    console.error("[SMTP Email Dispatch Failed]:", error.message);
+    return { success: false, error: error.message };
   }
 };
 
 /**
  * Intelligent Fast-Response Email Helper:
- * Attempts to deliver the email within maxWaitMs (default 1200ms).
- * - If delivered quickly (e.g. Brevo/Resend HTTP API taking ~250ms), returns full delivery details.
- * - If it exceeds maxWaitMs (e.g. SMTP connecting or cold network), it does NOT block the HTTP response!
- *   It continues executing in the background, logs results, and returns queued=true immediately so the UI responds in < 200ms!
+ * Dispatches email in the background or returns quickly so UI does not wait on network latency.
  */
-export const sendEmailQuickOrBackground = async (mailOptions, maxWaitMs = 5000) => {
+export const sendEmailQuickOrBackground = async (mailOptions, maxWaitMs = 3500) => {
   const emailPromise = sendEmail(mailOptions);
 
   const timeoutPromise = new Promise((resolve) =>
@@ -331,22 +101,21 @@ export const sendEmailQuickOrBackground = async (mailOptions, maxWaitMs = 5000) 
   const raceResult = await Promise.race([emailPromise, timeoutPromise]);
 
   if (raceResult?.timeout) {
-    // Background execution continues without blocking caller
     emailPromise
       .then((res) => {
         if (res?.success) {
-          console.log(`[Background Email Delivered to ${mailOptions.to}]:`, res);
+          console.log(`[Background SMTP Delivered to ${mailOptions.to}]:`, res.messageId);
         } else {
-          console.warn(`[Background Email Delivery Status for ${mailOptions.to}]:`, res?.error || res?.reason);
+          console.warn(`[Background SMTP Status for ${mailOptions.to}]:`, res?.error || res?.reason);
         }
       })
-      .catch((err) => console.error(`[Background Email Error for ${mailOptions.to}]:`, err.message));
+      .catch((err) => console.error(`[Background SMTP Error for ${mailOptions.to}]:`, err.message));
 
     return {
       success: true,
       emailSent: true,
       queued: true,
-      message: "Credentials email dispatched in background."
+      message: "Email dispatched via SMTP in background."
     };
   }
 
@@ -395,7 +164,7 @@ export const sendStudentWelcomeEmail = async ({ to, name, email }) => {
 };
 
 /**
- * 2. Account Credentials & Temporary Password Email (For Teacher or Student created by Admin/Org)
+ * 2. Account Credentials & Temporary Password Email
  */
 export const sendAccountCredentialsEmail = async ({ to, name, email, password, role, orgName, loginUrl }) => {
   const portalUrl = loginUrl || `${getClientUrl()}/login`;
@@ -484,7 +253,7 @@ export const sendLoginNotificationEmail = async ({ to, name, role, email }) => {
       </p>
       <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px; margin: 18px 0;">
         <p style="margin: 0; font-size: 13px; color: #991b1b; line-height: 1.4;">
-          <strong>Did not recognize this activity?</strong> If you did not sign in, someone else may have gained access to your account. Please reset your password immediately or contact platform security.
+          <strong>Did not recognize this activity?</strong> If you did not sign in, please reset your password immediately or contact platform security.
         </p>
       </div>
       <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px 0;" />
@@ -501,11 +270,7 @@ export const sendLoginNotificationEmail = async ({ to, name, role, email }) => {
  * 4. Organization Application Alert to Super Admin
  */
 export const sendOrgApplicationAdminAlert = async ({ orgName, orgType, adminName, email, phone, city, state, expectedStudents, website, notes }) => {
-  const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL || process.env.EMAIL_USER || process.env.SMTP_USER || "").trim();
-  if (!superAdminEmail) {
-    console.warn("[Admin Alert Skipped]: No Super Admin notification email configured.");
-    return { success: false, reason: "No admin alert recipient configured" };
-  }
+  const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL || process.env.SMTP_USER || "admin@vmsclass.com").trim();
   const subject = `[AssessIQ Alert] New Organization Request — ${orgName} (${orgType})`;
 
   const html = `
@@ -545,10 +310,7 @@ export const sendOrgApplicationAdminAlert = async ({ orgName, orgType, adminName
  * 5. Student Self-Registration Alert to Admin
  */
 export const sendStudentRegistrationAdminAlert = async ({ studentName, studentEmail, studentPhone, orgName }) => {
-  const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL || process.env.EMAIL_USER || process.env.SMTP_USER || "").trim();
-  if (!superAdminEmail) {
-    return { success: false, reason: "No admin alert recipient configured" };
-  }
+  const superAdminEmail = (process.env.SUPER_ADMIN_EMAIL || process.env.SMTP_USER || "admin@vmsclass.com").trim();
   const subject = `[AssessIQ Alert] New Student Registration — ${studentName}`;
 
   const text = `Hello Administrator,\n\nA new student has registered on AssessIQ:\nName: ${studentName}\nEmail: ${studentEmail}\nPhone: ${studentPhone || "N/A"}\nInstitution: ${orgName || "Independent / Platform"}\n\nAssessIQ System`;
@@ -569,19 +331,19 @@ export const sendPasswordResetOtpEmail = async ({ to, name, otp }) => {
       </div>
       <h2 style="color: #0f172a; font-size: 22px; margin-bottom: 12px;">Password Reset Verification</h2>
       <p style="color: #475569; font-size: 15px; line-height: 1.5;">Hello <strong>${name || "User"}</strong>,</p>
-      <p style="color: #475569; font-size: 15px; line-height: 1.5;">You have requested to reset or modify your account password. Use the single-use 6-digit verification code below to authorize this change:</p>
+      <p style="color: #475569; font-size: 15px; line-height: 1.5;">You have requested to reset your account password. Use the single-use 6-digit verification code below to authorize this change:</p>
       <div style="margin: 28px 0; text-align: center;">
         <span style="font-family: 'Courier New', monospace; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #1e40af; background: #eff6ff; padding: 14px 28px; border-radius: 10px; border: 2px dashed #93c5fd; display: inline-block;">${otp}</span>
       </div>
       <p style="color: #64748b; font-size: 13px; margin-bottom: 6px;">⏱️ This verification code is valid for <strong>10 minutes</strong>.</p>
-      <p style="color: #64748b; font-size: 13px;">If you did not initiate this request, please ignore this email or notify platform security.</p>
+      <p style="color: #64748b; font-size: 13px;">If you did not initiate this request, please ignore this email.</p>
       <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px 0;" />
       <p style="color: #94a3b8; font-size: 12px; margin: 0; text-align: center;">AssessIQ Multi-Tenant Institutional Assessment Platform</p>
     </div>
   `;
   const text = `Hello ${name || "User"},\n\nYour 6-digit password reset verification code is:\n\n${otp}\n\nThis code will expire in 10 minutes. If you did not request a password change, please ignore this email.\n\nAssessIQ Security Operations`;
 
-  return sendEmailQuickOrBackground({ to, subject, text, html }, 5000);
+  return sendEmailQuickOrBackground({ to, subject, text, html });
 };
 
 /**
@@ -623,18 +385,16 @@ export const sendStudentScorecardEmail = async ({ to, studentName, testTitle, sc
         </div>
       </div>
       <div style="text-align: center; margin: 24px 0;">
-        <a href="${getClientUrl()}/student/history" style="background: #1e1b4b; color: #ffffff; padding: 12px 26px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">View Full Scorecard & Answer Breakdown →</a>
+        <a href="${getClientUrl()}/student/my-attempts" style="background: #1e1b4b; color: #ffffff; padding: 12px 26px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">View Full Scorecard & Answer Breakdown →</a>
       </div>
       <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0 14px 0;" />
       <p style="color: #94a3b8; font-size: 12px; margin: 0; text-align: center;">AssessIQ Academic Examination Platform</p>
     </div>
   `;
 
-  const text = `Hello ${studentName || "Student"},\n\nYou have completed "${testTitle}".\n\nResult: ${passed ? "PASSED" : "COMPLETED"}\nScore: ${score} / ${totalMarks} (${percentage}%)\nTime Taken: ${formattedTime}\n\nView details: ${getClientUrl()}/student/history\n\nAssessIQ Operations`;
+  const text = `Hello ${studentName || "Student"},\n\nYou have completed "${testTitle}".\n\nResult: ${passed ? "PASSED" : "COMPLETED"}\nScore: ${score} / ${totalMarks} (${percentage}%)\nTime Taken: ${formattedTime}\n\nView details: ${getClientUrl()}/student/my-attempts\n\nAssessIQ Operations`;
 
   return sendEmailQuickOrBackground({ to, subject, text, html });
 };
 
 export default sendEmail;
-
-

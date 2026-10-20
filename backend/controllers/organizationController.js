@@ -305,6 +305,21 @@ export const updateOrganization = async (req, res) => {
       });
     }
 
+    // Non-superadmins can only update their own organization and cannot alter subscription or status
+    const cleanRole = (req.user.role || "").toLowerCase().replace(/[-_\s]/g, "");
+    if (cleanRole !== "superadmin") {
+      if (req.user.organizationId?.toString() !== req.params.id) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only update your own organization"
+        });
+      }
+      delete req.body.subscriptionPlan;
+      delete req.body.subscriptionStatus;
+      delete req.body.status;
+      delete req.body.isActive;
+    }
+
     const organization = await Organization.findByIdAndUpdate(
       req.params.id,
       req.body,

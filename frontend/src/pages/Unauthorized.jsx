@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ShieldAlertIcon } from "../components/common/Icons.jsx";
+import { getDefaultDashboard } from "../utils/roleUtils.js";
 import "./Unauthorized.css";
 
 const Unauthorized = () => {
@@ -10,10 +11,7 @@ const Unauthorized = () => {
 
   const getDashboardPath = () => {
     if (!user) return "/login";
-    if (user.role === "super_admin" || user.role === "admin" || user.role === "org_admin") return "/admin/dashboard";
-    if (user.role === "teacher") return "/teacher/dashboard";
-    if (user.role === "student") return "/student/dashboard";
-    return "/";
+    return getDefaultDashboard(user.role);
   };
 
   useEffect(() => {

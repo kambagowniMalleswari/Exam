@@ -81,22 +81,33 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
-      // Clear expired credentials
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("organizationId");
-      clearApiCache();
+    const status = error.response?.status;
+    const requestUrl = error.config?.url || "";
 
-      // Only redirect if not already on login/register/landing page
-      const currentPath = window.location.pathname;
-      if (
-        currentPath !== "/login" &&
-        currentPath !== "/register" &&
-        currentPath !== "/" &&
-        !currentPath.startsWith("/public")
-      ) {
-        window.location.href = "/login";
+    // Handle token expiration only on authenticated private requests
+    if (status === 401) {
+      const isAuthEndpoint = requestUrl.includes("/auth/login") || requestUrl.includes("/auth/register");
+      const isPublicEndpoint = requestUrl.includes("/public");
+
+      if (!isAuthEndpoint && !isPublicEndpoint) {
+        const token = localStorage.getItem("token");
+        // Only wipe credentials if the server explicitly rejected the existing token
+        if (token && error.response?.data?.message?.toLowerCase().includes("token")) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          localStorage.removeItem("organizationId");
+          clearApiCache();
+
+          const currentPath = window.location.pathname;
+          if (
+            currentPath !== "/login" &&
+            currentPath !== "/register" &&
+            currentPath !== "/" &&
+            !currentPath.startsWith("/public")
+          ) {
+            window.location.href = "/login";
+          }
+        }
       }
     }
     return Promise.reject(error);
