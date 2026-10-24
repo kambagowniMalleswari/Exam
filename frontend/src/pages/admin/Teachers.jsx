@@ -71,15 +71,21 @@ const Teachers = () => {
       setLoading(true);
       setError("");
 
-      const response = await api.get("/users");
-      const users = response.data.users || response.data || [];
-      const teacherUsers = users.filter((user) => user.role === "teacher");
+      const response = await api.get("/users/teachers");
+      const teacherUsers = response.data.teachers || response.data.users || response.data || [];
       setTeachers(teacherUsers);
     } catch (err) {
       console.error("Error fetching teachers:", err);
-      setError(
-        err.response?.data?.message || "Unable to load teachers."
-      );
+      // Fallback to /users if /users/teachers had an issue
+      try {
+        const fallback = await api.get("/users");
+        const allUsers = fallback.data.users || fallback.data || [];
+        setTeachers(allUsers.filter((u) => u.role === "teacher"));
+      } catch {
+        setError(
+          err.response?.data?.message || "Unable to load teachers."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -115,11 +121,13 @@ const Teachers = () => {
       return;
     }
 
+    const targetEmail = addForm.email.toLowerCase().trim();
+
     try {
       setModalLoading(true);
       await api.post("/users", {
         name: addForm.name.trim(),
-        email: addForm.email.toLowerCase().trim(),
+        email: targetEmail,
         phone: addForm.phone.trim(),
         subject: addForm.subject.trim(),
         password: addForm.password,
@@ -136,12 +144,31 @@ const Teachers = () => {
 
       await fetchTeachers();
     } catch (err) {
+      // Auto-recovery: If timeout or duplicate error, verify if teacher was already saved in DB
+      try {
+        const verifyRes = await api.get("/users/teachers");
+        const list = verifyRes.data.teachers || verifyRes.data.users || [];
+        const found = list.some(t => t.email?.toLowerCase() === targetEmail);
+        if (found) {
+          setShowAddModal(false);
+          setAddForm({ name: "", email: "", phone: "", subject: "", password: "" });
+          setFeedback("Teacher account created successfully! Credentials sent to email.");
+          setTimeout(() => setFeedback(""), 5000);
+          searchParams.delete("action");
+          setSearchParams(searchParams);
+          setTeachers(list);
+          return;
+        }
+      } catch {
+        // Fall through to error display
+      }
+
       const errorMsg =
         err.response?.data?.message ||
         (typeof err.response?.data?.error === "string" ? err.response.data.error : err.response?.data?.error?.message) ||
         (typeof err.response?.data === "string" && !err.response.data.includes("<html") && err.response.data.length < 250 ? err.response.data : null) ||
-        (err.code === "ECONNABORTED" ? "The server took too long to respond (Render free-tier cold start). Please click Create Faculty again." : null) ||
-        (err.message === "Network Error" ? "Network error: Server is currently unreachable. Please wait 10 seconds for the backend to wake up and try again." : null) ||
+        (err.code === "ECONNABORTED" ? "The server is taking a moment to respond. Please check the teachers list or try again in a few seconds." : null) ||
+        (err.message === "Network Error" ? "Network error: Server is currently waking up. Please wait 10 seconds and try again." : null) ||
         err.message ||
         "Failed to create teacher account.";
       setModalError(errorMsg);

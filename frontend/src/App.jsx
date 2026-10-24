@@ -1,62 +1,93 @@
+import React, { Suspense, lazy } from "react";
 import "./App.css";
 import { Navigate, Route, Routes } from "react-router-dom";
-
-import Login from "./pages/Login.jsx";
-import Register from "./pages/Register.jsx";
-import Unauthorized from "./pages/Unauthorized.jsx";
-import LandingPage from "./pages/LandingPage.jsx";
-import PublicTests from "./pages/PublicTests.jsx";
-import ContactUs from "./pages/ContactUs.jsx";
-import Donate from "./pages/Donate.jsx";
-import TeacherRequest from "./pages/TeacherRequest.jsx";
-import JoinWithUs from "./pages/JoinWithUs.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
-// Dedicated Role-Separated Sign-in Portals
-import TeacherLogin from "./pages/teacher/TeacherLogin.jsx";
-import AdminLogin from "./pages/admin/AdminLogin.jsx";
+// Public Pages (Lazy Loaded for maximum initial load performance)
+const LandingPage = lazy(() => import("./pages/LandingPage.jsx"));
+const Login = lazy(() => import("./pages/Login.jsx"));
+const Register = lazy(() => import("./pages/Register.jsx"));
+const ContactUs = lazy(() => import("./pages/ContactUs.jsx"));
+const Donate = lazy(() => import("./pages/Donate.jsx"));
+const PublicTests = lazy(() => import("./pages/PublicTests.jsx"));
+const JoinWithUs = lazy(() => import("./pages/JoinWithUs.jsx"));
+const Unauthorized = lazy(() => import("./pages/Unauthorized.jsx"));
 
+// Super Admin Pages
+const SuperAdminDashboard = lazy(() => import("./pages/superadmin/SuperAdminDashboard.jsx"));
+const Organizations = lazy(() => import("./pages/superadmin/Organizations.jsx"));
+const OrgRequestsManager = lazy(() => import("./pages/superadmin/OrgRequestsManager.jsx"));
+const SuperAdminReports = lazy(() => import("./pages/superadmin/SuperAdminReports.jsx"));
+const SuperAdminSubscriptions = lazy(() => import("./pages/superadmin/SuperAdminSubscriptions.jsx"));
 
-// Super Admin
-import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard.jsx";
-import Organizations from "./pages/superadmin/Organizations.jsx";
-import OrgRequestsManager from "./pages/superadmin/OrgRequestsManager.jsx";
-import SuperAdminReports from "./pages/superadmin/SuperAdminReports.jsx";
-import SuperAdminSubscriptions from "./pages/superadmin/SuperAdminSubscriptions.jsx";
+// Admin Pages
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard.jsx"));
+const Students = lazy(() => import("./pages/admin/Students.jsx"));
+const BatchesManager = lazy(() => import("./pages/admin/BatchesManager.jsx"));
+const Teachers = lazy(() => import("./pages/admin/Teachers.jsx"));
+const Tests = lazy(() => import("./pages/admin/Tests.jsx"));
+const Questions = lazy(() => import("./pages/admin/Questions.jsx"));
+const AdminResults = lazy(() => import("./pages/admin/AdminResults.jsx"));
+const AdminReports = lazy(() => import("./pages/admin/AdminReports.jsx"));
+const AdminSubscription = lazy(() => import("./pages/admin/AdminSubscription.jsx"));
+const TeacherRequestsManager = lazy(() => import("./pages/admin/TeacherRequestsManager.jsx"));
 
-// Admin
-import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
-import Students from "./pages/admin/Students.jsx";
-import BatchesManager from "./pages/admin/BatchesManager.jsx";
-import Teachers from "./pages/admin/Teachers.jsx";
-import Tests from "./pages/admin/Tests.jsx";
-import Questions from "./pages/admin/Questions.jsx";
-import AdminResults from "./pages/admin/AdminResults.jsx";
-import AdminReports from "./pages/admin/AdminReports.jsx";
-import AdminSubscription from "./pages/admin/AdminSubscription.jsx";
-import TeacherRequestsManager from "./pages/admin/TeacherRequestsManager.jsx";
+// Teacher Pages
+const TeacherDashboard = lazy(() => import("./pages/teacher/TeacherDashboard.jsx"));
+const TeacherTests = lazy(() => import("./pages/teacher/TeacherTests.jsx"));
+const TeacherQuestions = lazy(() => import("./pages/teacher/TeacherQuestions.jsx"));
+const TeacherResults = lazy(() => import("./pages/teacher/TeacherResults.jsx"));
 
-// Teacher
-import TeacherDashboard from "./pages/teacher/TeacherDashboard.jsx";
-import TeacherTests from "./pages/teacher/TeacherTests.jsx";
-import TeacherQuestions from "./pages/teacher/TeacherQuestions.jsx";
-import TeacherResults from "./pages/teacher/TeacherResults.jsx";
-
-// Student
-import StudentDashboard from "./pages/student/StudentDashboard.jsx";
-import AvailableTests from "./pages/student/AvailableTests.jsx";
-import StudentBatches from "./pages/student/StudentBatches.jsx";
-import TestInstructions from "./pages/student/TestInstructions.jsx";
-import TakeTest from "./pages/student/TakeTest.jsx";
-import AttemptResult from "./pages/student/AttemptResult.jsx";
-import MyAttempts from "./pages/student/MyAttempts.jsx";
+// Student Pages
+const StudentDashboard = lazy(() => import("./pages/student/StudentDashboard.jsx"));
+const AvailableTests = lazy(() => import("./pages/student/AvailableTests.jsx"));
+const StudentBatches = lazy(() => import("./pages/student/StudentBatches.jsx"));
+const TestInstructions = lazy(() => import("./pages/student/TestInstructions.jsx"));
+const TakeTest = lazy(() => import("./pages/student/TakeTest.jsx"));
+const AttemptResult = lazy(() => import("./pages/student/AttemptResult.jsx"));
+const MyAttempts = lazy(() => import("./pages/student/MyAttempts.jsx"));
 
 // Unified Profile
-import Profile from "./pages/Profile.jsx";
+const Profile = lazy(() => import("./pages/Profile.jsx"));
+
+const PageFallbackLoader = () => (
+  <div style={{
+    minHeight: "80vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+    gap: "14px"
+  }}>
+    <div style={{
+      width: "38px",
+      height: "38px",
+      border: "3px solid #e2e8f0",
+      borderTopColor: "#6366f1",
+      borderRadius: "50%",
+      animation: "vmsSpin 0.75s linear infinite"
+    }} />
+    <span style={{
+      fontSize: "13.5px",
+      fontWeight: 500,
+      color: "#64748b",
+      fontFamily: "'Outfit', 'Inter', sans-serif"
+    }}>
+      Loading...
+    </span>
+    <style>{`
+      @keyframes vmsSpin {
+        to { transform: rotate(360deg); }
+      }
+    `}</style>
+  </div>
+);
 
 function App() {
   return (
-    <Routes>
+    <Suspense fallback={<PageFallbackLoader />}>
+      <Routes>
       {/* Public Institutional Routes & Unified Sign-In */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
@@ -331,6 +362,7 @@ function App() {
       {/* Unknown Routes Catch-All */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+  </Suspense>
   );
 }
 

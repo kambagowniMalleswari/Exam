@@ -13,6 +13,7 @@ import {
   BookOpenIcon,
   CheckCircleIcon
 } from "../components/common/Icons.jsx";
+import Footer from "../components/common/Footer.jsx";
 import "./PublicTests.css";
 
 const PublicTests = () => {
@@ -296,6 +297,9 @@ const PublicTests = () => {
           </div>
         </div>
       </section>
+
+      {/* Global Footer (Image 2) */}
+      <Footer />
     </div>
   );
 };

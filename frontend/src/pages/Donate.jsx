@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BrandCrest } from "../components/common/BrandLogo.jsx";
+import Footer from "../components/common/Footer.jsx";
 import "./Donate.css";
 
 const Donate = () => {
@@ -216,17 +217,7 @@ const Donate = () => {
       </main>
 
       {/* Public Footer */}
-      <footer className="public-footer">
-        <div className="public-footer-inner">
-          <p>© {new Date().getFullYear()} AssessIQ Educational Foundation. All donations are dedicated to infrastructure and learning tools.</p>
-          <div className="footer-links">
-            <Link to="/">Home</Link>
-            <Link to="/contact">Contact Us</Link>
-            <Link to="/donate">Donate</Link>
-            <Link to="/login">Sign In</Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

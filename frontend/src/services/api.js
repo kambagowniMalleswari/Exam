@@ -20,13 +20,13 @@ const prewarmBackend = () => {
   try {
     const rootUrl = API_BASE_URL.replace(/\/api\/?$/, "");
     // Immediate background wake-up ping on application load
-    fetch(`${rootUrl}/`, { method: "GET", mode: "no-cors" }).catch(() => {});
+    fetch(`${rootUrl}/api`, { method: "GET" }).catch(() => {});
 
-    // Periodic ping every 10 minutes to prevent Render idle spin-down
+    // Periodic ping every 8 minutes to prevent Render idle spin-down
     if (typeof window !== "undefined") {
       setInterval(() => {
-        fetch(`${rootUrl}/`, { method: "GET", mode: "no-cors" }).catch(() => {});
-      }, 10 * 60 * 1000);
+        fetch(`${rootUrl}/api`, { method: "GET" }).catch(() => {});
+      }, 8 * 60 * 1000);
     }
   } catch {
     // Fail silently
@@ -40,7 +40,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json"
   },
-  timeout: 60000
+  timeout: 90000
 });
 
 // Fast Client-Side In-Memory Cache for GET queries (TTL = 8 seconds)
@@ -80,9 +80,26 @@ api.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
     const status = error.response?.status;
-    const requestUrl = error.config?.url || "";
+    const requestUrl = originalRequest?.url || "";
+
+    // Auto-retry once on Render cold-start timeouts (ECONNABORTED) or 504 Gateway Timeouts
+    const isTimeoutOrColdStart =
+      error.code === "ECONNABORTED" ||
+      status === 504 ||
+      (!error.response && error.message === "Network Error");
+
+    if (isTimeoutOrColdStart && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        console.warn("[API Auto-Retry] Retrying request following backend cold-start latency:", requestUrl);
+        return await api(originalRequest);
+      } catch (retryErr) {
+        return Promise.reject(retryErr);
+      }
+    }
 
     // Handle token expiration only on authenticated private requests
     if (status === 401) {
