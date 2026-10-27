@@ -50,7 +50,7 @@ const LandingPage = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    document.title = "AssessIQ — Multi-Tenant Institutional Assessment & MCQ Portal";
+    document.title = "VMS | AssessIQ — Multi-Tenant Institutional Assessment & MCQ Portal";
 
     let isMounted = true;
     const fetchPublicTests = async () => {

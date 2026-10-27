@@ -17,7 +17,7 @@ const DashboardLayout = ({ children, title }) => {
 
   // Synchronize browser tab title
   useEffect(() => {
-    document.title = title ? `${title} | AssessIQ` : "AssessIQ — Institutional Portal";
+    document.title = title ? `${title} | VMS | AssessIQ` : "VMS | AssessIQ — Institutional Portal";
   }, [title]);
 
   // Auto-close sidebar on mobile navigation

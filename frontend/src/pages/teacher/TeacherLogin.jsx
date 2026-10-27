@@ -24,7 +24,7 @@ const TeacherLogin = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    document.title = "Faculty Sign In | AssessIQ";
+    document.title = "Faculty Sign In | VMS | AssessIQ";
   }, []);
 
   const navigate = useNavigate();

@@ -32,7 +32,7 @@ const Login = () => {
   const { user, login, loginWithGoogle } = useAuth();
 
   useEffect(() => {
-    document.title = "Universal Sign In | AssessIQ";
+    document.title = "Universal Sign In | VMS | AssessIQ";
     if (user && user.role) {
       navigate(getDefaultDashboard(user.role), { replace: true });
     }

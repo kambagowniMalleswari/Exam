@@ -25,7 +25,7 @@ const Register = () => {
   const { register, loginWithGoogle } = useAuth();
 
   useEffect(() => {
-    document.title = "Student Registration | AssessIQ";
+    document.title = "Student Registration | VMS | AssessIQ";
     // Fetch active public organizations for student affiliation
     const fetchOrgs = async () => {
       try {

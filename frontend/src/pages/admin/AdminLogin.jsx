@@ -26,7 +26,7 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    document.title = "Admin Console Sign In | AssessIQ";
+    document.title = "Admin Console Sign In | VMS | AssessIQ";
   }, []);
 
   const navigate = useNavigate();

@@ -26,7 +26,7 @@ const PublicTests = () => {
   const [subjects, setSubjects] = useState([]);
 
   useEffect(() => {
-    document.title = "Public Examination Catalog | AssessIQ";
+    document.title = "Public Examination Catalog | VMS | AssessIQ";
     fetchPublicTests();
   }, []);
 
