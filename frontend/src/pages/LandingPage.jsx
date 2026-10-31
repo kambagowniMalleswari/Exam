@@ -239,8 +239,16 @@ const LandingPage = () => {
 
           <div className="hero-preview-column">
             <div className="hero-live-card">
-              <div className="live-card-badge">
-                <span className="live-dot"></span> LIVE ENGINE
+              <div className="live-card-media-banner">
+                <img
+                  src="/assessiq-hero-exam.jpg"
+                  alt="University computer laboratory proctored examination"
+                  className="live-card-banner-img"
+                  loading="eager"
+                />
+                <div className="live-card-badge-overlay">
+                  <span className="live-dot"></span> LIVE ENGINE
+                </div>
               </div>
               <div className="live-card-body">
                 <h3>Enterprise Examination Security</h3>
