@@ -130,8 +130,8 @@ export const applyForTeacher = async (req, res) => {
     });
 
     // 4. Send email confirmation to applicant & administration
-    const adminAlertEmail = process.env.SUPER_ADMIN_EMAIL || process.env.EMAIL_USER || "";
-    await Promise.allSettled([
+    // Dispatch confirmation and alert emails in the background so HTTP response returns instantly
+    Promise.allSettled([
       sendEmail({
         to: application.email,
         subject: `Teacher Application Received — ${org.name}`,
@@ -149,7 +149,7 @@ export const applyForTeacher = async (req, res) => {
         subject: `[AssessIQ Alert] New Teacher Application for ${org.name} — ${application.name}`,
         text: `Hello Administrator,\n\nA new teacher application has been received for institution "${org.name}".\n\nApplicant Details:\n- Name: ${application.name}\n- Email: ${application.email}\n- Phone: ${application.phone}\n- Subject: ${application.subject}\n- Qualification: ${application.qualification}\n- Experience: ${application.experienceYears || 0} years\n\nYou can review this application in the Super Admin or Organization dashboard.\n\nAssessIQ System`
       })
-    ]);
+    ]).catch((err) => console.error("[Teacher Application Email Dispatch Error]:", err.message));
 
     res.status(201).json({
       success: true,

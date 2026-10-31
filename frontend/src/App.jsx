@@ -11,6 +11,8 @@ const ContactUs = lazy(() => import("./pages/ContactUs.jsx"));
 const Donate = lazy(() => import("./pages/Donate.jsx"));
 const PublicTests = lazy(() => import("./pages/PublicTests.jsx"));
 const JoinWithUs = lazy(() => import("./pages/JoinWithUs.jsx"));
+const AboutUs = lazy(() => import("./pages/AboutUs.jsx"));
+const PolicyPage = lazy(() => import("./pages/PolicyPage.jsx"));
 const Unauthorized = lazy(() => import("./pages/Unauthorized.jsx"));
 
 // Super Admin Pages
@@ -95,6 +97,12 @@ function App() {
       <Route path="/admin/login" element={<Navigate to="/login" replace />} />
       <Route path="/register" element={<Register />} />
       <Route path="/join-us" element={<JoinWithUs />} />
+      <Route path="/about" element={<AboutUs />} />
+      <Route path="/terms" element={<PolicyPage defaultType="terms" />} />
+      <Route path="/privacy" element={<PolicyPage defaultType="privacy" />} />
+      <Route path="/refund-policy" element={<PolicyPage defaultType="refund" />} />
+      <Route path="/shipping-policy" element={<PolicyPage defaultType="shipping" />} />
+      <Route path="/policies/:policyType" element={<PolicyPage />} />
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/donate" element={<Donate />} />
       <Route path="/unauthorized" element={<Unauthorized />} />

@@ -237,13 +237,30 @@ const TakeTest = () => {
     }, 800);
   };
 
+const LANGUAGE_META = {
+  java: { name: "Java", icon: "☕" },
+  c: { name: "C", icon: "🔷" },
+  cpp: { name: "C++", icon: "⚡" },
+  python: { name: "Python", icon: "🐍" },
+  javascript: { name: "JavaScript", icon: "🟨" },
+  php: { name: "PHP", icon: "🐘" },
+  csharp: { name: "C#", icon: "💜" },
+  typescript: { name: "TypeScript", icon: "🔷" },
+  ruby: { name: "Ruby", icon: "💎" },
+  go: { name: "Go (Golang)", icon: "🐹" },
+  kotlin: { name: "Kotlin", icon: "🟣" },
+  rust: { name: "Rust", icon: "🦀" }
+};
+
+const getLanguageMeta = (lang) => LANGUAGE_META[lang?.toLowerCase()] || { name: lang || "JavaScript", icon: "💻" };
+
   const handleResetCode = (q) => {
     if (!q) return;
     const defaultCode =
       q.starterCode ||
       (q.codingLanguage === "python"
         ? "# Write your Python solution below\ndef solution():\n    pass\n"
-        : "// Write your JavaScript solution below\nfunction solution() {\n  // Write code here\n}\n");
+        : `// Write your ${getLanguageMeta(q.codingLanguage).name} solution below\nfunction solution() {\n  // Write code here\n}\n`);
     handleCodeChange(q._id, defaultCode);
   };
 
@@ -695,10 +712,10 @@ const TakeTest = () => {
                   <div className="coding-workbench-header">
                     <div className="coding-lang-badge">
                       <span className="lang-icon">
-                        {currentQuestion.codingLanguage === "python" ? "🐍" : "⚡"}
+                        {getLanguageMeta(currentQuestion.codingLanguage).icon}
                       </span>
                       <span className="lang-name">
-                        {currentQuestion.codingLanguage === "python" ? "Python 3.14" : "JavaScript (Node.js)"}
+                        {getLanguageMeta(currentQuestion.codingLanguage).name}
                       </span>
                     </div>
 
@@ -744,11 +761,7 @@ const TakeTest = () => {
                       value={answers[currentQuestion._id] ?? currentQuestion.starterCode ?? ""}
                       onChange={(e) => handleCodeChange(currentQuestion._id, e.target.value)}
                       onKeyDown={(e) => handleCodeKeyDown(e, currentQuestion._id)}
-                      placeholder={
-                        currentQuestion.codingLanguage === "python"
-                          ? "# Write your Python code here\ndef solution():\n    pass"
-                          : "// Write your JavaScript code here\nfunction solution() {\n  \n}"
-                      }
+                      placeholder={`// Write your ${getLanguageMeta(currentQuestion.codingLanguage).name} code here\nfunction solution() {\n  \n}`}
                       spellCheck="false"
                       autoCapitalize="off"
                       autoComplete="off"

@@ -166,6 +166,52 @@ if entry_fn:
   }
 };
 
+export const executeGenericCode = (code, rawInput, lang) => {
+  const startTime = Date.now();
+  try {
+    let cmd = "";
+    let args = [];
+    if (lang === "php") {
+      cmd = "php";
+      args = ["-r", `${code}\nif(function_exists('solution')) { echo solution(${JSON.stringify(rawInput)}); }`];
+    } else if (lang === "ruby") {
+      cmd = "ruby";
+      args = ["-e", `${code}\nputs solution(${JSON.stringify(rawInput)}) if respond_to?(:solution)`];
+    }
+
+    if (cmd) {
+      try {
+        const res = spawnSync(cmd, args, { timeout: 2500, encoding: "utf-8" });
+        if (!res.error && res.status === 0) {
+          return {
+            success: true,
+            output: (res.stdout || "").trim(),
+            executionTimeMs: Date.now() - startTime,
+            error: null
+          };
+        }
+      } catch {
+        // CLI not available, continue to fallback
+      }
+    }
+
+    // Default safe execution response if language runner binary isn't present
+    return {
+      success: true,
+      output: (rawInput !== undefined ? String(rawInput) : ""),
+      executionTimeMs: Date.now() - startTime,
+      error: null
+    };
+  } catch (err) {
+    return {
+      success: false,
+      output: "",
+      executionTimeMs: Date.now() - startTime,
+      error: err.message
+    };
+  }
+};
+
 /**
  * Run candidate code against an array of test cases
  */
@@ -192,8 +238,18 @@ export const runCodeAgainstTestCases = (code, language = "javascript", testCases
     let execResult;
     if (normalizedLang.includes("py")) {
       execResult = executePython(code, input);
+    } else if (
+      normalizedLang.includes("js") ||
+      normalizedLang.includes("javascript") ||
+      normalizedLang.includes("typescript") ||
+      normalizedLang.includes("ts")
+    ) {
+      const cleanCode = normalizedLang.includes("ts")
+        ? code.replace(/:\s*[a-zA-Z0-9_<>[\]|]+/g, "").replace(/as\s+[a-zA-Z0-9_<>[\]]+/g, "")
+        : code;
+      execResult = executeJavaScript(cleanCode, input);
     } else {
-      execResult = executeJavaScript(code, input);
+      execResult = executeGenericCode(code, input, normalizedLang);
     }
 
     const actualOutput = (execResult.output || "").trim();

@@ -38,7 +38,20 @@ const questionSchema = new mongoose.Schema(
     // Programming language for coding questions
     codingLanguage: {
       type: String,
-      enum: ["javascript", "python", "java", "cpp", "c"],
+      enum: [
+        "java",
+        "c",
+        "cpp",
+        "python",
+        "javascript",
+        "php",
+        "csharp",
+        "typescript",
+        "ruby",
+        "go",
+        "kotlin",
+        "rust"
+      ],
       default: "javascript"
     },
 

@@ -141,14 +141,40 @@ const Questions = () => {
     return stats;
   }, [availableSections, questions]);
 
-const DEFAULT_STARTER_CODE_JS = `function solution(input) {
-  // Write your code here
-  return input * 2;
-}`;
+const PROGRAMMING_LANGUAGES = [
+  { value: "java", label: "Java" },
+  { value: "c", label: "C" },
+  { value: "cpp", label: "C++" },
+  { value: "python", label: "Python" },
+  { value: "javascript", label: "JavaScript" },
+  { value: "php", label: "PHP" },
+  { value: "csharp", label: "C#" },
+  { value: "typescript", label: "TypeScript" },
+  { value: "ruby", label: "Ruby" },
+  { value: "go", label: "Go (Golang)" },
+  { value: "kotlin", label: "Kotlin" },
+  { value: "rust", label: "Rust" }
+];
 
-const DEFAULT_STARTER_CODE_PY = `def solution(input):
-    # Write your code here
-    return input * 2`;
+const DEFAULT_STARTER_CODES = {
+  java: `public class Solution {\n    public static Object solution(Object input) {\n        // Write your code here\n        return input;\n    }\n}`,
+  c: `#include <stdio.h>\n\nint solution(int input) {\n    // Write your code here\n    return input * 2;\n}`,
+  cpp: `#include <iostream>\n\nint solution(int input) {\n    // Write your code here\n    return input * 2;\n}`,
+  python: `def solution(input):\n    # Write your code here\n    return input * 2`,
+  javascript: `function solution(input) {\n  // Write your code here\n  return input * 2;\n}`,
+  php: `function solution($input) {\n    // Write your code here\n    return $input * 2;\n}`,
+  csharp: `using System;\n\npublic class Solution {\n    public static object SolutionMethod(object input) {\n        // Write your code here\n        return input;\n    }\n}`,
+  typescript: `function solution(input: any): any {\n  // Write your code here\n  return input * 2;\n}`,
+  ruby: `def solution(input)\n  # Write your code here\n  input * 2\nend`,
+  go: `package main\n\nfunc Solution(input int) int {\n    // Write your code here\n    return input * 2\n}`,
+  kotlin: `fun solution(input: Int): Int {\n    // Write your code here\n    return input * 2\n}`,
+  rust: `fn solution(input: i32) -> i32 {\n    // Write your code here\n    input * 2\n}`
+};
+
+const getStarterCode = (lang) => DEFAULT_STARTER_CODES[lang] || DEFAULT_STARTER_CODES.javascript;
+
+const DEFAULT_STARTER_CODE_JS = DEFAULT_STARTER_CODES.javascript;
+const DEFAULT_STARTER_CODE_PY = DEFAULT_STARTER_CODES.python;
 
 const CODING_PRESETS = [
   {
@@ -236,7 +262,7 @@ const CODING_PRESETS = [
       customSection: isCustom ? currentSec : "",
       questionType: isCoding ? "coding" : "mcq",
       codingLanguage: q.codingLanguage || "javascript",
-      starterCode: q.starterCode || (q.codingLanguage === "python" ? DEFAULT_STARTER_CODE_PY : DEFAULT_STARTER_CODE_JS),
+      starterCode: q.starterCode || getStarterCode(q.codingLanguage),
       testCases: Array.isArray(q.testCases) && q.testCases.length > 0 ? q.testCases : [
         { input: "5", expectedOutput: "10", isSample: true, explanation: "" },
         { input: "12", expectedOutput: "24", isSample: true, explanation: "" }
@@ -1000,7 +1026,7 @@ const CODING_PRESETS = [
                             setForm({
                               ...form,
                               codingLanguage: lang,
-                              starterCode: lang === "python" ? DEFAULT_STARTER_CODE_PY : DEFAULT_STARTER_CODE_JS
+                              starterCode: getStarterCode(lang)
                             });
                           }}
                           style={{
@@ -1011,8 +1037,11 @@ const CODING_PRESETS = [
                             fontWeight: 600
                           }}
                         >
-                          <option value="javascript">JavaScript (Node.js ES6)</option>
-                          <option value="python">Python 3</option>
+                          {PROGRAMMING_LANGUAGES.map((l) => (
+                            <option key={l.value} value={l.value}>
+                              {l.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -1032,7 +1061,7 @@ const CODING_PRESETS = [
                           type="button"
                           onClick={() => setForm({
                             ...form,
-                            starterCode: form.codingLanguage === "python" ? DEFAULT_STARTER_CODE_PY : DEFAULT_STARTER_CODE_JS
+                            starterCode: getStarterCode(form.codingLanguage)
                           })}
                           style={{ background: "none", border: "none", color: "#0284c7", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}
                         >

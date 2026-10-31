@@ -136,8 +136,8 @@ export const applyOrganization = async (req, res) => {
       status: "pending"
     });
 
-    // 1. Send confirmation email to applicant & alert to Super Admin
-    await Promise.allSettled([
+    // 1. Send confirmation email to applicant & alert to Super Admin in background
+    Promise.allSettled([
       sendEmail({
         to: cleanEmail,
         subject: "AssessIQ - Institutional Onboarding Application Received",
@@ -165,7 +165,7 @@ export const applyOrganization = async (req, res) => {
         website: website.trim(),
         notes: notes.trim()
       })
-    ]);
+    ]).catch((err) => console.error("[Org Application Email Dispatch Error]:", err.message));
 
     res.status(201).json({
       success: true,

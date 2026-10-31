@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getDefaultDashboard } from "../utils/roleUtils.js";
 import api from "../services/api.js";
+import VmsLogo from "../components/common/VmsLogo.jsx";
 import { BrandCrest } from "../components/common/BrandLogo.jsx";
 import {
   ClockIcon,
@@ -132,33 +133,35 @@ const LandingPage = () => {
       {/* Navigation Bar */}
       <header className="lms-header">
         <div className="lms-header-container">
-          <Link to="/" className="lms-brand" aria-label="AssessIQ Home">
-            <BrandCrest size={32} />
-            <div className="brand-text-group">
-              <span className="brand-title">AssessIQ</span>
-              <span className="brand-subtitle">Assessment Portal</span>
-            </div>
+          <Link to="/" className="lms-brand" aria-label="VMS Home">
+            <VmsLogo size={44} />
           </Link>
 
           <nav className="lms-nav-links">
-            <a href="#available-tests">Browse Tests</a>
-            <a href="#key-benefits">Platform Features</a>
-            <a href="#faq-section">FAQ</a>
+            <Link to="/" className="active">Home</Link>
+            <Link to="/public-tests">Courses</Link>
+            <Link to="/about">About</Link>
+            <Link to="/contact">Contact</Link>
             <Link to="/join-us">For Institutions</Link>
           </nav>
 
           <div className="lms-auth-actions">
             {user ? (
-              <Link to={getDefaultDashboard(user.role)} className="btn btn-primary lms-btn-signup">
-                My Dashboard →
-              </Link>
+              <div className="lms-user-pill-wrap">
+                <Link to={getDefaultDashboard(user.role)} className="btn btn-primary lms-btn-signup">
+                  {user.role === "teacher" ? "Instructor Dashboard →" : user.role === "student" ? "Student Dashboard →" : "Dashboard →"}
+                </Link>
+                <div className="lms-user-avatar" title={user.name || user.email}>
+                  {(user.name?.[0] || user.role?.[0] || "U").toUpperCase()}
+                </div>
+              </div>
             ) : (
               <>
                 <Link to="/login" className="btn btn-secondary lms-btn-login">
                   Sign In
                 </Link>
                 <Link to="/register" className="btn btn-primary lms-btn-signup">
-                  Sign Up Free
+                  Get Started
                 </Link>
               </>
             )}
@@ -176,9 +179,10 @@ const LandingPage = () => {
 
         {mobileMenuOpen && (
           <div className="lms-mobile-drawer">
-            <a href="#available-tests" onClick={() => setMobileMenuOpen(false)}>Browse Tests</a>
-            <a href="#key-benefits" onClick={() => setMobileMenuOpen(false)}>Platform Features</a>
-            <a href="#faq-section" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
+            <Link to="/" onClick={() => setMobileMenuOpen(false)}>Home</Link>
+            <Link to="/public-tests" onClick={() => setMobileMenuOpen(false)}>Courses</Link>
+            <Link to="/about" onClick={() => setMobileMenuOpen(false)}>About</Link>
+            <Link to="/contact" onClick={() => setMobileMenuOpen(false)}>Contact</Link>
             <Link to="/join-us" onClick={() => setMobileMenuOpen(false)}>For Institutions</Link>
             <div className="lms-mobile-drawer-auth">
               {user ? (
@@ -188,7 +192,7 @@ const LandingPage = () => {
               ) : (
                 <>
                   <Link to="/login" className="btn btn-secondary" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
-                  <Link to="/register" className="btn btn-primary" onClick={() => setMobileMenuOpen(false)}>Sign Up Free</Link>
+                  <Link to="/register" className="btn btn-primary" onClick={() => setMobileMenuOpen(false)}>Get Started</Link>
                 </>
               )}
             </div>
@@ -196,33 +200,35 @@ const LandingPage = () => {
         )}
       </header>
 
-      {/* Hero Section - Clean, High Impact */}
-      <section className="lms-hero-billboard">
-        <div className="hero-billboard-container">
-          <div className="hero-text-column">
-            <div className="hero-trust-pill">
-              <SparklesIcon size={14} />
-              <span>Institutional Examination & MCQ Engine</span>
+      {/* Hero Section - Matching Image 5 */}
+      <section className="lms-hero-mentor-section">
+        <div className="hero-mentor-container">
+          {/* Left Text Column */}
+          <div className="hero-mentor-text-col">
+            <div className="hero-satisfaction-pill">
+              <span className="sat-amber-dot"></span>
+              <span>100% SATISFACTION GUARANTEE</span>
             </div>
 
-            <h1 className="hero-billboard-heading">
-              Secure Online Assessments for Universities & Academies
+            <h1 className="hero-mentor-heading">
+              Learn any new skills from us from our <span className="hero-mentor-highlight">expert mentor</span>
             </h1>
 
-            <p className="hero-billboard-subtext">
-              Conduct server-timed, proctored examinations with automated grading, instant scorecards, and hermetically isolated workspaces for every department.
+            <p className="hero-mentor-subtext">
+              Let's find the right course for you and start learning from our professional mentors to advance your career.
             </p>
 
-            <div className="hero-cta-buttons">
-              <a href="#available-tests" className="btn-hero-explore">
-                Explore Assessments <PlayIcon size={14} />
-              </a>
-              <Link to="/join-us" className="btn-hero-partner">
-                <BuildingIcon size={15} /> Onboard Institution →
+            <div className="hero-mentor-cta-group">
+              <Link to="/public-tests" className="btn-mentor-start">
+                Get Started
               </Link>
+              <a href="#available-tests" className="btn-mentor-how">
+                <span className="play-circle-icon">▶</span>
+                <span>See How It Works</span>
+              </a>
             </div>
 
-            <form className="hero-search-box" onSubmit={handleSearchSubmit}>
+            <form className="hero-mentor-search" onSubmit={handleSearchSubmit}>
               <SearchIcon size={18} className="hero-search-icon" />
               <input
                 type="text"
@@ -237,36 +243,24 @@ const LandingPage = () => {
             </form>
           </div>
 
-          <div className="hero-preview-column">
-            <div className="hero-live-card">
-              <div className="live-card-badge">
-                <span className="live-dot"></span> LIVE ENGINE
+          {/* Right Visual Column matching Image 5 */}
+          <div className="hero-mentor-visual-col">
+            <div className="mentor-visual-card">
+              <div className="mentor-img-frame">
+                <img
+                  src="/expert-mentor-hero.jpg"
+                  alt="Professional Academic Mentor"
+                  className="mentor-real-img"
+                />
               </div>
-              <div className="live-card-body">
-                <h3>Enterprise Examination Security</h3>
-                <div className="feature-quick-list">
-                  <div className="quick-list-item">
-                    <span>⏱️</span>
-                    <span>Server-Synced Tamper-Proof Timers</span>
-                  </div>
-                  <div className="quick-list-item">
-                    <span>🛡️</span>
-                    <span>Focus & Tab-Switch Proctoring</span>
-                  </div>
-                  <div className="quick-list-item">
-                    <span>📊</span>
-                    <span>Instant Scoring & Negative Marking</span>
-                  </div>
-                  <div className="quick-list-item">
-                    <span>🏫</span>
-                    <span>Dedicated Department Tenancy</span>
-                  </div>
+
+              {/* Floating Star Rating Card matching Image 5 */}
+              <div className="mentor-floating-rating">
+                <div className="rating-star-box">★</div>
+                <div className="rating-details">
+                  <strong className="rating-score">4.9 / 5.0</strong>
+                  <span className="rating-label">25k+ Mentors with 5 star rating</span>
                 </div>
-              </div>
-              <div className="live-card-footer">
-                <Link to="/register" className="card-footer-link">
-                  Get Started as a Student →
-                </Link>
               </div>
             </div>
           </div>
@@ -307,19 +301,14 @@ const LandingPage = () => {
               filteredTests.map((test) => (
                 <div key={test._id} className="course-card">
                   <div className="course-thumbnail">
-                    {test.image ? (
-                      <img
-                        src={test.image}
-                        alt={test.title}
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <div className="thumbnail-backdrop">
-                        <BookOpenIcon size={28} />
-                      </div>
-                    )}
+                    <img
+                      src={test.image || "/tests-hero-banner.jpg"}
+                      alt={test.title}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/tests-hero-banner.jpg";
+                      }}
+                    />
                     <span className="difficulty-pill">{test.subject}</span>
                   </div>
 

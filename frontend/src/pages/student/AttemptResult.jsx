@@ -14,6 +14,23 @@ import {
 } from "../../components/common/Icons.jsx";
 import "./AttemptResult.css";
 
+const LANGUAGE_LABELS = {
+  java: "☕ Java",
+  c: "🔷 C",
+  cpp: "⚡ C++",
+  python: "🐍 Python",
+  javascript: "🟨 JavaScript",
+  php: "🐘 PHP",
+  csharp: "💜 C#",
+  typescript: "🔷 TypeScript",
+  ruby: "💎 Ruby",
+  go: "🐹 Go (Golang)",
+  kotlin: "🟣 Kotlin",
+  rust: "🦀 Rust"
+};
+
+const getLanguageLabel = (lang) => LANGUAGE_LABELS[lang?.toLowerCase()] || (lang ? `💻 ${lang}` : "⚡ JavaScript");
+
 const AttemptResult = () => {
   const { attemptId } = useParams();
   const navigate = useNavigate();
@@ -299,7 +316,7 @@ const AttemptResult = () => {
                           <div className="review-coding-details">
                             <div className="review-coding-header">
                               <span className="coding-lang-chip">
-                                {item.codingLanguage === "python" ? "🐍 Python" : "⚡ JavaScript"}
+                                {getLanguageLabel(item.codingLanguage)}
                               </span>
                               <span className={`coding-cases-chip ${isCorrect ? "c" : item.isPartial ? "p" : "w"}`}>
                                 🧪 {item.testCasesPassed ?? 0}/{item.totalTestCases ?? 0} Test Cases Passed
